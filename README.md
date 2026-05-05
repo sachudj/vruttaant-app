@@ -51,6 +51,7 @@ vruttaant-app/
 2. [Architecture](./docs/ARCHITECTURE.md) - System design & structure 
 3. [Development Guide](./docs/DEVELOPMENT.md) - Daily workflow & common tasks
 4. [Project Status](./docs/PROJECT_STATUS.md) - What's done, roadmap, next steps
+5. [Roadmap](./docs/ROADMAP.md) - Small-step implementation checklist
 
 **API & Backend:**
 - [API Endpoints](./docs/API_ENDPOINTS.md) - Complete reference with examples
@@ -89,6 +90,8 @@ vruttaant-app/
 
 ## Next Phase (Roadmap)
 
+Detailed implementation sequencing now lives in [docs/ROADMAP.md](./docs/ROADMAP.md).
+
 - [ ] API endpoint to retrieve saved news from database
 - [ ] User authentication & profiles
 - [ ] Bookmark/save articles feature
@@ -96,6 +99,21 @@ vruttaant-app/
 - [ ] Background news sync
 - [ ] Push notifications
 - [ ] Advanced search & filtering
+
+### Industry-Standard Secure App Checklist
+
+- [ ] Add centralized request validation (query/body/schema) for all API endpoints
+- [ ] Add security middleware: Helmet, strict CORS policy, and rate limiting
+- [ ] Add API auth hardening: JWT rotation, refresh token revocation, and protected routes
+- [ ] Add backend unit + integration tests for critical APIs (`/api/news/ingest`, `/api/news/cards`)
+- [ ] Add structured logging with request IDs and centralized error handling
+- [ ] Add observability: metrics, error tracking, and alerting for backend failures
+- [ ] Add API versioning strategy (`/api/v1`) with backward-compatibility policy
+- [ ] Add production readiness probes (`/health`, `/ready`) and graceful shutdown handling
+- [ ] Add dependency and container security scans in CI (SAST + npm audit gating)
+- [ ] Add secrets management policy (no plaintext secrets, rotation, environment separation)
+- [ ] Add role-based access controls for admin/internal operations
+- [ ] Add data governance for LLM output (category taxonomy validation + fallback rules)
 
 ## Infrastructure Scripts
 

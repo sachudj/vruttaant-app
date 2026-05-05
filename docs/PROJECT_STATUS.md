@@ -4,6 +4,8 @@
 **Version**: v0.2 (Active Development)  
 **Status**: ✅ Foundation + Mobile Feed Experience Implemented
 
+Detailed implementation sequencing and security hardening tasks are tracked in [ROADMAP.md](./ROADMAP.md).
+
 ---
 
 ## What's Been Completed

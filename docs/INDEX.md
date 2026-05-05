@@ -17,6 +17,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 - **[SETUP.md](./SETUP.md)** - Installation, running services, verification
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System design, project structure, tech stack
 - **[PROJECT_STATUS.md](./PROJECT_STATUS.md)** - What's implemented, roadmap, next steps
+- **[ROADMAP.md](./ROADMAP.md)** - Small-step implementation plan and security hardening checklist
 
 ### Development Guides
 - **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Daily workflow, debugging, common tasks
@@ -53,7 +54,8 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 
 ### 📊 Project Manager
 1. [PROJECT_STATUS.md](./PROJECT_STATUS.md) - What's done, roadmap
-2. [ARCHITECTURE.md](./ARCHITECTURE.md) - System overview
+2. [ROADMAP.md](./ROADMAP.md) - Pending tasks broken into actionable steps
+3. [ARCHITECTURE.md](./ARCHITECTURE.md) - System overview
 
 ## 📋 File Descriptions
 
@@ -63,6 +65,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 | **SETUP.md** | Installation & quick start (5 min) | Everyone |
 | **ARCHITECTURE.md** | System design & structure | Architects, leads |
 | **PROJECT_STATUS.md** | Implementation summary & roadmap | Everyone |
+| **ROADMAP.md** | Step-by-step pending implementation checklist | Everyone |
 | **DEVELOPMENT.md** | Daily workflow & debugging | Developers |
 | **BACKEND.md** | Server configuration & modules | Backend developers |
 | **MOBILE_APP.md** | Flutter setup & building | Mobile developers |
@@ -125,8 +128,8 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 ## 📝 Document Maintenance
 
 - Last updated: **May 5, 2026**
-- Total documentation: **11 files**
-- Total word count: **~20,000 words**
+- Total documentation: **12 files**
+- Total word count: **~21,000 words**
 - Coverage: Foundation complete with comprehensive environment setup, ready for feature development
 
 ## ✅ Verification
