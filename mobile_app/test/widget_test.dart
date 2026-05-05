@@ -12,7 +12,9 @@ import 'package:mobile_app/main.dart';
 import 'package:mobile_app/models/news_item.dart';
 
 void main() {
-  testWidgets('renders feed, swipes, and paginates near the end', (WidgetTester tester) async {
+  testWidgets('renders feed, swipes, and paginates near the end', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       MyApp(
         newsLoader: (page) async {
@@ -23,12 +25,14 @@ void main() {
                 summary: 'Summary one',
                 imageUrl: 'https://example.com/one.jpg',
                 source: 'Source One',
+                category: 'General',
               ),
               NewsItem(
                 title: 'Story Two',
                 summary: 'Summary two',
                 imageUrl: 'https://example.com/two.jpg',
                 source: 'Source Two',
+                category: 'General',
               ),
             ];
           }
@@ -39,6 +43,7 @@ void main() {
               summary: 'Summary three',
               imageUrl: 'https://example.com/three.jpg',
               source: 'Source Three',
+              category: 'General',
             ),
           ];
         },
@@ -49,10 +54,16 @@ void main() {
 
     expect(find.text('Story One'), findsOneWidget);
 
-    await tester.drag(find.byKey(const ValueKey('vertical-feed-pageview')), const Offset(0, -220));
+    await tester.drag(
+      find.byKey(const ValueKey('vertical-feed-pageview')),
+      const Offset(0, -220),
+    );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byKey(const ValueKey('vertical-feed-pageview')), const Offset(0, -400));
+    await tester.drag(
+      find.byKey(const ValueKey('vertical-feed-pageview')),
+      const Offset(0, -400),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Story Three'), findsOneWidget);

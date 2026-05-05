@@ -4,6 +4,7 @@ class NewsItem {
     required this.summary,
     required this.imageUrl,
     required this.source,
+    required this.category,
     this.url,
     this.language,
   });
@@ -12,6 +13,7 @@ class NewsItem {
   final String summary;
   final String imageUrl;
   final String source;
+  final String category;
   final String? url;
   final String? language;
 
@@ -22,7 +24,9 @@ class NewsItem {
       title: (json['title'] as String?)?.trim().isNotEmpty == true
           ? (json['title'] as String).trim()
           : 'Untitled',
-      summary: (json['summary'] as String?)?.trim().isNotEmpty == true
+      summary: (json['aiSummary'] as String?)?.trim().isNotEmpty == true
+          ? (json['aiSummary'] as String).trim()
+          : (json['summary'] as String?)?.trim().isNotEmpty == true
           ? (json['summary'] as String).trim()
           : 'No summary available.',
       imageUrl: (json['imageUrl'] as String?)?.trim().isNotEmpty == true
@@ -31,6 +35,9 @@ class NewsItem {
       source: (json['source'] as String?)?.trim().isNotEmpty == true
           ? (json['source'] as String).trim()
           : 'Unknown Source',
+      category: (json['category'] as String?)?.trim().isNotEmpty == true
+          ? (json['category'] as String).trim()
+          : 'General',
       url: json['url'] as String?,
       language: json['language'] as String?,
     );

@@ -2,6 +2,10 @@ const NewsCard = require('../models/NewsCard');
 const { isDatabaseConnected } = require('../config/database');
 const { fetchNewsCards } = require('../services/newsIngestionService');
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function ingestNewsFromUrl(req, res) {
   try {
     const {
@@ -31,6 +35,7 @@ async function ingestNewsFromUrl(req, res) {
               title: card.title,
               summary: card.summary,
               aiSummary: card.aiSummary,
+              category: card.category,
               imageUrl: card.imageUrl,
               source: card.source,
               publishedAt: card.publishedAt,
@@ -66,6 +71,72 @@ async function ingestNewsFromUrl(req, res) {
   }
 }
 
+async function getNewsCards(req, res) {
+  try {
+    if (!isDatabaseConnected()) {
+      return res.status(503).json({
+        message: 'Database is not connected.'
+      });
+    }
+
+    const {
+      language = 'en',
+      category,
+      page = '1',
+      limit = '20'
+    } = req.query || {};
+
+    const parsedPage = Math.max(parseInt(page, 10) || 1, 1);
+    const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    const filter = {
+      language: String(language || 'en').trim().toLowerCase()
+    };
+
+    if (category) {
+      const normalizedCategory = String(category).trim();
+      if (normalizedCategory) {
+        filter.category = {
+          $regex: `^${escapeRegex(normalizedCategory)}$`,
+          $options: 'i'
+        };
+      }
+    }
+
+    const [items, total] = await Promise.all([
+      NewsCard.find(filter)
+        .sort({ scrapedAt: -1 })
+        .skip(skip)
+        .limit(parsedLimit)
+        .lean(),
+      NewsCard.countDocuments(filter)
+    ]);
+
+    const totalPages = Math.max(Math.ceil(total / parsedLimit), 1);
+
+    return res.status(200).json({
+      message: 'News cards fetched successfully.',
+      page: parsedPage,
+      limit: parsedLimit,
+      total,
+      totalPages,
+      hasMore: parsedPage < totalPages,
+      filters: {
+        language: filter.language,
+        category: category ? String(category).trim() : null
+      },
+      cards: items
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: 'Unable to fetch news cards.',
+      error: error.message
+    });
+  }
+}
+
 module.exports = {
-  ingestNewsFromUrl
+  ingestNewsFromUrl,
+  getNewsCards
 };

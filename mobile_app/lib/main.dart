@@ -51,10 +51,26 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   final PageController _pageController = PageController();
   final List<NewsItem> _feed = [];
 
+  static const List<String?> _categories = [
+    null,
+    'Tech',
+    'Politics',
+    'Sports',
+    'Business',
+    'World',
+    'Health',
+    'Entertainment',
+    'Science',
+    'Education',
+    'General',
+  ];
+
   bool _isInitialLoading = true;
   bool _isLoadingMore = false;
   String? _errorMessage;
-  int _currentPage = 0;
+  int _currentPage = 1;
+  final String _language = 'en';
+  String? _selectedCategory;
 
   @override
   void initState() {
@@ -65,13 +81,14 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   Future<List<NewsItem>> _fetchNewsPage(int page) {
     final loader = widget.newsLoader;
     if (loader != null) {
-      return loader(page);
+      return loader(page - 1);
     }
 
-    final sourceUrl = _sourceUrls[page % _sourceUrls.length];
-    return _newsApiService.ingestAndFetchNews(
-      sourceUrl: sourceUrl,
-      maxItems: 20,
+    return _newsApiService.fetchCards(
+      language: _language,
+      category: _selectedCategory,
+      page: page,
+      limit: 20,
     );
   }
 
@@ -96,14 +113,30 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     });
 
     try {
-      final firstPage = await _fetchNewsPage(0);
+      var firstPage = await _fetchNewsPage(1);
+
+      if (firstPage.isEmpty) {
+        for (final sourceUrl in _sourceUrls) {
+          await _newsApiService.ingestNews(
+            sourceUrl: sourceUrl,
+            language: _language,
+            maxItems: 20,
+          );
+        }
+        firstPage = await _fetchNewsPage(1);
+      }
+
+      if (firstPage.isEmpty) {
+        throw Exception('No stories available for the selected filters yet.');
+      }
+
       if (!mounted) return;
 
       setState(() {
         _feed
           ..clear()
           ..addAll(firstPage);
-        _currentPage = 0;
+        _currentPage = 1;
         _isInitialLoading = false;
       });
     } catch (error) {
@@ -128,6 +161,13 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       final nextPage = _currentPage + 1;
       final incoming = await _fetchNewsPage(nextPage);
       if (!mounted) return;
+
+      if (incoming.isEmpty) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+        return;
+      }
 
       setState(() {
         _feed
@@ -156,12 +196,25 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     final imageUrl = feed[index].imageUrl;
     if (imageUrl.isEmpty) return;
 
-    precacheImage(NetworkImage(imageUrl), context).catchError((error, stackTrace) {
+    precacheImage(NetworkImage(imageUrl), context).catchError((
+      error,
+      stackTrace,
+    ) {
       return;
     });
   }
 
   Future<void> _onRefresh() async {
+    await _loadInitialFeed();
+  }
+
+  Future<void> _onCategorySelected(String? category) async {
+    if (_selectedCategory == category) return;
+
+    setState(() {
+      _selectedCategory = category;
+    });
+
     await _loadInitialFeed();
   }
 
@@ -228,33 +281,66 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
             _prefetchImageIfPossible(_feed, 1);
           });
 
-          return RefreshIndicator(
-            onRefresh: _onRefresh,
-            color: Colors.white,
-            backgroundColor: Colors.black,
-            child: PageView.builder(
-              key: const ValueKey('vertical-feed-pageview'),
-              controller: _pageController,
-              scrollDirection: Axis.vertical,
-              itemCount: _feed.length + (_isLoadingMore ? 1 : 0),
-              onPageChanged: (index) {
-                _prefetchImageIfPossible(_feed, index + 1);
-                _prefetchImageIfPossible(_feed, index + 2);
-                _loadMoreIfNeeded(index);
-              },
-              itemBuilder: (context, index) {
-                if (index >= _feed.length) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  );
-                }
+          return Stack(
+            children: [
+              RefreshIndicator(
+                onRefresh: _onRefresh,
+                color: Colors.white,
+                backgroundColor: Colors.black,
+                child: PageView.builder(
+                  key: const ValueKey('vertical-feed-pageview'),
+                  controller: _pageController,
+                  scrollDirection: Axis.vertical,
+                  itemCount: _feed.length + (_isLoadingMore ? 1 : 0),
+                  onPageChanged: (index) {
+                    _prefetchImageIfPossible(_feed, index + 1);
+                    _prefetchImageIfPossible(_feed, index + 2);
+                    _loadMoreIfNeeded(index);
+                  },
+                  itemBuilder: (context, index) {
+                    if (index >= _feed.length) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      );
+                    }
 
-                final news = _feed[index];
-                return _StoryPager(
-                  news: news,
-                );
-              },
-            ),
+                    final news = _feed[index];
+                    return _StoryPager(news: news);
+                  },
+                ),
+              ),
+              SafeArea(
+                child: SizedBox(
+                  height: 56,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    scrollDirection: Axis.horizontal,
+                    itemBuilder: (context, index) {
+                      final category = _categories[index];
+                      final selected = category == _selectedCategory;
+                      return ChoiceChip(
+                        label: Text(category ?? 'All'),
+                        selected: selected,
+                        onSelected: (_) => _onCategorySelected(category),
+                        selectedColor: Colors.white,
+                        labelStyle: TextStyle(
+                          color: selected ? Colors.black : Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        backgroundColor: Colors.black.withValues(alpha: 0.6),
+                        side: const BorderSide(color: Colors.white38),
+                      );
+                    },
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 8),
+                    itemCount: _categories.length,
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -279,7 +365,9 @@ class _StoryPagerState extends State<_StoryPager> {
   @override
   void initState() {
     super.initState();
-    _isTestBinding = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
+    _isTestBinding = WidgetsBinding.instance.runtimeType.toString().contains(
+      'TestWidgetsFlutterBinding',
+    );
     _isWebViewSupported = !kIsWeb && !_isTestBinding;
 
     final articleUrl = widget.news.originalUrl;
@@ -309,9 +397,7 @@ class _StoryPagerState extends State<_StoryPager> {
     final controller = _controller;
 
     if (_isWebViewSupported && controller != null) {
-      return SafeArea(
-        child: WebViewWidget(controller: controller),
-      );
+      return SafeArea(child: WebViewWidget(controller: controller));
     }
 
     if (articleUrl.isEmpty) {

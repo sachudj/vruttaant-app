@@ -76,17 +76,38 @@ function toLanguageLabel(language) {
   return LANGUAGE_LABELS[language] || 'English';
 }
 
+function normalizeCategory(category) {
+  const raw = cleanText(category);
+  if (!raw) {
+    return 'General';
+  }
+
+  const compact = raw.replace(/[^a-zA-Z\s/-]/g, '').trim();
+  if (!compact) {
+    return 'General';
+  }
+
+  return compact
+    .split(/\s+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
+    .slice(0, 40);
+}
+
 async function summarizeWithLlm(card, language) {
   const apiKey = process.env.LLM_API_KEY;
   if (!apiKey) {
-    return '';
+    return {
+      aiSummary: '',
+      category: 'General'
+    };
   }
 
   const apiUrl = process.env.LLM_API_URL || DEFAULT_LLM_API_URL;
   const model = process.env.LLM_MODEL || DEFAULT_LLM_MODEL;
   const normalizedLanguage = normalizeLanguage(language);
   const languageLabel = toLanguageLabel(normalizedLanguage);
-  const prompt = `Summarize this news in exactly 60 words in ${languageLabel}, keeping a neutral tone.`;
+  const prompt = `Summarize this news in exactly 60 words in ${languageLabel}, keeping a neutral tone. Also classify it into one short category label (examples: Tech, Politics, Sports, Business, World, Health, Entertainment, Science, Education). Return ONLY valid JSON with keys "summary" and "category".`;
 
   const articlePayload = [
     `Title: ${card.title || ''}`,
@@ -118,12 +139,29 @@ async function summarizeWithLlm(card, language) {
   });
 
   if (!response.ok) {
-    return '';
+    return {
+      aiSummary: '',
+      category: 'General'
+    };
   }
 
   const payload = await response.json();
-  const aiSummary = cleanText(payload?.choices?.[0]?.message?.content || '');
-  return aiSummary;
+  const rawContent = cleanText(payload?.choices?.[0]?.message?.content || '');
+
+  let parsed;
+  try {
+    parsed = JSON.parse(rawContent);
+  } catch {
+    parsed = {
+      summary: rawContent,
+      category: 'General'
+    };
+  }
+
+  return {
+    aiSummary: cleanText(parsed?.summary || ''),
+    category: normalizeCategory(parsed?.category)
+  };
 }
 
 async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
@@ -248,15 +286,17 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
   const cardsWithAiSummary = await Promise.all(
     cards.map(async (card) => {
       try {
-        const aiSummary = await summarizeWithLlm(card, normalizedLanguage);
+        const llmOutput = await summarizeWithLlm(card, normalizedLanguage);
         return {
           ...card,
-          aiSummary
+          aiSummary: llmOutput.aiSummary,
+          category: llmOutput.category
         };
       } catch {
         return {
           ...card,
-          aiSummary: ''
+          aiSummary: '',
+          category: 'General'
         };
       }
     })

@@ -1,5 +1,5 @@
 const express = require('express');
-const { ingestNewsFromUrl } = require('../controllers/newsController');
+const { ingestNewsFromUrl, getNewsCards } = require('../controllers/newsController');
 
 const router = express.Router();
 
@@ -11,5 +11,6 @@ router.get('/ingest/health', (req, res) => {
 });
 
 router.post('/ingest', ingestNewsFromUrl);
+router.get('/cards', getNewsCards);
 
 module.exports = router;
