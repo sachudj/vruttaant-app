@@ -1,0 +1,28 @@
+{
+  "name": "vruttaant-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Vruttaant multilingual card-based news app",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "infra:up": "docker compose -f ../docker-compose.yml up -d",
+    "infra:down": "docker compose -f ../docker-compose.yml down",
+    "infra:ps": "docker compose -f ../docker-compose.yml ps"
+  },
+  "keywords": [
+    "news",
+    "express",
+    "multilingual",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.21.2",
+    "mongoose": "^8.18.0"
+  }
+}

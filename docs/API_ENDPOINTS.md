@@ -1,0 +1,206 @@
+# API Endpoints Reference
+
+## Base URL
+```
+http://localhost:5000
+```
+(or next free port if 5000 is occupied)
+
+## Endpoints
+
+### Health Check
+
+#### GET /health
+Server health status including database connection state.
+
+**Response** (200 OK):
+```json
+{
+  "status": "ok",
+  "service": "vruttaant-backend",
+  "databaseConnected": true,
+  "timestamp": "2026-05-05T10:43:08.506Z"
+}
+```
+
+---
+
+### News Ingestion
+
+#### GET /api/news/ingest/health
+News API route health check.
+
+**Response** (200 OK):
+```json
+{
+  "status": "ok",
+  "route": "/api/news/ingest"
+}
+```
+
+---
+
+#### POST /api/news/ingest
+Scrape news from a URL and optionally persist to MongoDB.
+
+**Request Body**:
+```json
+{
+  "url": "https://example.com",
+  "language": "en",
+  "maxItems": 20,
+  "persist": true
+}
+```
+
+**Parameters**:
+- `url` (string, required): Source URL to scrape
+- `language` (string, optional): Language code (default: "en")
+- `maxItems` (number, optional): Max cards to extract (default: 20)
+- `persist` (boolean, optional): Save to MongoDB (default: false)
+
+**Response** (200 OK):
+```json
+{
+  "message": "News ingestion completed.",
+  "sourceUrl": "https://example.com/",
+  "language": "en",
+  "scrapedCount": 5,
+  "persistedCount": 5,
+  "dbStatus": "saved",
+  "cardsPreview": [
+    {
+      "title": "Article Headline",
+      "summary": "Short summary of the article",
+      "url": "https://example.com/article",
+      "imageUrl": "https://example.com/image.jpg",
+      "source": "News Site Name",
+      "language": "en",
+      "publishedAt": "2026-05-05T10:00:00Z",
+      "rawMetadata": {
+        "selectorMatched": true
+      }
+    }
+  ]
+}
+```
+
+**Response Fields**:
+- `scrapedCount`: Number of articles extracted from HTML
+- `persistedCount`: Number of new/updated articles saved to DB
+- `dbStatus`: 
+  - `"saved"` - Articles persisted to database
+  - `"skipped"` - persist=false or no articles found
+  - `"not-connected"` - Database unavailable
+- `cardsPreview`: First 5 extracted articles (full schema)
+
+**Error Response** (400 Bad Request):
+```json
+{
+  "message": "Request body must include a valid url field."
+}
+```
+
+**Error Response** (500 Internal Server Error):
+```json
+{
+  "message": "News ingestion failed.",
+  "error": "Error message details"
+}
+```
+
+---
+
+## Example Requests
+
+### Scrape Without Persistence (Preview)
+```bash
+curl -X POST http://localhost:5000/api/news/ingest \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://www.bbc.com/news",
+    "language": "en",
+    "maxItems": 5,
+    "persist": false
+  }'
+```
+
+### Scrape and Save to Database
+```bash
+curl -X POST http://localhost:5000/api/news/ingest \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://www.nytimes.com",
+    "language": "en",
+    "maxItems": 20,
+    "persist": true
+  }'
+```
+
+### Spanish News
+```bash
+curl -X POST http://localhost:5000/api/news/ingest \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://www.elmundo.es",
+    "language": "es",
+    "maxItems": 10,
+    "persist": true
+  }'
+```
+
+---
+
+## HTTP Status Codes
+
+- **200 OK**: Request succeeded
+- **400 Bad Request**: Missing or invalid required parameters
+- **500 Internal Server Error**: Server or database error
+
+---
+
+## Response Time
+
+- Health checks: ~10ms
+- Scraping (typical): 500ms - 2s (depends on source site)
+- Database persistence: +100-200ms
+
+---
+
+## Rate Limiting
+
+Currently **not implemented**. Future versions should add:
+- Per-IP rate limiting
+- Request throttling
+- Caching layer
+
+---
+
+## CORS
+
+All endpoints accept requests from any origin (CORS enabled).
+
+---
+
+## Authentication
+
+Currently **not implemented**. Future versions should add:
+- JWT bearer token validation
+- API key authentication
+- Request signing
+
+---
+
+## Pagination
+
+Currently **not implemented**. Endpoints return fixed result sets.
+
+Future: `/api/news/cards?page=1&limit=20`
+
+---
+
+## Versioning
+
+Current API version: `v0` (stable)
+
+Future paths: `/api/v1/news/ingest`

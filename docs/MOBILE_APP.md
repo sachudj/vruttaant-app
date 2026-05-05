@@ -1,0 +1,303 @@
+# Flutter Mobile App Setup
+
+## Overview
+Flutter mobile app for browsing news in a card-based interface. Supports iOS and Android with multi-language support.
+
+## Prerequisites
+- Flutter 3.41.9+ (installed via Homebrew)
+- Dart 3.11.5+ (included with Flutter)
+- iOS: Xcode 26.4.1+, CocoaPods 1.16.2+
+- Android: Android Studio 2025.3+, Android SDK 36+, Java 26+
+
+## Verify Installation
+
+```bash
+flutter doctor
+```
+
+All checks should show `✓`:
+```
+[✓] Flutter (Channel stable, 3.41.9)
+[✓] Android toolchain
+[✓] Xcode
+[✓] Chrome
+[✓] Connected device
+```
+
+If not, run:
+```bash
+flutter pub get
+flutter clean
+flutter pub get
+```
+
+## Project Setup
+
+```bash
+cd mobile_app
+```
+
+### Get Dependencies
+```bash
+flutter pub get
+```
+
+### Build Configuration
+
+Check `pubspec.yaml` for dependencies. Currently includes Flutter SDK defaults.
+
+### iOS Setup (macOS only)
+
+```bash
+cd ios
+pod install
+cd ..
+```
+
+This installs CocoaPods dependencies for iOS.
+
+## Running the App
+
+### On Simulator/Emulator
+
+**iOS Simulator** (macOS):
+```bash
+flutter run -d "iPhone 15 Pro"
+```
+
+**Android Emulator**:
+```bash
+flutter run -d "emulator-5554"
+```
+
+**Chrome (Web)**:
+```bash
+flutter run -d "chrome"
+```
+
+### On Physical Device
+
+**iPhone**:
+1. Connect iPhone via USB
+2. Trust the computer (on device)
+3. Run: `flutter devices` (verify device listed)
+4. Run: `flutter run`
+
+**Android**:
+1. Enable USB debugging on device
+2. Connect via USB
+3. Run: `flutter devices` (verify device listed)
+4. Run: `flutter run`
+
+## Development Workflow
+
+### Hot Reload (Fast Refresh)
+While app is running, press `r` in terminal:
+```
+r         reload
+R         restart
+```
+
+### Debug Mode
+```bash
+flutter run --debug
+```
+
+### Release Mode
+```bash
+flutter run --release
+```
+
+### Profile Mode (Performance Testing)
+```bash
+flutter run --profile
+```
+
+## Code Structure (Planned)
+
+```
+mobile_app/
+├── lib/
+│   ├── main.dart              # App entry point
+│   ├── screens/
+│   │   ├── home_screen.dart   # News card feed
+│   │   ├── detail_screen.dart # Article detail view
+│   │   └── settings_screen.dart
+│   ├── widgets/
+│   │   ├── news_card.dart
+│   │   └── swipe_gesture.dart
+│   ├── models/
+│   │   └── news_article.dart
+│   ├── services/
+│   │   ├── api_service.dart   # Backend communication
+│   │   └── storage_service.dart
+│   └── theme/
+│       └── app_theme.dart
+├── test/                      # Unit & widget tests
+├── pubspec.yaml              # Dependencies
+└── README.md                 # App-specific docs
+```
+
+## Building for Release
+
+### iOS Release Build
+```bash
+flutter build ios --release
+```
+
+Output: `build/ios/iphoneos/Runner.app`
+
+To create IPA:
+```bash
+flutter build ipa --release
+```
+
+Output: `build/ios/ipa/`
+
+### Android Release Build
+```bash
+flutter build apk --release
+```
+
+Output: `build/app/outputs/flutter-apk/app-release.apk`
+
+For Google Play (AAB format):
+```bash
+flutter build appbundle --release
+```
+
+Output: `build/app/outputs/bundle/release/app-release.aab`
+
+## Backend Integration
+
+Once implemented, API service will connect to:
+```
+http://localhost:5000  (development)
+https://api.vruttaant.app  (production)
+```
+
+### Example API Call Pattern
+```dart
+// services/api_service.dart
+class ApiService {
+  static const String BASE_URL = "http://localhost:5000";
+  
+  Future<List<NewsCard>> getCards(String language) async {
+    final response = await http.get(
+      Uri.parse('$BASE_URL/api/news/cards?language=$language'),
+    );
+    // Parse and return
+  }
+}
+```
+
+## Debugging
+
+### Enable Verbose Logging
+```bash
+flutter run -v
+```
+
+### Dart DevTools (Inspector)
+```bash
+flutter pub global activate devtools
+devtools
+```
+
+Then open in browser (URL printed), or use in VS Code:
+```bash
+flutter pub global run devtools
+```
+
+### Check Device Logs
+```bash
+flutter logs
+```
+
+## Common Issues
+
+### Build Fails on iOS
+```bash
+cd ios
+rm -rf Pods
+pod install
+cd ..
+flutter clean
+flutter pub get
+flutter run
+```
+
+### Build Fails on Android
+```bash
+flutter clean
+flutter pub get
+flutter run
+```
+
+### CocoaPods Issues
+```bash
+# Update CocoaPods
+sudo gem install cocoapods
+
+# Clean pods
+cd ios
+rm -rf Pods
+rm Podfile.lock
+pod install
+cd ..
+```
+
+## Testing
+
+### Run All Tests
+```bash
+flutter test
+```
+
+### Run Specific Test File
+```bash
+flutter test test/widget_test.dart
+```
+
+### Coverage Report
+```bash
+flutter test --coverage
+```
+
+Coverage in `coverage/lcov.info`
+
+## Localization (Multi-language)
+
+Flutter localization strategy:
+- Create `lib/l10n/app_en.arb` for English
+- Create `lib/l10n/app_es.arb` for Spanish
+- Create `lib/l10n/app_hi.arb` for Hindi
+- etc.
+
+Then generate with:
+```bash
+flutter gen-l10n
+```
+
+## Performance
+
+### Profile App
+```bash
+flutter run --profile
+```
+
+Use DevTools Performance tab to track:
+- Frame rate (target: 60 FPS on iOS, 120 FPS on iPad)
+- Memory usage
+- GPU/CPU metrics
+
+### Optimize Images
+- Use `flutter pub add cached_network_image`
+- Implement lazy loading for news cards
+- Cache images locally
+
+## Next Steps
+- Follow [SETUP.md](./SETUP.md) to start backend
+- Implement API client in `lib/services/api_service.dart`
+- Build UI components in `lib/widgets/`
+- Connect to `/api/news/ingest` endpoint
