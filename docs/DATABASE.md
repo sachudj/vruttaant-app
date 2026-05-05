@@ -13,6 +13,7 @@
   _id: ObjectId,                    // MongoDB auto-generated ID
   title: String,                    // Article headline (required)
   summary: String,                  // Short excerpt or description
+  aiSummary: String,                // LLM-generated neutral 60-word summary
   url: String,                      // Source article URL (required)
   imageUrl: String,                 // Featured image URL
   source: String,                   // Publication name (e.g., "BBC", "The Guardian")
@@ -35,6 +36,7 @@
   "_id": ObjectId("66373fa1c8e4d7e5b2a1c9d2"),
   "title": "Climate change accelerates Arctic warming",
   "summary": "New research shows Arctic warming at 4x global average rate",
+  "aiSummary": "Researchers report Arctic temperatures rising much faster than the global average, with impacts on sea ice, ecosystems, and coastal communities. The study links warming trends to greenhouse gas emissions and warns of wider climate effects. Scientists recommend sustained mitigation and adaptation planning while emphasizing continued monitoring to guide policy and reduce long-term environmental and economic risks.",
   "url": "https://bbc.com/news/arctic-warming-2026",
   "imageUrl": "https://static.files.bbci.co.uk/image.jpg",
   "source": "BBC News",

@@ -11,6 +11,10 @@ const newsCardSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    aiSummary: {
+      type: String,
+      default: ''
+    },
     url: {
       type: String,
       required: true,

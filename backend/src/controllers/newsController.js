@@ -30,6 +30,7 @@ async function ingestNewsFromUrl(req, res) {
             $set: {
               title: card.title,
               summary: card.summary,
+              aiSummary: card.aiSummary,
               imageUrl: card.imageUrl,
               source: card.source,
               publishedAt: card.publishedAt,

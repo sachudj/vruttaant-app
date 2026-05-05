@@ -15,7 +15,7 @@ npm start
 # 3. Setup mobile app (in separate terminal, from project root)
 cd mobile_app
 flutter pub get
-flutter run
+flutter run --dart-define=API_BASE_URL=http://localhost:5000
 ```
 
 ## Daily Development Routine
@@ -73,20 +73,22 @@ cd mobile_app
 flutter pub get
 
 # Run on device/simulator
-flutter run
+flutter run --dart-define=API_BASE_URL=http://localhost:5000
 
 # Or specify device
 flutter run -d "iPhone 15 Pro"
 
+# Android emulator host mapping
+flutter run -d "emulator-5554" --dart-define=API_BASE_URL=http://10.0.2.2:5000
+
 # Hot reload (during development, press 'r' in terminal)
 ```
 
-**File Structure** (will create as needed):
+**File Structure**:
 - `lib/main.dart` - Entry point
-- `lib/screens/` - Full pages
-- `lib/widgets/` - Reusable components
-- `lib/services/api_service.dart` - Backend API calls
-- `lib/models/` - Data classes
+- `lib/widgets/news_card.dart` - Full-screen overlay card
+- `lib/services/news_api_service.dart` - Backend API calls
+- `lib/models/news_item.dart` - Feed data model
 
 ### Database Operations
 
@@ -301,6 +303,12 @@ db.newscards.find().explain("executionStats")
 
 ### Mobile FPS
 Use Flutter DevTools Performance tab (see above).
+
+### Feed Behavior Notes
+- Vertical `PageView` for card-by-card swiping
+- Pull-to-refresh reloads first batch
+- Pull-up pagination appends additional batches
+- Next-card image prefetching improves swipe smoothness
 
 ## End of Day Checklist
 

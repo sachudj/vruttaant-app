@@ -1,7 +1,12 @@
 # Vruttaant
+[![CI](https://github.com/sachudj/vruttaant-app/actions/workflows/ci.yml/badge.svg)](https://github.com/sachudj/vruttaant-app/actions/workflows/ci.yml)
+[![Release](https://github.com/sachudj/vruttaant-app/actions/workflows/release.yml/badge.svg)](https://github.com/sachudj/vruttaant-app/actions/workflows/release.yml)
+[![Latest Release](https://img.shields.io/github/v/release/sachudj/vruttaant-app)](https://github.com/sachudj/vruttaant-app/releases)
+[![Coverage](https://codecov.io/gh/sachudj/vruttaant-app/branch/main/graph/badge.svg)](https://codecov.io/gh/sachudj/vruttaant-app)
+
 A multilingual, card-based news app providing a concise "Vruttaant" (chronicle) of local events through a swipable interface.
 
-**Status**: Early Development (v0.1)  
+**Status**: Active Development (v0.2)  
 **Last Updated**: May 5, 2026
 
 ## Quick Start (5 minutes)
@@ -69,16 +74,22 @@ vruttaant-app/
 ✅ MongoDB with Docker  
 ✅ News web scraping (Cheerio)  
 ✅ Multilingual support structure  
+✅ AI summarisation (60-word neutral summary via LLM)  
+✅ Supported summary languages: English, Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, Malayalam  
 ✅ Environment-based configuration  
 ✅ Port auto-fallback (5000 → 5001 → ...)  
 ✅ Health check endpoints  
 ✅ Docker infrastructure scripts  
+✅ Flutter vertical full-screen NewsCard UI  
+✅ Backend-integrated mobile feed via `/api/news/ingest`  
+✅ Pull-to-refresh in mobile feed  
+✅ Pull-up pagination (append batches)  
+✅ Image prefetching for smoother swipes  
 ✅ Complete documentation  
 
 ## Next Phase (Roadmap)
 
-- [ ] Flutter UI for card-based news feed
-- [ ] API endpoint to retrieve saved news
+- [ ] API endpoint to retrieve saved news from database
 - [ ] User authentication & profiles
 - [ ] Bookmark/save articles feature
 - [ ] Language preference settings
@@ -95,6 +106,30 @@ npm run infra:up      # Start MongoDB
 npm run infra:ps      # Check status
 npm run infra:down    # Stop MongoDB
 ```
+
+## GitHub Actions
+
+This repository now includes CI and release automation:
+
+- `.github/workflows/ci.yml`
+  - Runs backend syntax + startup health checks
+  - Runs Flutter analyze + widget tests
+- `.github/workflows/progress-report.yml`
+  - Reads `docs/PROJECT_STATUS.md` checklists
+  - Publishes completion percentage to workflow summary
+- `.github/workflows/release-drafter.yml`
+  - Maintains a draft release note from merged changes
+- `.github/workflows/release.yml`
+  - Publishes a GitHub Release automatically when a `v*` tag is pushed
+
+### Release Flow
+
+```bash
+git tag v0.3.0
+git push origin v0.3.0
+```
+
+Pushing the tag triggers the Release workflow and creates a GitHub Release with generated notes.
 
 ## Useful Links
 

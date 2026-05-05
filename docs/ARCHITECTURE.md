@@ -48,9 +48,16 @@ vruttaant-app/
 │
 ├── mobile_app/                       # Flutter cross-platform app
 │   ├── lib/
+│   │   ├── main.dart                # App shell + vertical PageView feed
+│   │   ├── models/
+│   │   │   └── news_item.dart       # Mobile news data model
+│   │   ├── services/
+│   │   │   └── news_api_service.dart # API client for /api/news/ingest
+│   │   └── widgets/
+│   │       └── news_card.dart       # Full-screen swipe card UI
 │   ├── android/
 │   ├── ios/
-│   ├── pubspec.yaml                 # Flutter dependencies
+│   ├── pubspec.yaml                 # Flutter dependencies (includes http)
 │   └── ...
 │
 ├── docker-compose.yml               # MongoDB + Mongo Express services
@@ -75,6 +82,7 @@ vruttaant-app/
 ### Mobile
 - **Framework**: Flutter 3.41.9
 - **Language**: Dart 3.11.5
+- **Networking**: http ^1.2.2
 - **Target Platforms**: iOS, Android, Web
 
 ### Infrastructure
@@ -83,18 +91,27 @@ vruttaant-app/
 
 ## Data Flow
 
-1. **News Ingestion**
-   - Mobile/external requests POST /api/news/ingest with source URL
+1. **Feed Loading (Mobile)**
+   - Mobile app calls `POST /api/news/ingest` through `NewsApiService`
+   - Feed is rendered as vertical full-screen cards (`PageView`)
+   - Pull-to-refresh reloads page 0
+   - Pull-up pagination appends additional batches
+   - Next images are prefetched for smoother card transitions
+
+2. **News Ingestion (Backend)**
+   - Mobile/external requests send source URL
    - Backend uses Cheerio to scrape HTML
    - Extracts title, summary, image URL, publish date
+   - Sends scraped content to LLM with prompt: `Summarize this news in exactly 60 words in [Language], keeping a neutral tone.`
+   - Adds `aiSummary` to each card (empty fallback when LLM config is missing)
    - Persists unique cards to MongoDB (upsert strategy)
 
-2. **Data Storage**
-   - NewsCard model with fields: title, summary, url, imageUrl, source, language, publishedAt, scrapedAt
+3. **Data Storage**
+   - NewsCard model with fields: title, summary, aiSummary, url, imageUrl, source, language, publishedAt, scrapedAt
    - Unique index on (url, language) to prevent duplicates
    - Automatic timestamps for createdAt/updatedAt
 
-3. **API Response**
+4. **API Response**
    - Returns parsed cards with persistence status
    - Shows count of new vs. updated documents
    - Includes preview of first 5 cards
@@ -111,6 +128,9 @@ Set in `backend/.env`:
 ```
 PORT=5000
 MONGODB_URI=mongodb://admin:admin123@127.0.0.1:27017/vruttaant?authSource=admin
+LLM_API_KEY=
+LLM_API_URL=https://api.openai.com/v1/chat/completions
+LLM_MODEL=gpt-4o-mini
 ```
 
 ## Deployment Model

@@ -46,6 +46,7 @@ Complete guide to setting up Vruttaant on macOS, Linux, or Windows.
 |-----------|---------|---------|
 | **Flutter** | 3.40+ | Mobile framework |
 | **Dart** | 3.10+ | Programming language |
+| **http (pub package)** | ^1.2.2 | Backend API client in mobile app |
 | **Android SDK** | API 24+ | Android development |
 | **Xcode** | 14+ | iOS development (macOS only) |
 
@@ -547,8 +548,11 @@ flutter doctor
 # Install dependencies
 flutter pub get
 
-# Run on emulator or device
-flutter run             # Select device when prompted
+# Run on iOS simulator/device
+flutter run --dart-define=API_BASE_URL=http://localhost:5000
+
+# Run on Android emulator (host loopback mapping)
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
 ```
 
 ---

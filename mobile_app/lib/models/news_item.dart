@@ -1,0 +1,38 @@
+class NewsItem {
+  const NewsItem({
+    required this.title,
+    required this.summary,
+    required this.imageUrl,
+    required this.source,
+    this.url,
+    this.language,
+  });
+
+  final String title;
+  final String summary;
+  final String imageUrl;
+  final String source;
+  final String? url;
+  final String? language;
+
+  String get originalUrl => (url ?? '').trim();
+
+  factory NewsItem.fromJson(Map<String, dynamic> json) {
+    return NewsItem(
+      title: (json['title'] as String?)?.trim().isNotEmpty == true
+          ? (json['title'] as String).trim()
+          : 'Untitled',
+      summary: (json['summary'] as String?)?.trim().isNotEmpty == true
+          ? (json['summary'] as String).trim()
+          : 'No summary available.',
+      imageUrl: (json['imageUrl'] as String?)?.trim().isNotEmpty == true
+          ? (json['imageUrl'] as String).trim()
+          : 'https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1600&q=80',
+      source: (json['source'] as String?)?.trim().isNotEmpty == true
+          ? (json['source'] as String).trim()
+          : 'Unknown Source',
+      url: json['url'] as String?,
+      language: json['language'] as String?,
+    );
+  }
+}

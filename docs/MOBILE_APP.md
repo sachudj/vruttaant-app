@@ -1,7 +1,7 @@
 # Flutter Mobile App Setup
 
 ## Overview
-Flutter mobile app for browsing news in a card-based interface. Supports iOS and Android with multi-language support.
+Flutter mobile app for browsing news in an InShorts-style vertical swipe interface. Supports iOS, Android, and Web with backend-powered feed loading.
 
 ## Prerequisites
 - Flutter 3.41.9+ (installed via Homebrew)
@@ -44,7 +44,10 @@ flutter pub get
 
 ### Build Configuration
 
-Check `pubspec.yaml` for dependencies. Currently includes Flutter SDK defaults.
+Check `pubspec.yaml` for dependencies. Key packages:
+
+- `http: ^1.2.2` for backend API calls
+- `cupertino_icons` for iOS icon set
 
 ### iOS Setup (macOS only)
 
@@ -113,26 +116,18 @@ flutter run --release
 flutter run --profile
 ```
 
-## Code Structure (Planned)
+## Code Structure
 
 ```
 mobile_app/
 ├── lib/
-│   ├── main.dart              # App entry point
-│   ├── screens/
-│   │   ├── home_screen.dart   # News card feed
-│   │   ├── detail_screen.dart # Article detail view
-│   │   └── settings_screen.dart
+│   ├── main.dart               # App shell, feed state, refresh, pagination
 │   ├── widgets/
-│   │   ├── news_card.dart
-│   │   └── swipe_gesture.dart
+│   │   └── news_card.dart      # Full-screen image + gradient text overlay
 │   ├── models/
-│   │   └── news_article.dart
+│   │   └── news_item.dart      # Mobile data model
 │   ├── services/
-│   │   ├── api_service.dart   # Backend communication
-│   │   └── storage_service.dart
-│   └── theme/
-│       └── app_theme.dart
+│   │   └── news_api_service.dart  # POST /api/news/ingest client
 ├── test/                      # Unit & widget tests
 ├── pubspec.yaml              # Dependencies
 └── README.md                 # App-specific docs
@@ -170,23 +165,38 @@ Output: `build/app/outputs/bundle/release/app-release.aab`
 
 ## Backend Integration
 
-Once implemented, API service will connect to:
+Current integration uses `NewsApiService` with:
+
+- Endpoint: `POST /api/news/ingest`
+- Source cycling for pagination batches
+- Pull-to-refresh for reloading first batch
+- Vertical swipe pagination for appending more cards
+- Image prefetching for upcoming cards
+
+By default, API service connects to:
 ```
 http://localhost:5000  (development)
 https://api.vruttaant.app  (production)
 ```
 
+Override API base URL at run time:
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://localhost:5000
+```
+
+Android emulator uses host loopback mapping:
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
+```
+
 ### Example API Call Pattern
 ```dart
-// services/api_service.dart
-class ApiService {
-  static const String BASE_URL = "http://localhost:5000";
-  
-  Future<List<NewsCard>> getCards(String language) async {
-    final response = await http.get(
-      Uri.parse('$BASE_URL/api/news/cards?language=$language'),
-    );
-    // Parse and return
+// services/news_api_service.dart
+class NewsApiService {
+  Future<List<NewsItem>> ingestAndFetchNews({required String sourceUrl}) async {
+    // POST /api/news/ingest and map cardsPreview to NewsItem
   }
 }
 ```
@@ -298,6 +308,6 @@ Use DevTools Performance tab to track:
 
 ## Next Steps
 - Follow [SETUP.md](./SETUP.md) to start backend
-- Implement API client in `lib/services/api_service.dart`
-- Build UI components in `lib/widgets/`
-- Connect to `/api/news/ingest` endpoint
+- Extend mobile feed with bookmarking + local persistence
+- Add a dedicated backend retrieval endpoint (`GET /api/news/cards`)
+- Add language/source filters in feed

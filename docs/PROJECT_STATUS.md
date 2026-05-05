@@ -1,8 +1,8 @@
 # Project Status & Implementation Summary
 
 **Date**: May 5, 2026  
-**Version**: v0.1 (Early Development)  
-**Status**: ✅ Foundation Complete, Ready for Feature Development
+**Version**: v0.2 (Active Development)  
+**Status**: ✅ Foundation + Mobile Feed Experience Implemented
 
 ---
 
@@ -42,38 +42,42 @@
   - Handles: upsert to DB, error responses
 
 ### ✅ Web Scraping Service
-- [x] Cheerio 1.0 HTML parsing integration
-- [x] Multi-selector article detection (article, .news-item, .card, etc.)
-- [x] Fallback selector matching (extracts from any `<a>` tags if needed)
-- [x] Text cleaning & normalization
-- [x] URL resolution (relative → absolute)
-- [x] Date parsing & validation
-- [x] Duplicate prevention (seen keys set)
-- [x] Configurable extraction limits
 
-### ✅ Infrastructure & Deployment
-- [x] Docker Compose configuration
-  - MongoDB 7 service with health checks
+### ✅ AI Summarization Service
+- [x] LLM integration for neutral 60-word summaries
+- [x] Prompt: `Summarize this news in exactly 60 words in [Language], keeping a neutral tone.`
+- [x] Stored in `aiSummary` field on `NewsCard`
+- [x] Graceful fallback when LLM credentials are not configured
+- [x] Supported languages: English, Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, Malayalam
+
   - Mongo Express 1.0.2 UI service (port 8081)
   - Named volume for data persistence
   - Automatic service dependency management
+  - aiSummary
 - [x] Backend npm scripts:
   - `npm start` - Production mode
   - `npm run dev` - Development mode (auto-reload)
   - `npm run infra:up` - Start Docker services
   - `npm run infra:down` - Stop Docker services
   - `npm run infra:ps` - Check service status
-- [x] Environment template (.env.example)
-- [x] Git configuration (.gitignore)
 
 ### ✅ Project Files & Structure
 - [x] Root directory organization
 - [x] Backend folder with clean structure
-- [x] Mobile app placeholder (Flutter generated)
-- [x] Documentation folder with 8 guides
+- [x] Mobile app with vertical swipe feed
+- [x] Documentation folder with 11 guides
 - [x] Main README with navigation
 
-### ✅ Documentation (8 Files)
+### ✅ Mobile Frontend (Implemented)
+- [x] Full-screen NewsCard widget with title/summary overlay
+- [x] Vertical swipe feed using `PageView`
+- [x] API integration via `NewsApiService`
+- [x] Pull-to-refresh support
+- [x] Pull-up pagination with batch append
+- [x] Next-card image prefetching
+- [x] Widget tests for swipe + pagination
+
+### ✅ Documentation (11 Files)
 - [x] SETUP.md - Installation & quick start
 - [x] ARCHITECTURE.md - System design & structure
 - [x] BACKEND.md - Server setup & config
@@ -88,10 +92,8 @@
 ## What's NOT Yet Implemented
 
 ### ⏳ Mobile Frontend
-- [ ] Flutter UI screens
-- [ ] News card widget
-- [ ] Swipe gesture handling
-- [ ] API integration (http client)
+- [ ] Detail screen for full article view
+- [ ] Settings/profile screens
 - [ ] Local storage
 - [ ] Theme/dark mode
 - [ ] Localization (i18n)
@@ -175,10 +177,10 @@ db.newscards.countDocuments()
 ## Next Steps for Continuation
 
 ### Immediate (1-2 days)
-1. Build Flutter UI skeleton (3 screens: home, detail, settings)
-2. Implement API client in Flutter
-3. Display news cards from `/api/news/ingest` response
-4. Add swipe gesture handling
+1. Add `GET /api/news/cards` endpoint for persisted retrieval
+2. Implement bookmark/save flow
+3. Add feed filters (language/source)
+4. Add detail screen and deep links
 
 ### Short Term (1 week)
 1. Add user authentication (simple JWT)
@@ -197,7 +199,7 @@ db.newscards.countDocuments()
 
 ## File Modification History
 
-All changes implemented in this session:
+Foundation and latest mobile feed updates:
 
 **Created**:
 - `docs/SETUP.md`
@@ -216,6 +218,13 @@ All changes implemented in this session:
 - `backend/.env.example` - MongoDB credentials added
 - `backend/src/index.js` - dotenv loading, DB bootstrap, graceful shutdown
 - `docker-compose.yml` - Full MongoDB + Mongo Express stack
+- `mobile_app/lib/main.dart` - Vertical feed + refresh + pagination + prefetch
+- `mobile_app/test/widget_test.dart` - Swipe + pagination test
+- `mobile_app/pubspec.yaml` - Added `http` dependency
+- `docs/MOBILE_APP.md` - Updated to implemented state
+- `docs/DEVELOPMENT.md` - Updated mobile commands and file structure
+- `docs/DEPENDENCIES.md` - Added mobile runtime dependency + emulator URL guidance
+- `docs/ARCHITECTURE.md` - Added mobile modules and runtime flow
 
 **Added**:
 - `backend/src/config/database.js`

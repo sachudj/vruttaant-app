@@ -36,6 +36,8 @@ This installs:
 - `cors` - Cross-origin resource sharing
 - `dotenv` - Environment variable loading
 
+Note: LLM summarization uses built-in `fetch` from Node.js runtime (no extra npm SDK required).
+
 ## Configuration
 
 ### Environment Variables (.env)
@@ -49,10 +51,16 @@ Edit `backend/.env`:
 ```env
 PORT=5000
 MONGODB_URI=mongodb://admin:admin123@127.0.0.1:27017/vruttaant?authSource=admin
+LLM_API_KEY=
+LLM_API_URL=https://api.openai.com/v1/chat/completions
+LLM_MODEL=gpt-4o-mini
 ```
 
 **PORT**: Server listening port (auto-fallback to next free port if occupied)
 **MONGODB_URI**: Connection string to MongoDB
+**LLM_API_KEY**: API key for summary generation
+**LLM_API_URL**: OpenAI-compatible chat completions endpoint
+**LLM_MODEL**: Model used for AI summaries
 
 For MongoDB Atlas (cloud):
 ```
@@ -96,6 +104,7 @@ Located in `src/models/NewsCard.js`
 {
   title: String (required),
   summary: String,
+  aiSummary: String,                 // LLM-generated neutral 60-word summary
   url: String (required),
   imageUrl: String,
   source: String,

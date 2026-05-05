@@ -1,17 +1,42 @@
-# mobile_app
+# Vruttaant Mobile App
 
-A new Flutter project.
+Flutter client for Vruttaant with an InShorts-style vertical swipe feed.
 
-## Getting Started
+## Implemented
 
-This project is a starting point for a Flutter application.
+- Full-screen `NewsCard` with image background and text overlay
+- Vertical `PageView` feed
+- Backend integration via `POST /api/news/ingest`
+- Pull-to-refresh
+- Pull-up pagination (append batches)
+- Image prefetching for upcoming cards
 
-A few resources to get you started if this is your first Flutter project:
+## Key Paths
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- `lib/main.dart` - app shell, feed state, refresh + pagination flow
+- `lib/widgets/news_card.dart` - full-screen card widget
+- `lib/services/news_api_service.dart` - backend API client
+- `lib/models/news_item.dart` - mobile feed model
+- `test/widget_test.dart` - widget tests for swipe and pagination
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Run
+
+```bash
+cd mobile_app
+flutter pub get
+
+# iOS simulator/device
+flutter run --dart-define=API_BASE_URL=http://localhost:5000
+
+# Android emulator
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
+```
+
+## Verify
+
+```bash
+flutter analyze
+flutter test -r compact
+```
+
+For broader project docs, see `../docs/MOBILE_APP.md` and `../docs/INDEX.md`.

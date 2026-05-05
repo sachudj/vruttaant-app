@@ -1,5 +1,47 @@
 const cheerio = require('cheerio');
 
+const DEFAULT_LLM_API_URL = 'https://api.openai.com/v1/chat/completions';
+const DEFAULT_LLM_MODEL = 'gpt-4o-mini';
+const SUPPORTED_LANGUAGE_ALIASES = {
+  en: 'en',
+  english: 'en',
+  hi: 'hi',
+  hindi: 'hi',
+  bn: 'bn',
+  bengali: 'bn',
+  mr: 'mr',
+  marathi: 'mr',
+  te: 'te',
+  telugu: 'te',
+  ta: 'ta',
+  tamil: 'ta',
+  gu: 'gu',
+  gujarati: 'gu',
+  ur: 'ur',
+  urdu: 'ur',
+  kn: 'kn',
+  kannada: 'kn',
+  or: 'or',
+  od: 'or',
+  odia: 'or',
+  ml: 'ml',
+  malayalam: 'ml'
+};
+
+const LANGUAGE_LABELS = {
+  en: 'English',
+  hi: 'Hindi',
+  bn: 'Bengali',
+  mr: 'Marathi',
+  te: 'Telugu',
+  ta: 'Tamil',
+  gu: 'Gujarati',
+  ur: 'Urdu',
+  kn: 'Kannada',
+  or: 'Odia',
+  ml: 'Malayalam'
+};
+
 function parseDate(value) {
   if (!value) {
     return null;
@@ -25,7 +67,68 @@ function cleanText(value) {
   return (value || '').replace(/\s+/g, ' ').trim();
 }
 
+function normalizeLanguage(language) {
+  const normalized = String(language || 'en').trim().toLowerCase();
+  return SUPPORTED_LANGUAGE_ALIASES[normalized] || 'en';
+}
+
+function toLanguageLabel(language) {
+  return LANGUAGE_LABELS[language] || 'English';
+}
+
+async function summarizeWithLlm(card, language) {
+  const apiKey = process.env.LLM_API_KEY;
+  if (!apiKey) {
+    return '';
+  }
+
+  const apiUrl = process.env.LLM_API_URL || DEFAULT_LLM_API_URL;
+  const model = process.env.LLM_MODEL || DEFAULT_LLM_MODEL;
+  const normalizedLanguage = normalizeLanguage(language);
+  const languageLabel = toLanguageLabel(normalizedLanguage);
+  const prompt = `Summarize this news in exactly 60 words in ${languageLabel}, keeping a neutral tone.`;
+
+  const articlePayload = [
+    `Title: ${card.title || ''}`,
+    `Summary: ${card.summary || ''}`,
+    `Source: ${card.source || ''}`,
+    `URL: ${card.url || ''}`
+  ].join('\n');
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.2,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a concise neutral news editor.'
+        },
+        {
+          role: 'user',
+          content: `${prompt}\n\n${articlePayload}`
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    return '';
+  }
+
+  const payload = await response.json();
+  const aiSummary = cleanText(payload?.choices?.[0]?.message?.content || '');
+  return aiSummary;
+}
+
 async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
+  const normalizedLanguage = normalizeLanguage(language);
+
   let normalizedUrl;
   try {
     normalizedUrl = new URL(sourceUrl).toString();
@@ -95,7 +198,7 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
       url: link,
       imageUrl,
       source,
-      language,
+      language: normalizedLanguage,
       publishedAt,
       rawMetadata: {
         selectorMatched: true
@@ -133,7 +236,7 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
         url: link,
         imageUrl: '',
         source: '',
-        language,
+        language: normalizedLanguage,
         publishedAt: null,
         rawMetadata: {
           selectorMatched: false
@@ -142,11 +245,28 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
     });
   }
 
+  const cardsWithAiSummary = await Promise.all(
+    cards.map(async (card) => {
+      try {
+        const aiSummary = await summarizeWithLlm(card, normalizedLanguage);
+        return {
+          ...card,
+          aiSummary
+        };
+      } catch {
+        return {
+          ...card,
+          aiSummary: ''
+        };
+      }
+    })
+  );
+
   return {
     sourceUrl: normalizedUrl,
-    language,
-    totalFound: cards.length,
-    cards
+    language: normalizedLanguage,
+    totalFound: cardsWithAiSummary.length,
+    cards: cardsWithAiSummary
   };
 }
 
