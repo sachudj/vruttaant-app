@@ -1,0 +1,15 @@
+{
+  "name": "vruttaant-app",
+  "private": true,
+  "scripts": {
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "backend/src/**/*.js": "eslint --no-warn-ignored",
+    "mobile_app/**/*.dart": "dart format"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2"
+  }
+}

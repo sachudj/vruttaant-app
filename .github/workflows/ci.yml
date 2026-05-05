@@ -40,6 +40,9 @@ jobs:
           node --check src/routes/newsRoutes.js
           node --check src/services/newsIngestionService.js
 
+      - name: Lint
+        run: npm run lint
+
       - name: Start backend
         env:
           PORT: 5000
