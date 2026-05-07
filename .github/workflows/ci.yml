@@ -39,9 +39,15 @@ jobs:
           node --check src/models/NewsCard.js
           node --check src/routes/newsRoutes.js
           node --check src/services/newsIngestionService.js
+           node --check src/routes/apiRouter.js
+           node --check src/middleware/errorHandler.js
+           node --check src/middleware/requestValidation.js
 
       - name: Lint
         run: npm run lint
+
+      - name: Tests
+        run: npm test
 
       - name: Start backend
         env:
