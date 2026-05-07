@@ -173,6 +173,33 @@ git push origin v0.3.0
 
 Pushing the tag triggers the Release workflow and creates a GitHub Release with generated notes.
 
+## Release Check (Manual Verification)
+
+Use this before cutting a release to validate core backend flows end to end.
+
+```bash
+# Auto-selects a free port, starts backend, runs smoke checks, and stops backend
+bash scripts/run-smoke-auto.sh
+```
+
+What this verifies:
+- Health and API version routing
+- Input validation failure paths
+- Auth lifecycle (signup, login, refresh rotation, logout revocation)
+- Protected bookmark routes and duplicate guard
+- RBAC deny path for non-admin access
+
+Optional admin allow-path verification:
+
+```bash
+REQUIRE_ADMIN_SUCCESS=true ADMIN_EMAIL=your_admin_email ADMIN_PASSWORD=your_admin_password bash scripts/run-smoke-auto.sh
+```
+
+Expected summary for successful run:
+- PASS count for all core checks
+- FAIL=0
+- SKIP=1 when admin allow-path is not enabled
+
 ## Useful Links
 
 - **Backend Health**: http://localhost:5000/health
