@@ -19,4 +19,12 @@ export default [
       'prefer-const': 'error',
     },
   },
+  {
+    files: ['**/__tests__/**/*.test.js', '**/*.test.js'],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      },
+    },
+  },
 ];

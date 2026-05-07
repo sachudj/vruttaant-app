@@ -70,7 +70,9 @@ const apiLimiter = rateLimit({
 
 app.use(cors(corsOptions));
 app.use(helmet());
-app.use(express.json());
+app.use(express.json({
+  limit: process.env.JSON_PAYLOAD_LIMIT || '10kb'
+}));
 app.use('/api', apiLimiter);
 app.use('/api/news', newsRoutes);
 

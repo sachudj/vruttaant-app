@@ -311,5 +311,13 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
 }
 
 module.exports = {
-  fetchNewsCards
+  fetchNewsCards,
+  // Exported for testing
+  normalizeLanguage,
+  normalizeCategory,
+  parseDate,
+  resolveUrl,
+  cleanText,
+  toLanguageLabel,
+  summarizeWithLlm
 };
