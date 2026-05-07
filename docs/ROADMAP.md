@@ -14,8 +14,8 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] A3. Validate and clamp cards inputs (`page`, `limit`, `language`, `category`)
 - [x] A4. Add centralized error-handler middleware with consistent JSON error envelope
 - [x] A5. Add `helmet` with secure defaults
-- [ ] A6. Restrict CORS to approved origins by environment
-- [ ] A7. Add rate limiter for public API routes
+- [x] A6. Restrict CORS to approved origins by environment
+- [x] A7. Add rate limiter for public API routes
 - [ ] A8. Add request size limits for JSON payloads
 - [ ] D1. Add backend unit tests for ingestion parsing and category normalization
 
@@ -41,8 +41,8 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] Validate and clamp cards inputs (`page`, `limit`, `language`, `category`)
 - [x] Add centralized error-handler middleware with consistent JSON error envelope
 - [x] Add `helmet` with secure defaults
-- [ ] Restrict CORS to approved origins by environment
-- [ ] Add rate limiter for public API routes
+- [x] Restrict CORS to approved origins by environment
+- [x] Add rate limiter for public API routes
 - [ ] Add request size limits for JSON payloads
 - [ ] Add API versioning prefix (`/api/v1`) and compatibility notes
 
@@ -108,3 +108,4 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 7, 2026_: Sprint plan created for Secure API Baseline (A1-A8, D1).
 - _May 7, 2026_: Completed A1-A3 with reusable validator middleware + sanitized request inputs for `/api/news/ingest` and `/api/news/cards`. Backend lint and syntax checks passed.
 - _May 7, 2026_: Completed A4-A5 with centralized `AppError` + global error middleware and Helmet enabled in app bootstrap. Backend lint and syntax checks passed.
+- _May 7, 2026_: Completed A6-A7 with environment-based CORS allowlist and API rate limiting (`express-rate-limit`) in app bootstrap. Backend lint and syntax checks passed.
