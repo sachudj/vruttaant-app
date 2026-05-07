@@ -13,13 +13,7 @@ async function ingestNewsFromUrl(req, res) {
       language = 'en',
       maxItems = 20,
       persist = true
-    } = req.body || {};
-
-    if (!url) {
-      return res.status(400).json({
-        message: 'Request body must include a valid url field.'
-      });
-    }
+    } = req.validated?.body || req.body || {};
 
     const parsedCards = await fetchNewsCards(url, language, Number(maxItems) || 20);
 
@@ -82,12 +76,12 @@ async function getNewsCards(req, res) {
     const {
       language = 'en',
       category,
-      page = '1',
-      limit = '20'
-    } = req.query || {};
+      page = 1,
+      limit = 20
+    } = req.validated?.query || req.query || {};
 
-    const parsedPage = Math.max(parseInt(page, 10) || 1, 1);
-    const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+    const parsedPage = page;
+    const parsedLimit = limit;
     const skip = (parsedPage - 1) * parsedLimit;
 
     const filter = {

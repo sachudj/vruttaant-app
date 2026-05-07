@@ -3,6 +3,30 @@
 **Date**: May 5, 2026  
 **Purpose**: Break down pending work into small, trackable implementation steps.
 
+## Current Sprint (May 7 to May 14): Secure API Baseline
+
+Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
+
+### Planned Execution Order
+
+- [x] A1. Add request validation middleware for all API payloads and query params
+- [x] A2. Validate and clamp ingest inputs (`url`, `maxItems`, `language`, `persist`)
+- [x] A3. Validate and clamp cards inputs (`page`, `limit`, `language`, `category`)
+- [ ] A4. Add centralized error-handler middleware with consistent JSON error envelope
+- [ ] A5. Add `helmet` with secure defaults
+- [ ] A6. Restrict CORS to approved origins by environment
+- [ ] A7. Add rate limiter for public API routes
+- [ ] A8. Add request size limits for JSON payloads
+- [ ] D1. Add backend unit tests for ingestion parsing and category normalization
+
+### Definition of Done (Sprint)
+
+- [x] Backend lint passes
+- [ ] Backend tests pass
+- [ ] CI workflow passes on main branch
+- [ ] API docs updated for any request/response changes
+- [ ] Session Notes updated with completed items and commit hash
+
 ## How We Will Use This File
 
 1. Pick 1-2 unchecked items per session.
@@ -12,9 +36,9 @@
 
 ## Track A: Security & API Hardening
 
-- [ ] Add request validation middleware for all API payloads and query params
-- [ ] Validate and clamp ingest inputs (`url`, `maxItems`, `language`, `persist`)
-- [ ] Validate and clamp cards inputs (`page`, `limit`, `language`, `category`)
+- [x] Add request validation middleware for all API payloads and query params
+- [x] Validate and clamp ingest inputs (`url`, `maxItems`, `language`, `persist`)
+- [x] Validate and clamp cards inputs (`page`, `limit`, `language`, `category`)
 - [ ] Add centralized error-handler middleware with consistent JSON error envelope
 - [ ] Add `helmet` with secure defaults
 - [ ] Restrict CORS to approved origins by environment
@@ -81,3 +105,5 @@
 ## Session Notes
 
 - _Add short notes here after each implementation session._
+- _May 7, 2026_: Sprint plan created for Secure API Baseline (A1-A8, D1).
+- _May 7, 2026_: Completed A1-A3 with reusable validator middleware + sanitized request inputs for `/api/news/ingest` and `/api/news/cards`. Backend lint and syntax checks passed.
