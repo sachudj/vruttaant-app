@@ -36,18 +36,22 @@ jobs:
           node --check src/index.js
           node --check src/config/database.js
           node --check src/controllers/authController.js
+          node --check src/controllers/bookmarkController.js
           node --check src/controllers/newsController.js
+          node --check src/models/Bookmark.js
           node --check src/models/RefreshToken.js
           node --check src/models/NewsCard.js
           node --check src/models/User.js
+          node --check src/routes/bookmarkRoutes.js
           node --check src/routes/newsRoutes.js
           node --check src/routes/authRoutes.js
           node --check src/services/newsIngestionService.js
            node --check src/routes/apiRouter.js
+           node --check src/middleware/authMiddleware.js
            node --check src/middleware/errorHandler.js
            node --check src/middleware/requestValidation.js
-           node --check src/middleware/authMiddleware.js
           node --check src/validation/authValidators.js
+          node --check src/validation/bookmarkValidators.js
 
       - name: Lint
         run: npm run lint

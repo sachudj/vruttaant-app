@@ -1,12 +1,14 @@
 const express = require('express');
 const newsRoutes = require('./newsRoutes');
 const authRoutes = require('./authRoutes');
+const bookmarkRoutes = require('./bookmarkRoutes');
 
 const apiRouter = express.Router();
 
 // Mount versioned API routes
 apiRouter.use('/v1/news', newsRoutes);
 apiRouter.use('/v1/auth', authRoutes);
+apiRouter.use('/v1/user/bookmarks', bookmarkRoutes);
 
 // Backwards compatibility: also mount at non-versioned path (deprecated)
 apiRouter.use('/news', (req, res, next) => {

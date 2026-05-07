@@ -52,8 +52,8 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] Add user model and secure password hashing
 - [x] Add login/signup endpoints with JWT access token
 - [x] Add refresh token rotation and revocation storage
-- [ ] Add auth middleware for protected routes
-- [ ] Add bookmark endpoints scoped to authenticated user
+- [x] Add auth middleware for protected routes
+- [x] Add bookmark endpoints scoped to authenticated user
 - [ ] Add role field and role-based route guard for admin operations
 
 ## Track C: Reliability & Observability
@@ -114,4 +114,5 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 7, 2026_: Completed A9 with API v1 versioning. Created `apiRouter.js` to mount routes at `/api/v1/news`. Added backwards compatibility layer at `/api/news` with deprecation warnings. Updated root endpoint to reflect versioning. Added comprehensive API_VERSIONING.md with migration guide, stability guarantees, and v2 timeline. Commit: `266b3fa`.
 - _May 7, 2026_: Completed B1-B3 with secure auth baseline: `User` model, password hashing (`bcryptjs`), JWT signup/login, and refresh token rotation + revocation storage in `RefreshToken` model. Added `/api/v1/auth` routes (`signup`, `login`, `refresh`, `logout`) with legacy `/api/auth` compatibility. Backend lint and tests passed. Commit: `9815bd0`.
 - _May 7, 2026_: Added dedicated GitHub Actions test job for independent test execution. Updated README with project status section (52/52 tests passing, 12/20 items = 60% complete). Commit: `2e15d5d`.
-- _May 7, 2026_: Completed B4 with auth middleware (`verifyAccessToken`, `verifyRefreshToken`, `verifyRefreshTokenNotRevoked`, `verifyUserExists`). Middleware extracts and validates JWT from Authorization headers, verifies token claims, checks token revocation status in RefreshToken storage, and optionally reloads user from database. Comprehensive test suite with 23 new tests (total 52 passing). Commit: pending.
+- _May 7, 2026_: Completed B4 with auth middleware (`verifyAccessToken`, `verifyRefreshToken`, `verifyRefreshTokenNotRevoked`, `verifyUserExists`). Middleware extracts and validates JWT from Authorization headers, verifies token claims, checks token revocation status in RefreshToken storage, and optionally reloads user from database. Comprehensive test suite with 23 new tests (total 52 passing). Commit: `a84730e`.
+- _May 7, 2026_: Completed B5 with bookmark feature. Created `Bookmark` model with userId reference and compound unique index (userId + url prevents duplicates). Added `bookmarkController` with createBookmark, listBookmarks, deleteBookmark operations with ownership verification. Added `bookmarkValidators` for payload and query validation. Added protected bookmark routes at `/api/v1/user/bookmarks` with auth middleware. Added 39 comprehensive unit tests for validators and controller (total 91 passing). All tests passing (91/91), lint passed.
