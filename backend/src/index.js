@@ -6,7 +6,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
 const { connectDatabase, isDatabaseConnected } = require('./config/database');
-const newsRoutes = require('./routes/newsRoutes');
+const apiRouter = require('./routes/apiRouter');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -74,7 +74,7 @@ app.use(express.json({
   limit: process.env.JSON_PAYLOAD_LIMIT || '10kb'
 }));
 app.use('/api', apiLimiter);
-app.use('/api/news', newsRoutes);
+app.use('/api', apiRouter);
 
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -88,7 +88,10 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     message: 'Vruttaant backend is running',
-    health: '/health'
+    version: '1.0.0',
+    health: '/health',
+    api: '/api/v1',
+    docs: 'See /api/v1 for available endpoints'
   });
 });
 
