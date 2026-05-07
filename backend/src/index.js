@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const { connectDatabase, isDatabaseConnected } = require('./config/database');
 const apiRouter = require('./routes/apiRouter');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
+const { requestLogger } = require('./middleware/requestLogger');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -51,7 +52,7 @@ const corsOptions = {
     callback(null, false);
   },
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id']
 };
 
 const apiLimiter = rateLimit({
@@ -73,6 +74,7 @@ app.use(helmet());
 app.use(express.json({
   limit: process.env.JSON_PAYLOAD_LIMIT || '10kb'
 }));
+app.use(requestLogger);
 app.use('/api', apiLimiter);
 app.use('/api', apiRouter);
 
