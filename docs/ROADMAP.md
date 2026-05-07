@@ -17,6 +17,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] A6. Restrict CORS to approved origins by environment
 - [x] A7. Add rate limiter for public API routes
 - [x] A8. Add request size limits for JSON payloads
+- [x] A9. Add API versioning prefix (`/api/v1`) and compatibility notes
 - [x] D1. Add backend unit tests for ingestion parsing and category normalization
 
 ### Definition of Done (Sprint)
@@ -44,7 +45,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] Restrict CORS to approved origins by environment
 - [x] Add rate limiter for public API routes
 - [x] Add request size limits for JSON payloads
-- [ ] Add API versioning prefix (`/api/v1`) and compatibility notes
+- [x] Add API versioning prefix (`/api/v1`) and compatibility notes
 
 ## Track B: Authentication & Access Control
 
@@ -110,3 +111,4 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 7, 2026_: Completed A4-A5 with centralized `AppError` + global error middleware and Helmet enabled in app bootstrap. Backend lint and syntax checks passed.
 - _May 7, 2026_: Completed A6-A7 with environment-based CORS allowlist and API rate limiting (`express-rate-limit`) in app bootstrap. Backend lint and syntax checks passed.
 - _May 7, 2026_: Completed A8-D1 with JSON payload size limits (10kb default, configurable via `JSON_PAYLOAD_LIMIT` env var) and 29 unit tests for ingestion service utilities (language/category normalization, date parsing, URL resolution, text cleaning). Jest configured, ESLint updated for Jest globals. All tests passing (29/29). Commit: `a52b89d`.
+- _May 7, 2026_: Completed A9 with API v1 versioning. Created `apiRouter.js` to mount routes at `/api/v1/news`. Added backwards compatibility layer at `/api/news` with deprecation warnings. Updated root endpoint to reflect versioning. Added comprehensive API_VERSIONING.md with migration guide, stability guarantees, and v2 timeline. Commit: `266b3fa`.
