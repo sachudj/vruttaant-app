@@ -88,6 +88,28 @@ vruttaant-app/
 ✅ Image prefetching for smoother swipes  
 ✅ Complete documentation  
 
+## Project Status
+
+**Test Coverage**: 29/29 tests passing ✅  
+**Overall Progress**: 12/20 items complete (60%)
+
+**By Track:**
+- **Track A** (Secure API Baseline): 9/9 (100%) ✅
+  - Request validation, error handling, security headers, CORS, rate limiting, payload limits, API versioning
+- **Track B** (Authentication): 3/6 (50%) 🔄
+  - ✅ B1: User model with secure password storage
+  - ✅ B2: JWT signup/login endpoints
+  - ✅ B3: Refresh token rotation & revocation
+  - ⏳ B4-B6: Auth middleware, bookmarks, role-based access
+- **Track C** (Observability): 0/7 (0%) ⏳
+- **Track D** (Testing): 1/7 (14%) 🔄
+  - ✅ D1: 29 unit tests for ingestion service
+  - ⏳ D2-D7: Integration tests, contract tests, E2E tests
+- **Track E** (Data Governance): 0/6 (0%) ⏳
+- **Track F** (Feature Milestones): 0/4 (0%) ⏳
+
+For detailed roadmap, see [docs/ROADMAP.md](./docs/ROADMAP.md).
+
 ## Next Phase (Roadmap)
 
 Detailed implementation sequencing now lives in [docs/ROADMAP.md](./docs/ROADMAP.md).
