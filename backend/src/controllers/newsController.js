@@ -1,12 +1,13 @@
 const NewsCard = require('../models/NewsCard');
 const { isDatabaseConnected } = require('../config/database');
 const { fetchNewsCards } = require('../services/newsIngestionService');
+const { AppError } = require('../middleware/errorHandler');
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-async function ingestNewsFromUrl(req, res) {
+async function ingestNewsFromUrl(req, res, next) {
   try {
     const {
       url,
@@ -58,19 +59,14 @@ async function ingestNewsFromUrl(req, res) {
       cardsPreview: parsedCards.cards.slice(0, 5)
     });
   } catch (error) {
-    return res.status(500).json({
-      message: 'News ingestion failed.',
-      error: error.message
-    });
+    return next(error);
   }
 }
 
-async function getNewsCards(req, res) {
+async function getNewsCards(req, res, next) {
   try {
     if (!isDatabaseConnected()) {
-      return res.status(503).json({
-        message: 'Database is not connected.'
-      });
+      throw new AppError(503, 'Database is not connected.');
     }
 
     const {
@@ -123,10 +119,7 @@ async function getNewsCards(req, res) {
       cards: items
     });
   } catch (error) {
-    return res.status(500).json({
-      message: 'Unable to fetch news cards.',
-      error: error.message
-    });
+    return next(error);
   }
 }
 

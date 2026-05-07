@@ -12,8 +12,8 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] A1. Add request validation middleware for all API payloads and query params
 - [x] A2. Validate and clamp ingest inputs (`url`, `maxItems`, `language`, `persist`)
 - [x] A3. Validate and clamp cards inputs (`page`, `limit`, `language`, `category`)
-- [ ] A4. Add centralized error-handler middleware with consistent JSON error envelope
-- [ ] A5. Add `helmet` with secure defaults
+- [x] A4. Add centralized error-handler middleware with consistent JSON error envelope
+- [x] A5. Add `helmet` with secure defaults
 - [ ] A6. Restrict CORS to approved origins by environment
 - [ ] A7. Add rate limiter for public API routes
 - [ ] A8. Add request size limits for JSON payloads
@@ -39,8 +39,8 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] Add request validation middleware for all API payloads and query params
 - [x] Validate and clamp ingest inputs (`url`, `maxItems`, `language`, `persist`)
 - [x] Validate and clamp cards inputs (`page`, `limit`, `language`, `category`)
-- [ ] Add centralized error-handler middleware with consistent JSON error envelope
-- [ ] Add `helmet` with secure defaults
+- [x] Add centralized error-handler middleware with consistent JSON error envelope
+- [x] Add `helmet` with secure defaults
 - [ ] Restrict CORS to approved origins by environment
 - [ ] Add rate limiter for public API routes
 - [ ] Add request size limits for JSON payloads
@@ -107,3 +107,4 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _Add short notes here after each implementation session._
 - _May 7, 2026_: Sprint plan created for Secure API Baseline (A1-A8, D1).
 - _May 7, 2026_: Completed A1-A3 with reusable validator middleware + sanitized request inputs for `/api/news/ingest` and `/api/news/cards`. Backend lint and syntax checks passed.
+- _May 7, 2026_: Completed A4-A5 with centralized `AppError` + global error middleware and Helmet enabled in app bootstrap. Backend lint and syntax checks passed.
