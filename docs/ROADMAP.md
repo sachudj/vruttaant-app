@@ -49,9 +49,9 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 
 ## Track B: Authentication & Access Control
 
-- [ ] Add user model and secure password hashing
-- [ ] Add login/signup endpoints with JWT access token
-- [ ] Add refresh token rotation and revocation storage
+- [x] Add user model and secure password hashing
+- [x] Add login/signup endpoints with JWT access token
+- [x] Add refresh token rotation and revocation storage
 - [ ] Add auth middleware for protected routes
 - [ ] Add bookmark endpoints scoped to authenticated user
 - [ ] Add role field and role-based route guard for admin operations
@@ -112,3 +112,4 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 7, 2026_: Completed A6-A7 with environment-based CORS allowlist and API rate limiting (`express-rate-limit`) in app bootstrap. Backend lint and syntax checks passed.
 - _May 7, 2026_: Completed A8-D1 with JSON payload size limits (10kb default, configurable via `JSON_PAYLOAD_LIMIT` env var) and 29 unit tests for ingestion service utilities (language/category normalization, date parsing, URL resolution, text cleaning). Jest configured, ESLint updated for Jest globals. All tests passing (29/29). Commit: `a52b89d`.
 - _May 7, 2026_: Completed A9 with API v1 versioning. Created `apiRouter.js` to mount routes at `/api/v1/news`. Added backwards compatibility layer at `/api/news` with deprecation warnings. Updated root endpoint to reflect versioning. Added comprehensive API_VERSIONING.md with migration guide, stability guarantees, and v2 timeline. Commit: `266b3fa`.
+- _May 7, 2026_: Completed B1-B3 with secure auth baseline: `User` model, password hashing (`bcryptjs`), JWT signup/login, and refresh token rotation + revocation storage in `RefreshToken` model. Added `/api/v1/auth` routes (`signup`, `login`, `refresh`, `logout`) with legacy `/api/auth` compatibility. Backend lint and tests passed.

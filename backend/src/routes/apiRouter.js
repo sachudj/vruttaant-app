@@ -1,10 +1,12 @@
 const express = require('express');
 const newsRoutes = require('./newsRoutes');
+const authRoutes = require('./authRoutes');
 
 const apiRouter = express.Router();
 
 // Mount versioned API routes
 apiRouter.use('/v1/news', newsRoutes);
+apiRouter.use('/v1/auth', authRoutes);
 
 // Backwards compatibility: also mount at non-versioned path (deprecated)
 apiRouter.use('/news', (req, res, next) => {
@@ -12,5 +14,11 @@ apiRouter.use('/news', (req, res, next) => {
   next();
 });
 apiRouter.use('/news', newsRoutes);
+
+apiRouter.use('/auth', (req, res, next) => {
+  console.warn(`[DEPRECATION] Non-versioned auth endpoint called. Use /api/v1/auth instead.`);
+  next();
+});
+apiRouter.use('/auth', authRoutes);
 
 module.exports = apiRouter;

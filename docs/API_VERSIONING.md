@@ -14,9 +14,13 @@ The Vruttaant backend uses URL-based versioning to manage API evolution. All end
 - Endpoints:
   - `POST /api/v1/news/ingest` - Ingest news from a source URL
   - `GET /api/v1/news/cards` - Retrieve paginated news cards
+  - `POST /api/v1/auth/signup` - Create account and issue tokens
+  - `POST /api/v1/auth/login` - Login and issue tokens
+  - `POST /api/v1/auth/refresh` - Rotate refresh token and issue new access token
+  - `POST /api/v1/auth/logout` - Revoke refresh token
 
 ### v0 (Deprecated, Backwards Compatibility)
-- Base URL: `https://api.vruttaant.app/api/news` (legacy)
+- Base URLs: `https://api.vruttaant.app/api/news`, `https://api.vruttaant.app/api/auth` (legacy)
 - Status: **Deprecated** as of May 7, 2026
 - Timeline: Will be removed in v2.0.0 (estimated Q3 2026)
 - Warning: Deprecation warning logged for all non-versioned requests
@@ -62,7 +66,6 @@ curl -X POST http://localhost:5000/api/v1/news/ingest \
 
 ### v2.0.0 (Planned Q3 2026)
 Expected changes:
-- User authentication & authorization endpoints
 - Bookmark management scoped to user
 - New fields in news card response (user-specific metadata)
 - Role-based access control
