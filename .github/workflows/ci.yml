@@ -46,6 +46,7 @@ jobs:
            node --check src/routes/apiRouter.js
            node --check src/middleware/errorHandler.js
            node --check src/middleware/requestValidation.js
+           node --check src/middleware/authMiddleware.js
           node --check src/validation/authValidators.js
 
       - name: Lint
