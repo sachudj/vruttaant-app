@@ -49,12 +49,12 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 
 ## Track B: Authentication & Access Control
 
-- [x] Add user model and secure password hashing
-- [x] Add login/signup endpoints with JWT access token
-- [x] Add refresh token rotation and revocation storage
+- [x] Add user model with email uniqueness and secure password hashing
+- [x] Add JWT-based login/signup/refresh/logout endpoints
+- [x] Add refresh token rotation and revocation tracking
 - [x] Add auth middleware for protected routes
 - [x] Add bookmark endpoints scoped to authenticated user
-- [ ] Add role field and role-based route guard for admin operations
+- [x] Add role field and role-based route guard for admin operations
 
 ## Track C: Reliability & Observability
 
@@ -88,11 +88,11 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 ## Track F: Product Milestones
 
 ### Milestone 1: Secure API Baseline
-- [ ] Tracks A items 1-8 completed
-- [ ] Track D item 1 completed
+- [x] All Track A items 1-9 completed
+- [x] Track D item 1 completed (114 unit tests passing)
 
 ### Milestone 2: Authenticated User Flows
-- [ ] Track B items 1-6 completed
+- [x] All Track B items 1-6 completed
 - [ ] Bookmark flow available in mobile app
 
 ### Milestone 3: Production Reliability
@@ -116,4 +116,4 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 7, 2026_: Added dedicated GitHub Actions test job for independent test execution. Updated README with project status section (52/52 tests passing, 12/20 items = 60% complete). Commit: `2e15d5d`.
 - _May 7, 2026_: Completed B4 with auth middleware (`verifyAccessToken`, `verifyRefreshToken`, `verifyRefreshTokenNotRevoked`, `verifyUserExists`). Middleware extracts and validates JWT from Authorization headers, verifies token claims, checks token revocation status in RefreshToken storage, and optionally reloads user from database. Comprehensive test suite with 23 new tests (total 52 passing). Commit: `a84730e`.
 - _May 7, 2026_: Completed B5 with bookmark feature. Created `Bookmark` model with userId reference and compound unique index (userId + url prevents duplicates). Added `bookmarkController` with createBookmark, listBookmarks, deleteBookmark operations with ownership verification. Added `bookmarkValidators` for payload and query validation. Added protected bookmark routes at `/api/v1/user/bookmarks` with auth middleware. Added 39 comprehensive unit tests for validators and controller (total 91 passing). All tests passing (91/91), lint passed. Commit: `64dc775`.
-- _May 7, 2026_: Completed B6 with role-based access control. Created `roleGuard` middleware with `requireRole`, `requireAdmin`, and `requireUser` functions for flexible role checking. Created `adminController` with `getDetailedHealth` and `getSystemStats` endpoints for monitoring and observability. Created protected admin routes at `/api/v1/admin` accessible only to users with admin role. Added 23 comprehensive unit tests for role guard middleware and admin endpoints (total 114 passing). All tests passing (114/114), lint passed. Commit: pending.
+- _May 7, 2026_: Completed B6 with role-based access control. Created `roleGuard` middleware with `requireRole`, `requireAdmin`, and `requireUser` functions for flexible role checking. Created `adminController` with `getDetailedHealth` and `getSystemStats` endpoints for monitoring and observability. Created protected admin routes at `/api/v1/admin` accessible only to users with admin role. Added 23 comprehensive unit tests for role guard middleware and admin endpoints (total 114 passing). All tests passing (114/114), lint passed. Commit: `b40c803`.
