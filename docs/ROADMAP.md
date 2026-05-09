@@ -24,7 +24,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 
 - [x] Backend lint passes
 - [x] Backend tests pass
-- [ ] CI workflow passes on main branch
+- [x] CI workflow passes on main branch
 - [x] API docs updated for any request/response changes
 - [x] Session Notes updated with completed items and commit hash
 
