@@ -23,10 +23,10 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 ### Definition of Done (Sprint)
 
 - [x] Backend lint passes
-- [ ] Backend tests pass
+- [x] Backend tests pass
 - [ ] CI workflow passes on main branch
-- [ ] API docs updated for any request/response changes
-- [ ] Session Notes updated with completed items and commit hash
+- [x] API docs updated for any request/response changes
+- [x] Session Notes updated with completed items and commit hash
 
 ## How We Will Use This File
 
