@@ -33,6 +33,42 @@ const userSchema = new mongoose.Schema(
       categories: {
         type: [String],
         default: []
+      },
+      notifications: {
+        enabled: {
+          type: Boolean,
+          default: true
+        },
+        breakingNews: {
+          type: Boolean,
+          default: true
+        },
+        bookmarkAlerts: {
+          type: Boolean,
+          default: true
+        },
+        dailyDigest: {
+          type: Boolean,
+          default: false
+        },
+        quietHours: {
+          enabled: {
+            type: Boolean,
+            default: false
+          },
+          start: {
+            type: String,
+            default: '22:00'
+          },
+          end: {
+            type: String,
+            default: '07:00'
+          },
+          timezone: {
+            type: String,
+            default: 'UTC'
+          }
+        }
       }
     }
   },

@@ -38,8 +38,10 @@ jobs:
           node --check src/controllers/adminController.js
           node --check src/controllers/authController.js
           node --check src/controllers/bookmarkController.js
+          node --check src/controllers/notificationController.js
           node --check src/controllers/newsController.js
           node --check src/models/Bookmark.js
+          node --check src/models/NotificationDevice.js
           node --check src/models/RefreshToken.js
           node --check src/models/NewsCard.js
           node --check src/models/User.js
@@ -55,6 +57,7 @@ jobs:
            node --check src/middleware/requestValidation.js
           node --check src/validation/authValidators.js
           node --check src/validation/bookmarkValidators.js
+          node --check src/validation/notificationValidators.js
 
       - name: Lint
         run: npm run lint
