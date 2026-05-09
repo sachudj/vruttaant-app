@@ -145,6 +145,10 @@ main() {
   preflight_target_check
 
   # 1) Health and root metadata
+  request GET "$BASE_URL/ready"
+  assert_http_code 200 "GET /ready returns 200"
+  assert_json_expr_true '.status == "ready"' "GET /ready has ready status"
+
   request GET "$BASE_URL/health"
   assert_http_code 200 "GET /health returns 200"
   assert_json_expr_true '.status == "ok"' "GET /health has status ok"

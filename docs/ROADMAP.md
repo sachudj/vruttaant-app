@@ -58,9 +58,9 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 
 ## Track C: Reliability & Observability
 
-- [ ] Add structured logging (JSON) with request IDs
-- [ ] Add request/response timing logs for API calls
-- [ ] Add `/ready` endpoint for readiness checks
+- [x] Add structured logging (JSON) with request IDs
+- [x] Add request/response timing logs for API calls
+- [x] Add `/ready` endpoint for readiness checks
 - [ ] Add graceful shutdown for in-flight requests and DB cleanup
 - [ ] Add external error tracking integration
 - [ ] Add metrics export for latency/error rate
@@ -117,3 +117,4 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 7, 2026_: Completed B4 with auth middleware (`verifyAccessToken`, `verifyRefreshToken`, `verifyRefreshTokenNotRevoked`, `verifyUserExists`). Middleware extracts and validates JWT from Authorization headers, verifies token claims, checks token revocation status in RefreshToken storage, and optionally reloads user from database. Comprehensive test suite with 23 new tests (total 52 passing). Commit: `a84730e`.
 - _May 7, 2026_: Completed B5 with bookmark feature. Created `Bookmark` model with userId reference and compound unique index (userId + url prevents duplicates). Added `bookmarkController` with createBookmark, listBookmarks, deleteBookmark operations with ownership verification. Added `bookmarkValidators` for payload and query validation. Added protected bookmark routes at `/api/v1/user/bookmarks` with auth middleware. Added 39 comprehensive unit tests for validators and controller (total 91 passing). All tests passing (91/91), lint passed. Commit: `64dc775`.
 - _May 7, 2026_: Completed B6 with role-based access control. Created `roleGuard` middleware with `requireRole`, `requireAdmin`, and `requireUser` functions for flexible role checking. Created `adminController` with `getDetailedHealth` and `getSystemStats` endpoints for monitoring and observability. Created protected admin routes at `/api/v1/admin` accessible only to users with admin role. Added 23 comprehensive unit tests for role guard middleware and admin endpoints (total 114 passing). All tests passing (114/114), lint passed. Commit: `b40c803`.
+- _May 9, 2026_: Completed C1-C3 observability baseline. Added JSON request logging middleware with `X-Request-Id` propagation and per-request timing (`durationMs`), plus readiness probe at `/ready` that returns `200` when DB is connected and `503` when not ready. Added unit tests for request logger and readiness behavior (total 121 passing). Updated manual smoke checks to include readiness validation. Commit: pending.

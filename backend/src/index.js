@@ -9,6 +9,7 @@ const { connectDatabase, isDatabaseConnected } = require('./config/database');
 const apiRouter = require('./routes/apiRouter');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const { requestLogger } = require('./middleware/requestLogger');
+const { readyHandler } = require('./health/readiness');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -86,6 +87,8 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+app.get('/ready', readyHandler);
 
 app.get('/', (req, res) => {
   res.json({

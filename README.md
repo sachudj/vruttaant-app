@@ -90,8 +90,8 @@ vruttaant-app/
 
 ## Project Status
 
-**Test Coverage**: 114/114 tests passing ✅  
-**Overall Progress**: 15/20 items complete (75%)
+**Test Coverage**: 121/121 tests passing ✅  
+**Overall Progress**: 18/20 items complete (90%)
 
 **By Track:**
 - **Track A** (Secure API Baseline): 9/9 (100%) ✅
@@ -103,9 +103,12 @@ vruttaant-app/
   - ✅ B4: Auth middleware for protected routes
   - ✅ B5: Bookmark endpoints with ownership scoping
   - ✅ B6: Role-based access control with admin endpoints
-- **Track C** (Observability): 0/7 (0%) ⏳
+- **Track C** (Observability): 3/7 (43%) 🔄
+  - ✅ C1: Structured JSON request logging with request IDs
+  - ✅ C2: Request/response timing logs (`durationMs`) for API calls
+  - ✅ C3: Readiness probe endpoint at `/ready`
 - **Track D** (Testing): 1/7 (14%) 🔄
-  - ✅ D1: 114 unit tests (ingestion, auth, bookmarks, RBAC)
+  - ✅ D1: 121 unit tests (ingestion, auth, bookmarks, RBAC, observability)
   - ⏳ D2-D7: Integration tests, contract tests, E2E tests
 - **Track E** (Data Governance): 0/6 (0%) ⏳
 - **Track F** (Feature Milestones): 0/4 (0%) ⏳
@@ -183,6 +186,7 @@ bash scripts/run-smoke-auto.sh
 ```
 
 What this verifies:
+- Readiness and health probes (`/ready`, `/health`)
 - Health and API version routing
 - Input validation failure paths
 - Auth lifecycle (signup, login, refresh rotation, logout revocation)
@@ -203,6 +207,7 @@ Expected summary for successful run:
 ## Useful Links
 
 - **Backend Health**: http://localhost:5000/health
+- **Backend Readiness**: http://localhost:5000/ready
 - **Mongo Express UI**: http://localhost:8081
   - Username: `admin`
   - Password: `admin123`
