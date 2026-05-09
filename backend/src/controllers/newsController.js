@@ -101,6 +101,8 @@ async function getNewsCards(req, res, next) {
     const {
       language = 'en',
       category,
+      q,
+      sort = 'latest',
       page = 1,
       limit = 20
     } = req.validated?.query || req.query || {};
@@ -123,9 +125,22 @@ async function getNewsCards(req, res, next) {
       }
     }
 
+    const normalizedQuery = String(q || '').trim();
+    if (normalizedQuery) {
+      filter.$text = { $search: normalizedQuery };
+    }
+
+    const normalizedSort = String(sort || 'latest').trim().toLowerCase();
+    const useRelevanceSort = normalizedSort === 'relevance' && Boolean(normalizedQuery);
+
+    const projection = useRelevanceSort ? { score: { $meta: 'textScore' } } : undefined;
+    const sortSpec = useRelevanceSort
+      ? { score: { $meta: 'textScore' }, scrapedAt: -1 }
+      : { scrapedAt: -1 };
+
     const [items, total] = await Promise.all([
-      NewsCard.find(filter)
-        .sort({ scrapedAt: -1 })
+      NewsCard.find(filter, projection)
+        .sort(sortSpec)
         .skip(skip)
         .limit(parsedLimit)
         .lean(),
@@ -143,7 +158,9 @@ async function getNewsCards(req, res, next) {
       hasMore: parsedPage < totalPages,
       filters: {
         language: filter.language,
-        category: category ? String(category).trim() : null
+        category: category ? String(category).trim() : null,
+        q: normalizedQuery || null,
+        sort: useRelevanceSort ? 'relevance' : 'latest'
       },
       cards: items
     });

@@ -133,6 +133,13 @@ function validateCardsQuery(payload) {
   }
 
   const category = String(query.category || '').trim().slice(0, 40);
+  const q = String(query.q || '').trim().slice(0, 120);
+
+  const normalizedSort = String(query.sort || 'latest').trim().toLowerCase();
+  const allowedSorts = new Set(['latest', 'relevance']);
+  if (!allowedSorts.has(normalizedSort)) {
+    errors.push('sort must be one of: latest, relevance.');
+  }
 
   if (errors.length) {
     return {
@@ -147,7 +154,9 @@ function validateCardsQuery(payload) {
       language,
       page,
       limit,
-      category: category || undefined
+      category: category || undefined,
+      q: q || undefined,
+      sort: normalizedSort
     }
   };
 }

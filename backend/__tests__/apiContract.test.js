@@ -149,7 +149,7 @@ describe('API contract', () => {
 
     const response = await request(app)
       .get('/api/v1/news/cards')
-      .query({ language: 'en', page: '1', limit: '2' });
+      .query({ language: 'en', page: '1', limit: '2', q: 'markets', sort: 'relevance' });
 
     expect(response.statusCode).toBe(200);
     expectExactKeys(response.body, [
@@ -163,7 +163,7 @@ describe('API contract', () => {
       'cards'
     ]);
 
-    expectExactKeys(response.body.filters, ['language', 'category']);
+    expectExactKeys(response.body.filters, ['language', 'category', 'q', 'sort']);
     expect(typeof response.body.page).toBe('number');
     expect(typeof response.body.limit).toBe('number');
     expect(typeof response.body.total).toBe('number');
