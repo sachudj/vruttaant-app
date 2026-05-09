@@ -14,6 +14,7 @@ const {
   createInFlightRequestTracker,
   createGracefulShutdown
 } = require('./server/gracefulShutdown');
+const { initErrorTracker } = require('./observability/errorTracker');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -136,6 +137,13 @@ function startServer(preferredPort) {
 }
 
 async function bootstrap() {
+  const tracker = initErrorTracker();
+  if (tracker.enabled) {
+    console.log('[observability] External error tracking enabled (Sentry).');
+  } else {
+    console.log('[observability] External error tracking disabled (missing SENTRY_DSN).');
+  }
+
   await connectDatabase();
   const server = await startServer(PORT);
 
