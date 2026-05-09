@@ -5,7 +5,7 @@ import 'package:mobile_app/models/bookmark_item.dart';
 import 'package:mobile_app/models/news_item.dart';
 
 class NewsApiService {
-  NewsApiService({String? baseUrl, http.Client? client})
+  NewsApiService({String? baseUrl, String? accessToken, http.Client? client})
     : baseUrl =
           baseUrl ??
           const String.fromEnvironment(
@@ -13,6 +13,10 @@ class NewsApiService {
             defaultValue: 'http://localhost:5000',
           ),
       accessToken = (() {
+        final explicitToken = (accessToken ?? '').trim();
+        if (explicitToken.isNotEmpty) {
+          return explicitToken;
+        }
         final token = const String.fromEnvironment('API_ACCESS_TOKEN').trim();
         return token.isEmpty ? null : token;
       })(),
@@ -221,5 +225,66 @@ class NewsApiService {
     if (response.statusCode != 200) {
       throw Exception('Failed to update profile (${response.statusCode}).');
     }
+  }
+
+  Future<Map<String, dynamic>> fetchNotificationPreferences() async {
+    final uri = Uri.parse('$baseUrl/api/v1/user/notifications/preferences');
+    final response = await _client.get(uri, headers: _authHeaders());
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to fetch notification preferences (${response.statusCode}).',
+      );
+    }
+
+    final dynamic payload = jsonDecode(response.body);
+    if (payload is! Map<String, dynamic>) {
+      throw Exception('Unexpected notification preferences response format.');
+    }
+
+    final dynamic data = payload['data'];
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Missing notification preferences data in response.');
+    }
+
+    final dynamic notifications = data['notifications'];
+    if (notifications is! Map<String, dynamic>) {
+      throw Exception('Missing notifications object in response.');
+    }
+
+    return notifications;
+  }
+
+  Future<Map<String, dynamic>> updateNotificationPreferences({
+    required Map<String, dynamic> notifications,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/user/notifications/preferences');
+    final response = await _client.patch(
+      uri,
+      headers: _authHeaders(),
+      body: jsonEncode({'notifications': notifications}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to update notification preferences (${response.statusCode}).',
+      );
+    }
+
+    final dynamic payload = jsonDecode(response.body);
+    if (payload is! Map<String, dynamic>) {
+      throw Exception('Unexpected notification preferences update format.');
+    }
+
+    final dynamic data = payload['data'];
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Missing notification update data in response.');
+    }
+
+    final dynamic updated = data['notifications'];
+    if (updated is! Map<String, dynamic>) {
+      throw Exception('Missing updated notifications in response.');
+    }
+
+    return updated;
   }
 }

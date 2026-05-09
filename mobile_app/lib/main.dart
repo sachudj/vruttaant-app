@@ -450,47 +450,259 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     }
   }
 
+  Map<String, dynamic> _defaultNotificationPreferences() {
+    return {
+      'enabled': true,
+      'breakingNews': true,
+      'bookmarkAlerts': true,
+      'dailyDigest': false,
+      'quietHours': {
+        'enabled': false,
+        'start': '22:00',
+        'end': '07:00',
+        'timezone': 'UTC',
+      },
+    };
+  }
+
+  Map<String, dynamic> _normalizeNotificationPreferences(
+    Map<String, dynamic>? incoming,
+  ) {
+    final defaults = _defaultNotificationPreferences();
+    final source = incoming ?? <String, dynamic>{};
+    final sourceQuiet = source['quietHours'];
+    final quietHours = sourceQuiet is Map<String, dynamic>
+        ? sourceQuiet
+        : <String, dynamic>{};
+    final defaultQuiet = defaults['quietHours'] as Map<String, dynamic>;
+
+    return {
+      'enabled': source['enabled'] is bool
+          ? source['enabled']
+          : defaults['enabled'],
+      'breakingNews': source['breakingNews'] is bool
+          ? source['breakingNews']
+          : defaults['breakingNews'],
+      'bookmarkAlerts': source['bookmarkAlerts'] is bool
+          ? source['bookmarkAlerts']
+          : defaults['bookmarkAlerts'],
+      'dailyDigest': source['dailyDigest'] is bool
+          ? source['dailyDigest']
+          : defaults['dailyDigest'],
+      'quietHours': {
+        'enabled': quietHours['enabled'] is bool
+            ? quietHours['enabled']
+            : defaultQuiet['enabled'],
+        'start':
+            quietHours['start'] is String &&
+                (quietHours['start'] as String).trim().isNotEmpty
+            ? (quietHours['start'] as String).trim()
+            : defaultQuiet['start'],
+        'end':
+            quietHours['end'] is String &&
+                (quietHours['end'] as String).trim().isNotEmpty
+            ? (quietHours['end'] as String).trim()
+            : defaultQuiet['end'],
+        'timezone':
+            quietHours['timezone'] is String &&
+                (quietHours['timezone'] as String).trim().isNotEmpty
+            ? (quietHours['timezone'] as String).trim()
+            : defaultQuiet['timezone'],
+      },
+    };
+  }
+
   Future<void> _openSettingsSheet() async {
-    final selectedLanguage = await showModalBottomSheet<String>(
+    final messenger = ScaffoldMessenger.of(context);
+    var pendingLanguage = _language;
+    var pendingNotifications = _defaultNotificationPreferences();
+    var hasServerNotificationPrefs = false;
+
+    if (_newsApiService.hasAccessToken) {
+      try {
+        final fetched = await _newsApiService.fetchNotificationPreferences();
+        pendingNotifications = _normalizeNotificationPreferences(fetched);
+        hasServerNotificationPrefs = true;
+      } catch (_) {
+        pendingNotifications = _normalizeNotificationPreferences(null);
+      }
+    }
+
+    if (!mounted) return;
+
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       backgroundColor: const Color(0xFF121212),
       isScrollControlled: true,
       builder: (context) {
-        return SafeArea(
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.5,
-            child: Column(
-              children: [
-                const SizedBox(height: 10),
-                const Text(
-                  'Language Preference',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                  ),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            Widget languageTile(String code, String name) {
+              return ListTile(
+                title: Text(name, style: const TextStyle(color: Colors.white)),
+                trailing: pendingLanguage == code
+                    ? const Icon(Icons.check, color: Colors.indigoAccent)
+                    : null,
+                onTap: () {
+                  setModalState(() {
+                    pendingLanguage = code;
+                  });
+                },
+              );
+            }
+
+            return SafeArea(
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.82,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Language Preference',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Divider(color: Colors.white24, height: 1),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            languageTile('en', 'English'),
+                            languageTile('hi', 'Hindi'),
+                            languageTile('bn', 'Bengali'),
+                            languageTile('mr', 'Marathi'),
+                            languageTile('te', 'Telugu'),
+                            languageTile('ta', 'Tamil'),
+                            if (_newsApiService.hasAccessToken) ...[
+                              const Divider(color: Colors.white24),
+                              const Padding(
+                                padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Notifications',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              if (!hasServerNotificationPrefs)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 4,
+                                  ),
+                                  child: Text(
+                                    'Using defaults because server preferences could not be loaded.',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              SwitchListTile.adaptive(
+                                title: const Text(
+                                  'Enable Notifications',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                value: pendingNotifications['enabled'] as bool,
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    pendingNotifications['enabled'] = value;
+                                  });
+                                },
+                              ),
+                              SwitchListTile.adaptive(
+                                title: const Text(
+                                  'Breaking News Alerts',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                value:
+                                    pendingNotifications['breakingNews']
+                                        as bool,
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    pendingNotifications['breakingNews'] =
+                                        value;
+                                  });
+                                },
+                              ),
+                              SwitchListTile.adaptive(
+                                title: const Text(
+                                  'Bookmark Alerts',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                value:
+                                    pendingNotifications['bookmarkAlerts']
+                                        as bool,
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    pendingNotifications['bookmarkAlerts'] =
+                                        value;
+                                  });
+                                },
+                              ),
+                              SwitchListTile.adaptive(
+                                title: const Text(
+                                  'Daily Digest',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                value:
+                                    pendingNotifications['dailyDigest'] as bool,
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    pendingNotifications['dailyDigest'] = value;
+                                  });
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                      child: Row(
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Cancel'),
+                          ),
+                          const Spacer(),
+                          FilledButton(
+                            onPressed: () {
+                              Navigator.of(context).pop({
+                                'language': pendingLanguage,
+                                if (_newsApiService.hasAccessToken)
+                                  'notifications': pendingNotifications,
+                              });
+                            },
+                            child: const Text('Save'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                const Divider(color: Colors.white24, height: 1),
-                Expanded(
-                  child: ListView(
-                    children: [
-                      _buildLanguageTile(context, 'en', 'English'),
-                      _buildLanguageTile(context, 'hi', 'Hindi'),
-                      _buildLanguageTile(context, 'bn', 'Bengali'),
-                      _buildLanguageTile(context, 'mr', 'Marathi'),
-                      _buildLanguageTile(context, 'te', 'Telugu'),
-                      _buildLanguageTile(context, 'ta', 'Tamil'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
 
+    if (result == null) {
+      return;
+    }
+
+    final selectedLanguage = result['language'] as String?;
     if (selectedLanguage != null && selectedLanguage != _language) {
       if (!mounted) return;
       setState(() {
@@ -503,16 +715,25 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       }
       await _loadInitialFeed();
     }
-  }
 
-  Widget _buildLanguageTile(BuildContext context, String code, String name) {
-    return ListTile(
-      title: Text(name, style: const TextStyle(color: Colors.white)),
-      trailing: _language == code
-          ? const Icon(Icons.check, color: Colors.indigoAccent)
-          : null,
-      onTap: () => Navigator.of(context).pop(code),
-    );
+    if (_newsApiService.hasAccessToken) {
+      final dynamic rawNotifications = result['notifications'];
+      if (rawNotifications is Map<String, dynamic>) {
+        final normalized = _normalizeNotificationPreferences(rawNotifications);
+        try {
+          await _newsApiService.updateNotificationPreferences(
+            notifications: normalized,
+          );
+          if (!mounted) return;
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Notification preferences saved.')),
+          );
+        } catch (error) {
+          if (!mounted) return;
+          messenger.showSnackBar(SnackBar(content: Text('$error')));
+        }
+      }
+    }
   }
 
   Future<void> _openBookmarksSheet() async {

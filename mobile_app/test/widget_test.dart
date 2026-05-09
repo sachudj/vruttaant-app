@@ -101,8 +101,10 @@ void main() {
     expect(find.text('Language Preference'), findsOneWidget);
     expect(find.text('Hindi'), findsOneWidget);
 
-    // Tap Hindi
+    // Tap Hindi and save
     await tester.tap(find.text('Hindi'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
     // Verify sheet closed
