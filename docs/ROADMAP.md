@@ -83,7 +83,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] Add duplicate detection strategy across sources
 - [x] Add source-level quality rules (title length, URL validity, image availability)
 - [x] Add audit logs for LLM summary/category generation failures
-- [ ] Add reprocessing job for cards with missing summary/category
+- [x] Add reprocessing job for cards with missing summary/category
 
 ## Track F: Product Milestones
 
@@ -100,7 +100,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] Track D items 2-4 completed
 
 ### Milestone 4: Data Quality at Scale
-- [ ] Track E items 1-6 completed (5/6 done)
+- [x] Track E items 1-6 completed
 - [x] Track D items 5-7 completed
 
 ## Session Notes
@@ -132,3 +132,4 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 9, 2026_: Completed E3 cross-source duplicate detection. Added `backend/src/utils/fingerprint.js` with `computeTitleFingerprint(title)` (lowercase, strip punctuation, collapse whitespace, truncate to 120 chars). Added `titleFingerprint` field + `{ titleFingerprint, language }` compound index to `NewsCard` schema. Updated `newsIngestionService.js` to attach fingerprints to every parsed card. Updated ingest controller to query existing fingerprints before bulk-write and skip cards whose fingerprint is already stored in the DB, preventing duplicate stories from different source URLs. Added `dedupSkippedCount` to ingest response. Added 11 fingerprint unit tests and 1 cross-source dedup integration test; updated API contract test for new response shape and card preview fields. Total tests now 240 passing. Commit: `74434be`.
 - _May 9, 2026_: Completed E4 source-level quality rules in ingestion parsing. Added shared quality validation in `newsIngestionService.js` for title length (25-180 chars), valid HTTP(S) article URL, and required valid HTTP(S) image URL. Parsing now filters low-quality cards before LLM processing/persistence. Added unit tests for quality rules and fixture-driven parser tests verifying invalid cards are dropped. Total tests now 245 passing. Commit: `788d8e0`.
 - _May 9, 2026_: Completed E5 audit logging for LLM summary/category failure paths. Added `src/observability/auditLogger.js` for structured audit JSON logs, then wired ingestion service to log events for provider error responses (`llm_summary_category_provider_error`), invalid JSON model output (`llm_summary_category_invalid_json`), and runtime enrichment exceptions (`llm_summary_category_enrichment_failed`). Added unit tests for audit logger and fixture-driven service tests that assert logs are emitted for each failure path. Total tests now 248 passing. Commit: pending.
+- _May 9, 2026_: Completed E6 reprocessing job for cards missing summary/category. Added `src/jobs/reprocessMissingMetadata.js` with DB-aware batch reprocessing (query missing metadata, call `summarizeWithLlm`, update cards, continue on per-card failures). Added npm script `job:reprocess-missing-metadata` for operational execution and failure counters (`scanned`, `updated`, `skipped`, `failed`). Added dedicated job unit tests with mocked DB/LLM behavior including failure-path audit logging. Total tests now 253 passing. Commit: pending.
