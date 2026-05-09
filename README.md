@@ -156,8 +156,8 @@ Detailed implementation sequencing now lives in [docs/ROADMAP.md](./docs/ROADMAP
 - [x] Add observability: metrics, error tracking, and alerting for backend failures
 - [x] Add API versioning strategy (`/api/v1`) with backward-compatibility policy
 - [x] Add production readiness probes (`/health`, `/ready`) and graceful shutdown handling
-- [ ] Add dependency and container security scans in CI (SAST + npm audit gating)
-- [ ] Add secrets management policy (no plaintext secrets, rotation, environment separation)
+- [x] Add dependency and container security scans in CI (SAST + npm audit gating)
+- [x] Add secrets management policy (no plaintext secrets, rotation, environment separation)
 - [x] Add role-based access controls for admin/internal operations
 - [x] Add data governance for LLM output (category taxonomy validation + fallback rules)
 
@@ -178,6 +178,9 @@ This repository now includes CI and release automation:
 - `.github/workflows/ci.yml`
   - Runs backend syntax + startup health checks
   - Runs Flutter analyze + widget tests
+- `.github/workflows/security.yml`
+  - Runs CodeQL SAST scans for JavaScript code
+  - Runs Trivy filesystem scan for vulnerabilities, secrets, and misconfigurations
 - `.github/workflows/progress-report.yml`
   - Reads `docs/PROJECT_STATUS.md` checklists
   - Publishes completion percentage to workflow summary
