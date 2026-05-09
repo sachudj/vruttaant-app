@@ -18,10 +18,12 @@ const sampleHtml = fs.readFileSync(
 describe('newsIngestionService fixtures and deterministic llm mocks', () => {
   const originalFetch = global.fetch;
   const originalLlmApiKey = process.env.LLM_API_KEY;
+  const originalConsoleLog = console.log;
 
   afterEach(() => {
     global.fetch = originalFetch;
     process.env.LLM_API_KEY = originalLlmApiKey;
+    console.log = originalConsoleLog;
     jest.restoreAllMocks();
   });
 
@@ -49,6 +51,8 @@ describe('newsIngestionService fixtures and deterministic llm mocks', () => {
 
   it('summarizeWithLlm falls back predictably when model content is not JSON', async () => {
     process.env.LLM_API_KEY = 'test-key';
+    const logSpy = jest.fn();
+    console.log = logSpy;
     global.fetch = jest.fn().mockResolvedValue(
       createFetchOkJson(deterministicLlmResponses.plainText)
     );
@@ -67,10 +71,15 @@ describe('newsIngestionService fixtures and deterministic llm mocks', () => {
       aiSummary: 'This is plain text from the model and not valid JSON.',
       category: 'General'
     });
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining('llm_summary_category_invalid_json')
+    );
   });
 
   it('summarizeWithLlm returns defaults on provider error response', async () => {
     process.env.LLM_API_KEY = 'test-key';
+    const logSpy = jest.fn();
+    console.log = logSpy;
     global.fetch = jest.fn().mockResolvedValue(createFetchError(503));
 
     const result = await summarizeWithLlm(
@@ -87,6 +96,9 @@ describe('newsIngestionService fixtures and deterministic llm mocks', () => {
       aiSummary: '',
       category: 'General'
     });
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining('llm_summary_category_provider_error')
+    );
   });
 
   it('fetchNewsCards parses deterministic article fixture data', async () => {
@@ -155,5 +167,29 @@ describe('newsIngestionService fixtures and deterministic llm mocks', () => {
     expect(result.cards[0].title).toBe('This is a sufficiently long title with valid url and image');
     expect(result.cards[0].url).toBe('https://example.com/news/valid');
     expect(result.cards[0].imageUrl).toBe('https://example.com/images/valid.jpg');
+  });
+
+  it('fetchNewsCards logs enrichment failure and falls back when llm call throws', async () => {
+    process.env.LLM_API_KEY = 'test-key';
+    const logSpy = jest.fn();
+    console.log = logSpy;
+
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => sampleHtml
+      })
+      .mockRejectedValueOnce(new Error('LLM network down'))
+      .mockResolvedValueOnce(createFetchOkJson(deterministicLlmResponses.validJson));
+
+    const result = await fetchNewsCards('https://example.com/news', 'en', 2);
+
+    expect(result.cards).toHaveLength(2);
+    expect(result.cards[0].aiSummary).toBe('');
+    expect(result.cards[0].category).toBe('General');
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining('llm_summary_category_enrichment_failed')
+    );
   });
 });

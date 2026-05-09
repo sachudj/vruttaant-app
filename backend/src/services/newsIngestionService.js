@@ -1,6 +1,7 @@
 const cheerio = require('cheerio');
 const { normalizeToTaxonomy } = require('../constants/categories');
 const { computeTitleFingerprint } = require('../utils/fingerprint');
+const { logAuditEvent } = require('../observability/auditLogger');
 
 const DEFAULT_LLM_API_URL = 'https://api.openai.com/v1/chat/completions';
 const DEFAULT_LLM_MODEL = 'gpt-4o-mini';
@@ -168,6 +169,12 @@ async function summarizeWithLlm(card, language) {
   });
 
   if (!response.ok) {
+    logAuditEvent('llm_summary_category_provider_error', {
+      statusCode: response.status,
+      source: card?.source || '',
+      url: card?.url || '',
+      language: normalizedLanguage
+    });
     return {
       aiSummary: '',
       category: 'General'
@@ -181,6 +188,12 @@ async function summarizeWithLlm(card, language) {
   try {
     parsed = JSON.parse(rawContent);
   } catch {
+    logAuditEvent('llm_summary_category_invalid_json', {
+      source: card?.source || '',
+      url: card?.url || '',
+      language: normalizedLanguage,
+      rawPreview: rawContent.slice(0, 200)
+    });
     parsed = {
       summary: rawContent,
       category: 'General'
@@ -331,7 +344,13 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
           aiSummary: llmOutput.aiSummary,
           category: llmOutput.category
         };
-      } catch {
+      } catch (error) {
+        logAuditEvent('llm_summary_category_enrichment_failed', {
+          source: card?.source || '',
+          url: card?.url || '',
+          language: normalizedLanguage,
+          error: error?.message || 'Unknown error'
+        });
         return {
           ...card,
           aiSummary: '',
