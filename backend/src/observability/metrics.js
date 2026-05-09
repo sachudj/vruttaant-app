@@ -1,4 +1,5 @@
 const client = require('prom-client');
+const { isDatabaseConnected } = require('../config/database');
 
 const registry = new client.Registry();
 
@@ -6,6 +7,7 @@ let initialized = false;
 let requestCount;
 let requestDuration;
 let errorCount;
+let databaseConnectedGauge;
 
 function normalizePath(path) {
   if (!path) {
@@ -23,7 +25,8 @@ function initializeMetrics() {
       registry,
       requestCount,
       requestDuration,
-      errorCount
+      errorCount,
+      databaseConnectedGauge
     };
   }
 
@@ -54,14 +57,27 @@ function initializeMetrics() {
     registers: [registry]
   });
 
+  databaseConnectedGauge = new client.Gauge({
+    name: 'vruttaant_database_connected',
+    help: 'Database connectivity state (1=connected, 0=disconnected)',
+    registers: [registry]
+  });
+
   initialized = true;
 
   return {
     registry,
     requestCount,
     requestDuration,
-    errorCount
+    errorCount,
+    databaseConnectedGauge
   };
+}
+
+function updateDatabaseConnectivity(checkFn = isDatabaseConnected, gauge = databaseConnectedGauge) {
+  const connected = checkFn() ? 1 : 0;
+  gauge.set(connected);
+  return connected;
 }
 
 function resolveRequestPath(req) {
@@ -106,9 +122,12 @@ function createMetricsMiddleware(options = {}) {
 
 function createMetricsHandler(options = {}) {
   const register = options.registry || registry;
+  const databaseGauge = options.databaseConnectedGauge || databaseConnectedGauge;
+  const databaseCheck = options.isDatabaseConnected || isDatabaseConnected;
 
   return async (req, res, next) => {
     try {
+      updateDatabaseConnectivity(databaseCheck, databaseGauge);
       res.setHeader('Content-Type', register.contentType);
       const content = await Promise.resolve(register.metrics());
       res.status(200).send(content);
@@ -130,5 +149,6 @@ module.exports = {
   metricsMiddleware,
   metricsHandler,
   normalizePath,
-  resolveRequestPath
+  resolveRequestPath,
+  updateDatabaseConnectivity
 };

@@ -3,7 +3,8 @@ const {
   normalizePath,
   resolveRequestPath,
   createMetricsMiddleware,
-  createMetricsHandler
+  createMetricsHandler,
+  updateDatabaseConnectivity
 } = require('../src/observability/metrics');
 
 describe('metrics', () => {
@@ -85,6 +86,42 @@ describe('metrics', () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.send).toHaveBeenCalledWith('vruttaant_http_requests_total 10');
       expect(next).not.toHaveBeenCalled();
+    });
+
+    it('updates database connectivity gauge on scrape', async () => {
+      const registry = {
+        contentType: 'text/plain; version=0.0.4; charset=utf-8',
+        metrics: jest.fn().mockResolvedValue('vruttaant_database_connected 1')
+      };
+      const databaseConnectedGauge = {
+        set: jest.fn()
+      };
+
+      const handler = createMetricsHandler({
+        registry,
+        databaseConnectedGauge,
+        isDatabaseConnected: () => true
+      });
+
+      const res = {
+        setHeader: jest.fn(),
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn()
+      };
+
+      await handler({}, res, jest.fn());
+
+      expect(databaseConnectedGauge.set).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('updateDatabaseConnectivity', () => {
+    it('returns 0 for disconnected database and sets gauge accordingly', () => {
+      const gauge = { set: jest.fn() };
+      const value = updateDatabaseConnectivity(() => false, gauge);
+
+      expect(value).toBe(0);
+      expect(gauge.set).toHaveBeenCalledWith(0);
     });
   });
 });

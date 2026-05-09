@@ -1,0 +1,38 @@
+groups:
+  - name: vruttaant-backend-alerts
+    rules:
+      - alert: VruttaantBackendDown
+        expr: up{job="vruttaant-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: vruttaant-backend
+        annotations:
+          summary: "Vruttaant backend is down"
+          description: "Prometheus cannot scrape vruttaant-backend for 2 minutes."
+
+      - alert: VruttaantHigh5xxRate
+        expr: |
+          (
+            sum(rate(vruttaant_http_errors_total[5m]))
+            /
+            clamp_min(sum(rate(vruttaant_http_requests_total[5m])), 0.001)
+          ) > 0.05
+          and sum(rate(vruttaant_http_requests_total[5m])) > 0.066
+        for: 5m
+        labels:
+          severity: warning
+          service: vruttaant-backend
+        annotations:
+          summary: "High backend 5xx rate"
+          description: "5xx ratio is above 5% for 5m with at least ~20 requests over 5m."
+
+      - alert: VruttaantDatabaseDisconnected
+        expr: vruttaant_database_connected == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: vruttaant-backend
+        annotations:
+          summary: "Backend database disconnected"
+          description: "`vruttaant_database_connected` is 0 for 2 minutes."

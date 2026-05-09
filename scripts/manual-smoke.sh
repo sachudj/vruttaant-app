@@ -161,6 +161,11 @@ main() {
   else
     log_fail "GET /metrics exports request duration histogram"
   fi
+  if [[ "$HTTP_BODY" == *"vruttaant_database_connected"* ]]; then
+    log_pass "GET /metrics exports database connectivity gauge"
+  else
+    log_fail "GET /metrics exports database connectivity gauge"
+  fi
 
   request GET "$BASE_URL/health"
   assert_http_code 200 "GET /health returns 200"
