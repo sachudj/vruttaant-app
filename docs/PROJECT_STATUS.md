@@ -1,8 +1,8 @@
 # Project Status & Implementation Summary
 
 **Date**: May 5, 2026  
-**Version**: v0.2 (Active Development)  
-**Status**: ✅ Foundation + Mobile Feed Experience Implemented
+**Version**: v0.3 (Active Development)  
+**Status**: ✅ Core Platform Implemented (API hardening, auth, observability, data governance, search)
 
 Detailed implementation sequencing and security hardening tasks are tracked in [ROADMAP.md](./ROADMAP.md).
 
@@ -99,35 +99,35 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 ## What's NOT Yet Implemented
 
 ### ⏳ Mobile Frontend
-- [ ] Detail screen for full article view
+- [x] Detail screen for full article view
 - [ ] Settings/profile screens
 - [ ] Local storage
 - [ ] Theme/dark mode
 - [ ] Localization (i18n)
 
 ### ⏳ Advanced Backend Features
-- [ ] Saved articles/bookmarks
-- [ ] Search & filtering API
-- [ ] Pagination
-- [ ] Rate limiting
-- [ ] Request logging/monitoring
-- [ ] Error tracking
+- [x] Saved articles/bookmarks
+- [x] Search & filtering API
+- [x] Pagination
+- [x] Rate limiting
+- [x] Request logging/monitoring
+- [x] Error tracking
 
 ### ⏳ DevOps & Production
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Automated tests (Jest, Flutter)
+- [x] CI/CD pipeline (GitHub Actions)
+- [x] Automated tests (Jest, Flutter)
 - [ ] Load testing
 - [ ] Database migrations strategy
 - [ ] Backup automation
-- [ ] Monitoring & alerting
+- [x] Monitoring & alerting
 - [ ] Production deployment config
 
 ### ⏳ Data & Content
 - [ ] Multi-language article sources
-- [ ] News categorization
+- [x] News categorization
 - [ ] Trending articles algorithm
 - [ ] Recommendation engine
-- [ ] Duplicate article detection across sources
+- [x] Duplicate article detection across sources
 
 ---
 
@@ -168,36 +168,33 @@ db.newscards.countDocuments()
 
 ## Known Limitations
 
-1. **Single Source Scraping**: `/api/news/ingest` scrapes one URL per request
-2. **No Authentication**: All endpoints are public
-3. **No Rate Limiting**: Can be abused with many requests
-4. **Basic HTML Parsing**: Cheerio selectors may fail on complex sites
-5. **No Caching**: Every request scrapes fresh data
-6. **Manual Scheduling**: No background jobs for periodic scraping
-7. **No Monitoring**: No error tracking or performance metrics
+1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` still accepts one source URL per request.
+2. **No Push Notifications Yet**: Mobile does not yet deliver proactive alerts.
+3. **No Trending/Recommendation Layer**: Feed ranking is recency/relevance-based, without personalization.
+4. **No Local Offline Cache**: Stories are fetched from API on demand.
+5. **No Load-Test Baseline**: Performance limits under sustained traffic are not formally benchmarked.
 
 ---
 
 ## Next Steps for Continuation
 
 ### Immediate (1-2 days)
-1. Add `GET /api/news/cards` endpoint for persisted retrieval
-2. Implement bookmark/save flow
-3. Add feed filters (language/source)
-4. Add detail screen and deep links
+1. Add push notifications for breaking stories and saved-topic alerts
+2. Add local cache for offline reading and faster startup
+3. Add richer settings/profile screens in mobile
+4. Add load-test baseline and capture SLO targets
 
 ### Short Term (1 week)
-1. Add user authentication (simple JWT)
-2. Implement `/api/news/cards` endpoint (retrieve saved cards)
-3. Add bookmark/save functionality
-4. Store user preferences
+1. Add trending stories endpoint and ranking pipeline
+2. Add recommendation engine hooks based on preferences/bookmarks
+3. Add secrets-management policy and environment hardening docs
+4. Add container/SAST security scanning to CI
 
 ### Medium Term (2-4 weeks)
-1. Setup CI/CD pipeline
-2. Add automated tests (backend + mobile)
-3. Implement background job scheduling
-4. Add database migration strategy
-5. Setup production MongoDB Atlas instance
+1. Add database migration strategy
+2. Add backup automation and restore runbook
+3. Add production deployment config and roll-forward/rollback playbooks
+4. Extend multi-language source coverage with ingestion quality scoring
 
 ---
 

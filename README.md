@@ -112,7 +112,7 @@ vruttaant-app/
   - ✅ C6: Metrics export endpoint (`/metrics`) with latency/error counters
   - ✅ C7: Alert rules for uptime, 5xx spikes, and DB disconnects
 - **Track D** (Testing): 7/7 (100%) ✅
-  - ✅ D1: 155 tests (ingestion, auth, bookmarks, RBAC, observability)
+  - ✅ D1: 272 tests (ingestion, auth, profiles, bookmarks, RBAC, observability)
   - ✅ D2: Integration tests for `/api/v1/news/ingest`
   - ✅ D3: Integration tests for `/api/v1/news/cards`
   - ✅ D4: API contract tests for response-shape stability
@@ -138,28 +138,28 @@ For detailed roadmap, see [docs/ROADMAP.md](./docs/ROADMAP.md).
 
 Detailed implementation sequencing now lives in [docs/ROADMAP.md](./docs/ROADMAP.md).
 
-- [ ] API endpoint to retrieve saved news from database
-- [ ] User authentication & profiles
-- [ ] Bookmark/save articles feature
-- [ ] Language preference settings
-- [ ] Background news sync
+- [x] API endpoint to retrieve saved news from database
+- [x] User authentication & profiles
+- [x] Bookmark/save articles feature
+- [x] Language preference settings
+- [x] Background news sync
 - [ ] Push notifications
-- [ ] Advanced search & filtering
+- [x] Advanced search & filtering
 
 ### Industry-Standard Secure App Checklist
 
-- [ ] Add centralized request validation (query/body/schema) for all API endpoints
-- [ ] Add security middleware: Helmet, strict CORS policy, and rate limiting
-- [ ] Add API auth hardening: JWT rotation, refresh token revocation, and protected routes
-- [ ] Add backend unit + integration tests for critical APIs (`/api/news/ingest`, `/api/news/cards`)
-- [ ] Add structured logging with request IDs and centralized error handling
-- [ ] Add observability: metrics, error tracking, and alerting for backend failures
-- [ ] Add API versioning strategy (`/api/v1`) with backward-compatibility policy
-- [ ] Add production readiness probes (`/health`, `/ready`) and graceful shutdown handling
+- [x] Add centralized request validation (query/body/schema) for all API endpoints
+- [x] Add security middleware: Helmet, strict CORS policy, and rate limiting
+- [x] Add API auth hardening: JWT rotation, refresh token revocation, and protected routes
+- [x] Add backend unit + integration tests for critical APIs (`/api/news/ingest`, `/api/news/cards`)
+- [x] Add structured logging with request IDs and centralized error handling
+- [x] Add observability: metrics, error tracking, and alerting for backend failures
+- [x] Add API versioning strategy (`/api/v1`) with backward-compatibility policy
+- [x] Add production readiness probes (`/health`, `/ready`) and graceful shutdown handling
 - [ ] Add dependency and container security scans in CI (SAST + npm audit gating)
 - [ ] Add secrets management policy (no plaintext secrets, rotation, environment separation)
-- [ ] Add role-based access controls for admin/internal operations
-- [ ] Add data governance for LLM output (category taxonomy validation + fallback rules)
+- [x] Add role-based access controls for admin/internal operations
+- [x] Add data governance for LLM output (category taxonomy validation + fallback rules)
 
 ## Infrastructure Scripts
 
