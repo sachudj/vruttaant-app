@@ -73,7 +73,24 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   @override
   void initState() {
     super.initState();
-    _loadInitialFeed();
+    _initApp();
+  }
+
+  Future<void> _initApp() async {
+    if (_newsApiService.hasAccessToken) {
+      try {
+        final profileData = await _newsApiService.fetchProfile();
+        final prefs =
+            profileData['profile']?['preferences'] as Map<String, dynamic>?;
+        if (prefs != null) {
+          final profileLang = prefs['language'] as String?;
+          if (profileLang != null && profileLang.isNotEmpty) {
+            _language = profileLang;
+          }
+        }
+      } catch (_) {}
+    }
+    await _loadInitialFeed();
   }
 
   Future<List<NewsItem>> _fetchNewsPage(int page) {
@@ -342,9 +359,12 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       if (!mounted) return;
       setState(() {
         _language = selectedLanguage;
-        // Optionally clear bookmarks since they might be language specific,
-        // but for now, we'll keep them as is and just reload the feed.
       });
+      if (_newsApiService.hasAccessToken) {
+        try {
+          await _newsApiService.updateProfile(language: selectedLanguage);
+        } catch (_) {}
+      }
       await _loadInitialFeed();
     }
   }

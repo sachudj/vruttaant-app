@@ -182,4 +182,32 @@ class NewsApiService {
       throw Exception('Failed to delete bookmark (${response.statusCode}).');
     }
   }
+
+  Future<Map<String, dynamic>> fetchProfile() async {
+    final uri = Uri.parse('$baseUrl/api/v1/user/profile');
+    final response = await _client.get(uri, headers: _authHeaders());
+    if (response.statusCode != 200) {
+      throw Exception('Failed to fetch profile (${response.statusCode}).');
+    }
+    final dynamic payload = jsonDecode(response.body);
+    return payload as Map<String, dynamic>;
+  }
+
+  Future<void> updateProfile({String? language}) async {
+    final uri = Uri.parse('$baseUrl/api/v1/user/profile');
+
+    final prefs = <String, dynamic>{};
+    if (language != null) {
+      prefs['language'] = language;
+    }
+
+    final response = await _client.patch(
+      uri,
+      headers: _authHeaders(),
+      body: jsonEncode({'preferences': prefs}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update profile (${response.statusCode}).');
+    }
+  }
 }
