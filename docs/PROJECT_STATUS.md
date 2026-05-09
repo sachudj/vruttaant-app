@@ -43,6 +43,11 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
   - Returns: parsed cards + persistence stats
   - Handles: upsert to DB, error responses
 
+### ✅ Advanced Backend Features
+- [x] User authentication (JWT)
+- [x] User accounts & profiles
+- [x] User preferences (language, sources)
+
 ### ✅ Web Scraping Service
 
 ### ✅ AI Summarization Service
@@ -101,10 +106,7 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [ ] Localization (i18n)
 
 ### ⏳ Advanced Backend Features
-- [ ] User authentication (JWT, OAuth)
-- [ ] User accounts & profiles
 - [ ] Saved articles/bookmarks
-- [ ] User preferences (language, sources)
 - [ ] Search & filtering API
 - [ ] Pagination
 - [ ] Rate limiting
