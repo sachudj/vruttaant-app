@@ -1,0 +1,123 @@
+const fs = require('fs');
+const path = require('path');
+const {
+  fetchNewsCards,
+  summarizeWithLlm
+} = require('../newsIngestionService');
+const {
+  deterministicLlmResponses,
+  createFetchOkJson,
+  createFetchError
+} = require('../../../__tests__/fixtures/llmResponses');
+
+const sampleHtml = fs.readFileSync(
+  path.join(__dirname, '../../../__tests__/fixtures/newsSource.sample.html'),
+  'utf8'
+);
+
+describe('newsIngestionService fixtures and deterministic llm mocks', () => {
+  const originalFetch = global.fetch;
+  const originalLlmApiKey = process.env.LLM_API_KEY;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    process.env.LLM_API_KEY = originalLlmApiKey;
+    jest.restoreAllMocks();
+  });
+
+  it('summarizeWithLlm returns deterministic summary/category for valid JSON response', async () => {
+    process.env.LLM_API_KEY = 'test-key';
+    global.fetch = jest.fn().mockResolvedValue(
+      createFetchOkJson(deterministicLlmResponses.validJson)
+    );
+
+    const result = await summarizeWithLlm(
+      {
+        title: 'Metro expansion approved by city council',
+        summary: 'A transit plan was approved by city officials.',
+        source: 'City Times',
+        url: 'https://example.com/news/metro-expansion'
+      },
+      'en'
+    );
+
+    expect(result).toEqual({
+      aiSummary: 'Public transit expansion moves forward with budget controls and staged delivery milestones.',
+      category: 'Business'
+    });
+  });
+
+  it('summarizeWithLlm falls back predictably when model content is not JSON', async () => {
+    process.env.LLM_API_KEY = 'test-key';
+    global.fetch = jest.fn().mockResolvedValue(
+      createFetchOkJson(deterministicLlmResponses.plainText)
+    );
+
+    const result = await summarizeWithLlm(
+      {
+        title: 'Startup raises funding',
+        summary: 'Funding round announced',
+        source: 'Tech Daily',
+        url: 'https://example.com/news/climate-analytics'
+      },
+      'en'
+    );
+
+    expect(result).toEqual({
+      aiSummary: 'This is plain text from the model and not valid JSON.',
+      category: 'General'
+    });
+  });
+
+  it('summarizeWithLlm returns defaults on provider error response', async () => {
+    process.env.LLM_API_KEY = 'test-key';
+    global.fetch = jest.fn().mockResolvedValue(createFetchError(503));
+
+    const result = await summarizeWithLlm(
+      {
+        title: 'Title',
+        summary: 'Summary',
+        source: 'Source',
+        url: 'https://example.com/news/item'
+      },
+      'en'
+    );
+
+    expect(result).toEqual({
+      aiSummary: '',
+      category: 'General'
+    });
+  });
+
+  it('fetchNewsCards parses deterministic article fixture data', async () => {
+    delete process.env.LLM_API_KEY;
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => sampleHtml
+    });
+
+    const result = await fetchNewsCards('https://example.com/news', 'english', 10);
+
+    expect(result.sourceUrl).toBe('https://example.com/news');
+    expect(result.language).toBe('en');
+    expect(result.totalFound).toBe(2);
+    expect(result.cards).toHaveLength(2);
+
+    expect(result.cards[0]).toMatchObject({
+      title: 'Metro expansion approved by city council',
+      source: 'City Times',
+      url: 'https://example.com/news/metro-expansion',
+      language: 'en',
+      aiSummary: '',
+      category: 'General'
+    });
+
+    expect(result.cards[1]).toMatchObject({
+      title: 'Startup raises funding for climate analytics',
+      source: 'Tech Daily',
+      url: 'https://example.com/news/climate-analytics',
+      language: 'en'
+    });
+  });
+});

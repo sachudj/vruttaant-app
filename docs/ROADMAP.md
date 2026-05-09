@@ -72,7 +72,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] Add backend integration tests for `/api/news/ingest`
 - [x] Add backend integration tests for `/api/news/cards`
 - [x] Add API contract tests for response shape stability
-- [ ] Add test data fixtures and deterministic mocks for LLM responses
+- [x] Add test data fixtures and deterministic mocks for LLM responses
 - [ ] Add minimum coverage threshold gates in CI
 - [ ] Add dependency vulnerability checks and CI fail rules for high severity
 
@@ -125,3 +125,4 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 9, 2026_: Completed D2 integration tests for `/api/v1/news/ingest` using Supertest with mocked ingestion/database boundaries. Covered validation failure (`400`), successful ingest with and without persistence, DB-connected persistence path, and DB-disconnected fallback path. Added app export guard in `index.js` (`require.main === module`) for testability without changing runtime startup behavior. Total tests now 143 passing. Commit: `c49c028`.
 - _May 9, 2026_: Completed D3 integration tests for `/api/v1/news/cards` using Supertest with mocked query chain on `NewsCard.find()`. Covered query validation failure (`400`), DB unavailable behavior (`503`), pagination metadata (`page`, `limit`, `totalPages`, `hasMore`), language normalization, and category filter regex behavior. Total tests now 147 passing. Commit: `fd70a6a`.
 - _May 9, 2026_: Completed D4 API contract tests for response shape stability. Added contract-focused suite for `/api/v1/news/ingest` and `/api/v1/news/cards` covering success payload keys/types and standardized error envelope keys (`success`, `error`, `statusCode`, `message`, `details`, `requestId`) under production-mode error shaping. Total tests now 151 passing. Commit: pending.
+- _May 9, 2026_: Completed D5 with reusable test fixtures and deterministic LLM mocks. Added HTML source fixture and fixed LLM provider response fixtures, then added fixture-driven tests for `summarizeWithLlm` (valid JSON, plain-text fallback, provider error) and `fetchNewsCards` parsing flow. Total tests now 155 passing. Commit: pending.
