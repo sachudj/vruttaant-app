@@ -80,7 +80,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 
 - [x] Define and enforce a strict category taxonomy
 - [x] Add fallback mapping for unknown category labels
-- [ ] Add duplicate detection strategy across sources
+- [x] Add duplicate detection strategy across sources
 - [ ] Add source-level quality rules (title length, URL validity, image availability)
 - [ ] Add audit logs for LLM summary/category generation failures
 - [ ] Add reprocessing job for cards with missing summary/category
@@ -100,7 +100,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] Track D items 2-4 completed
 
 ### Milestone 4: Data Quality at Scale
-- [ ] Track E items 1-6 completed (2/6 done)
+- [ ] Track E items 1-6 completed (3/6 done)
 - [x] Track D items 5-7 completed
 
 ## Session Notes
@@ -128,4 +128,5 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 9, 2026_: Completed D5 with reusable test fixtures and deterministic LLM mocks. Added HTML source fixture and fixed LLM provider response fixtures, then added fixture-driven tests for `summarizeWithLlm` (valid JSON, plain-text fallback, provider error) and `fetchNewsCards` parsing flow. Total tests now 155 passing. Commit: pending.
 - _May 9, 2026_: Completed D6 by enforcing backend Jest global coverage thresholds (statements 70%, branches 60%, functions 70%, lines 70%) and wiring CI backend test job to run coverage mode so threshold violations fail pull requests. Verified coverage run remains green (155/155 tests). Commit: pending.
 - _May 9, 2026_: Completed D7 by adding an explicit backend CI dependency audit gate (`npm audit --audit-level=high`) that fails builds on high/critical vulnerabilities. Added reusable backend script (`security:audit`) and verified local audit currently reports zero vulnerabilities. Commit: b31351f.
-- _May 9, 2026_: Completed E1+E2 together. Created `backend/src/constants/categories.js` with the canonical 10-label taxonomy (Tech, Politics, Sports, Business, World, Health, Entertainment, Science, Education, General) and a keyword-based fallback map covering common LLM-produced variants. Replaced the ad-hoc `normalizeCategory` function in `newsIngestionService.js` with `normalizeToTaxonomy`, enforcing strict taxonomy membership with graceful fallback to 'General'. Added 73 new tests in `__tests__/categories.test.js` covering exact matches (all cases/capitalizations), keyword fallback (33 cases), and empty/unknown/null inputs. Total tests now 228 passing. Commit: pending.
+- _May 9, 2026_: Completed E1+E2 together. Created `backend/src/constants/categories.js` with the canonical 10-label taxonomy (Tech, Politics, Sports, Business, World, Health, Entertainment, Science, Education, General) and a keyword-based fallback map covering common LLM-produced variants. Replaced the ad-hoc `normalizeCategory` function in `newsIngestionService.js` with `normalizeToTaxonomy`, enforcing strict taxonomy membership with graceful fallback to 'General'. Added 73 new tests in `__tests__/categories.test.js` covering exact matches (all cases/capitalizations), keyword fallback (33 cases), and empty/unknown/null inputs. Total tests now 228 passing. Commit: ce9edd4.
+- _May 9, 2026_: Completed E3 cross-source duplicate detection. Added `backend/src/utils/fingerprint.js` with `computeTitleFingerprint(title)` (lowercase, strip punctuation, collapse whitespace, truncate to 120 chars). Added `titleFingerprint` field + `{ titleFingerprint, language }` compound index to `NewsCard` schema. Updated `newsIngestionService.js` to attach fingerprints to every parsed card. Updated ingest controller to query existing fingerprints before bulk-write and skip cards whose fingerprint is already stored in the DB, preventing duplicate stories from different source URLs. Added `dedupSkippedCount` to ingest response. Added 11 fingerprint unit tests and 1 cross-source dedup integration test; updated API contract test for new response shape and card preview fields. Total tests now 240 passing. Commit: pending.

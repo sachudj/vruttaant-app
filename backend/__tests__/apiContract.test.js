@@ -7,13 +7,18 @@ const mockChain = {
   lean: jest.fn()
 };
 
+// Separate lean mock for fingerprint dedup query (returns [] = no existing fingerprints)
+const mockFingerprintChain = {
+  lean: jest.fn().mockResolvedValue([])
+};
+
 jest.mock('../src/services/newsIngestionService', () => ({
   fetchNewsCards: jest.fn()
 }));
 
 jest.mock('../src/models/NewsCard', () => ({
   bulkWrite: jest.fn(),
-  find: jest.fn(() => mockChain),
+  find: jest.fn(),
   countDocuments: jest.fn()
 }));
 
@@ -52,11 +57,18 @@ describe('API contract', () => {
     mockChain.limit.mockReturnValue(mockChain);
     mockChain.lean.mockResolvedValue([]);
 
+    NewsCard.find.mockReturnValue(mockChain);
+
     isDatabaseConnected.mockReturnValue(true);
     NewsCard.countDocuments.mockResolvedValue(0);
   });
 
   it('keeps POST /api/v1/news/ingest success response shape stable', async () => {
+    // For the ingest path, the first find() call is the fingerprint dedup query.
+    NewsCard.find
+      .mockReturnValueOnce(mockFingerprintChain)
+      .mockReturnValue(mockChain);
+
     fetchNewsCards.mockResolvedValue({
       sourceUrl: 'https://example.com/news',
       language: 'en',
@@ -72,6 +84,7 @@ describe('API contract', () => {
           url: 'https://example.com/article',
           language: 'en',
           publishedAt: null,
+          titleFingerprint: 'title',
           rawMetadata: { selectorMatched: true }
         }
       ]
@@ -94,6 +107,7 @@ describe('API contract', () => {
       'language',
       'scrapedCount',
       'persistedCount',
+      'dedupSkippedCount',
       'dbStatus',
       'cardsPreview'
     ]);
@@ -103,6 +117,7 @@ describe('API contract', () => {
     expect(typeof response.body.language).toBe('string');
     expect(typeof response.body.scrapedCount).toBe('number');
     expect(typeof response.body.persistedCount).toBe('number');
+    expect(typeof response.body.dedupSkippedCount).toBe('number');
     expect(typeof response.body.dbStatus).toBe('string');
     expect(Array.isArray(response.body.cardsPreview)).toBe(true);
 
@@ -116,6 +131,7 @@ describe('API contract', () => {
       'url',
       'language',
       'publishedAt',
+      'titleFingerprint',
       'rawMetadata'
     ]);
   });

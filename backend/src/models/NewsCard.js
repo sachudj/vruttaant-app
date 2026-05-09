@@ -47,6 +47,12 @@ const newsCardSchema = new mongoose.Schema(
       type: Date,
       default: Date.now
     },
+    titleFingerprint: {
+      type: String,
+      default: '',
+      trim: true,
+      index: true
+    },
     rawMetadata: {
       type: mongoose.Schema.Types.Mixed,
       default: {}
@@ -59,5 +65,6 @@ const newsCardSchema = new mongoose.Schema(
 
 newsCardSchema.index({ url: 1, language: 1 }, { unique: true });
 newsCardSchema.index({ language: 1, category: 1, scrapedAt: -1 });
+newsCardSchema.index({ titleFingerprint: 1, language: 1 });
 
 module.exports = mongoose.model('NewsCard', newsCardSchema);

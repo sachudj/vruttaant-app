@@ -1,5 +1,6 @@
 const cheerio = require('cheerio');
 const { normalizeToTaxonomy } = require('../constants/categories');
+const { computeTitleFingerprint } = require('../utils/fingerprint');
 
 const DEFAULT_LLM_API_URL = 'https://api.openai.com/v1/chat/completions';
 const DEFAULT_LLM_MODEL = 'gpt-4o-mini';
@@ -225,6 +226,7 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
       source,
       language: normalizedLanguage,
       publishedAt,
+      titleFingerprint: computeTitleFingerprint(title),
       rawMetadata: {
         selectorMatched: true
       }
@@ -263,6 +265,7 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
         source: '',
         language: normalizedLanguage,
         publishedAt: null,
+        titleFingerprint: computeTitleFingerprint(title),
         rawMetadata: {
           selectorMatched: false
         }

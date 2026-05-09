@@ -19,10 +19,36 @@ async function ingestNewsFromUrl(req, res, next) {
     const parsedCards = await fetchNewsCards(url, language, Number(maxItems) || 20);
 
     let persistedCount = 0;
+    let dedupSkippedCount = 0;
     let dbStatus = 'skipped';
 
     if (persist && isDatabaseConnected() && parsedCards.cards.length) {
-      const operations = parsedCards.cards.map((card) => ({
+      // E3: Cross-source duplicate detection.
+      // Cards with the same titleFingerprint + language already in the DB are
+      // considered duplicates of stories we already have (possibly from another
+      // source URL). Fetch existing fingerprints for this language in one query,
+      // then filter before bulk-write so we only upsert genuinely new stories.
+      const incomingFingerprints = parsedCards.cards
+        .map((c) => c.titleFingerprint)
+        .filter(Boolean);
+
+      let existingFingerprints = new Set();
+      if (incomingFingerprints.length) {
+        const existing = await NewsCard.find(
+          { titleFingerprint: { $in: incomingFingerprints }, language: parsedCards.language },
+          { titleFingerprint: 1, _id: 0 }
+        ).lean();
+        existingFingerprints = new Set(existing.map((d) => d.titleFingerprint));
+      }
+
+      // Keep cards whose URL is new OR whose fingerprint is not already stored.
+      // URL-level upsert already handles same-URL re-ingestion; fingerprint check
+      // prevents cross-source story duplication.
+      const deduplicatedCards = parsedCards.cards.filter(
+        (c) => !c.titleFingerprint || !existingFingerprints.has(c.titleFingerprint)
+      );
+
+      const operations = deduplicatedCards.map((card) => ({
         updateOne: {
           filter: { url: card.url, language: card.language },
           update: {
@@ -34,6 +60,7 @@ async function ingestNewsFromUrl(req, res, next) {
               imageUrl: card.imageUrl,
               source: card.source,
               publishedAt: card.publishedAt,
+              titleFingerprint: card.titleFingerprint || '',
               rawMetadata: card.rawMetadata,
               scrapedAt: new Date()
             }
@@ -44,6 +71,7 @@ async function ingestNewsFromUrl(req, res, next) {
 
       const writeResult = await NewsCard.bulkWrite(operations, { ordered: false });
       persistedCount = (writeResult.upsertedCount || 0) + (writeResult.modifiedCount || 0);
+      dedupSkippedCount = parsedCards.cards.length - deduplicatedCards.length;
       dbStatus = 'saved';
     } else if (persist && !isDatabaseConnected()) {
       dbStatus = 'not-connected';
@@ -55,6 +83,7 @@ async function ingestNewsFromUrl(req, res, next) {
       language: parsedCards.language,
       scrapedCount: parsedCards.totalFound,
       persistedCount,
+      dedupSkippedCount,
       dbStatus,
       cardsPreview: parsedCards.cards.slice(0, 5)
     });
