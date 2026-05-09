@@ -74,7 +74,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] Add API contract tests for response shape stability
 - [x] Add test data fixtures and deterministic mocks for LLM responses
 - [x] Add minimum coverage threshold gates in CI
-- [ ] Add dependency vulnerability checks and CI fail rules for high severity
+- [x] Add dependency vulnerability checks and CI fail rules for high severity
 
 ## Track E: Data Governance & Feed Quality
 
@@ -101,7 +101,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 
 ### Milestone 4: Data Quality at Scale
 - [ ] Track E items 1-6 completed
-- [ ] Track D items 5-7 completed
+- [x] Track D items 5-7 completed
 
 ## Session Notes
 
@@ -127,3 +127,4 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 9, 2026_: Completed D4 API contract tests for response shape stability. Added contract-focused suite for `/api/v1/news/ingest` and `/api/v1/news/cards` covering success payload keys/types and standardized error envelope keys (`success`, `error`, `statusCode`, `message`, `details`, `requestId`) under production-mode error shaping. Total tests now 151 passing. Commit: pending.
 - _May 9, 2026_: Completed D5 with reusable test fixtures and deterministic LLM mocks. Added HTML source fixture and fixed LLM provider response fixtures, then added fixture-driven tests for `summarizeWithLlm` (valid JSON, plain-text fallback, provider error) and `fetchNewsCards` parsing flow. Total tests now 155 passing. Commit: pending.
 - _May 9, 2026_: Completed D6 by enforcing backend Jest global coverage thresholds (statements 70%, branches 60%, functions 70%, lines 70%) and wiring CI backend test job to run coverage mode so threshold violations fail pull requests. Verified coverage run remains green (155/155 tests). Commit: pending.
+- _May 9, 2026_: Completed D7 by adding an explicit backend CI dependency audit gate (`npm audit --audit-level=high`) that fails builds on high/critical vulnerabilities. Added reusable backend script (`security:audit`) and verified local audit currently reports zero vulnerabilities. Commit: pending.
