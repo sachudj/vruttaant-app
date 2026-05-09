@@ -2,14 +2,18 @@ const { isDatabaseConnected } = require('../config/database');
 
 function getReadinessStatus(options = {}) {
   const dbCheck = options.isDatabaseConnected || isDatabaseConnected;
+  const shutdownCheck = options.isShuttingDown || (() => false);
   const nowIso = options.nowIso || (() => new Date().toISOString());
   const dbConnected = dbCheck();
+  const shuttingDown = shutdownCheck();
+  const ready = dbConnected && !shuttingDown;
 
   return {
-    ready: dbConnected,
-    status: dbConnected ? 'ready' : 'not_ready',
+    ready,
+    status: ready ? 'ready' : 'not_ready',
     checks: {
-      database: dbConnected ? 'up' : 'down'
+      database: dbConnected ? 'up' : 'down',
+      shutdown: shuttingDown ? 'in_progress' : 'idle'
     },
     timestamp: nowIso()
   };

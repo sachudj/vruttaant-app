@@ -5,6 +5,7 @@ describe('readiness', () => {
     it('returns ready payload when database is connected', () => {
       const result = getReadinessStatus({
         isDatabaseConnected: () => true,
+        isShuttingDown: () => false,
         nowIso: () => '2026-05-09T12:00:00.000Z'
       });
 
@@ -12,7 +13,8 @@ describe('readiness', () => {
         ready: true,
         status: 'ready',
         checks: {
-          database: 'up'
+          database: 'up',
+          shutdown: 'idle'
         },
         timestamp: '2026-05-09T12:00:00.000Z'
       });
@@ -21,6 +23,7 @@ describe('readiness', () => {
     it('returns not_ready payload when database is disconnected', () => {
       const result = getReadinessStatus({
         isDatabaseConnected: () => false,
+        isShuttingDown: () => false,
         nowIso: () => '2026-05-09T12:00:00.000Z'
       });
 
@@ -28,7 +31,26 @@ describe('readiness', () => {
         ready: false,
         status: 'not_ready',
         checks: {
-          database: 'down'
+          database: 'down',
+          shutdown: 'idle'
+        },
+        timestamp: '2026-05-09T12:00:00.000Z'
+      });
+    });
+
+    it('returns not_ready when shutdown is in progress', () => {
+      const result = getReadinessStatus({
+        isDatabaseConnected: () => true,
+        isShuttingDown: () => true,
+        nowIso: () => '2026-05-09T12:00:00.000Z'
+      });
+
+      expect(result).toEqual({
+        ready: false,
+        status: 'not_ready',
+        checks: {
+          database: 'up',
+          shutdown: 'in_progress'
         },
         timestamp: '2026-05-09T12:00:00.000Z'
       });
@@ -39,6 +61,7 @@ describe('readiness', () => {
     it('returns 200 when app is ready', () => {
       const handler = createReadyHandler({
         isDatabaseConnected: () => true,
+        isShuttingDown: () => false,
         nowIso: () => '2026-05-09T12:00:00.000Z'
       });
 
@@ -54,7 +77,8 @@ describe('readiness', () => {
         status: 'ready',
         service: 'vruttaant-backend',
         checks: {
-          database: 'up'
+          database: 'up',
+          shutdown: 'idle'
         },
         timestamp: '2026-05-09T12:00:00.000Z'
       });
@@ -63,6 +87,7 @@ describe('readiness', () => {
     it('returns 503 when app is not ready', () => {
       const handler = createReadyHandler({
         isDatabaseConnected: () => false,
+        isShuttingDown: () => false,
         nowIso: () => '2026-05-09T12:00:00.000Z'
       });
 
@@ -78,7 +103,8 @@ describe('readiness', () => {
         status: 'not_ready',
         service: 'vruttaant-backend',
         checks: {
-          database: 'down'
+          database: 'down',
+          shutdown: 'idle'
         },
         timestamp: '2026-05-09T12:00:00.000Z'
       });

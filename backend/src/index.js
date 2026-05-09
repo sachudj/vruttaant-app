@@ -9,10 +9,21 @@ const { connectDatabase, isDatabaseConnected } = require('./config/database');
 const apiRouter = require('./routes/apiRouter');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const { requestLogger } = require('./middleware/requestLogger');
-const { readyHandler } = require('./health/readiness');
+const { createReadyHandler } = require('./health/readiness');
+const {
+  createInFlightRequestTracker,
+  createGracefulShutdown
+} = require('./server/gracefulShutdown');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
+const GRACEFUL_SHUTDOWN_TIMEOUT_MS = Number(process.env.GRACEFUL_SHUTDOWN_TIMEOUT_MS) || 10000;
+const inFlightRequests = createInFlightRequestTracker();
+
+const readyHandler = createReadyHandler({
+  isDatabaseConnected,
+  isShuttingDown: inFlightRequests.isShuttingDown
+});
 
 function buildAllowedOrigins() {
   const envOrigins = String(process.env.CORS_ALLOWED_ORIGINS || '')
@@ -76,6 +87,7 @@ app.use(express.json({
   limit: process.env.JSON_PAYLOAD_LIMIT || '10kb'
 }));
 app.use(requestLogger);
+app.use(inFlightRequests.middleware);
 app.use('/api', apiLimiter);
 app.use('/api', apiRouter);
 
@@ -104,32 +116,50 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 function startServer(preferredPort) {
-  const server = app.listen(preferredPort, () => {
-    console.log(`Server running on http://localhost:${preferredPort}`);
-  });
+  return new Promise((resolve, reject) => {
+    const server = app.listen(preferredPort, () => {
+      console.log(`Server running on http://localhost:${preferredPort}`);
+      resolve(server);
+    });
 
-  server.on('error', (error) => {
-    if (error.code === 'EADDRINUSE') {
-      const nextPort = preferredPort + 1;
-      console.log(`Port ${preferredPort} is in use, retrying on ${nextPort}...`);
-      startServer(nextPort);
-      return;
-    }
+    server.on('error', (error) => {
+      if (error.code === 'EADDRINUSE') {
+        const nextPort = preferredPort + 1;
+        console.log(`Port ${preferredPort} is in use, retrying on ${nextPort}...`);
+        resolve(startServer(nextPort));
+        return;
+      }
 
-    throw error;
+      reject(error);
+    });
   });
 }
 
 async function bootstrap() {
   await connectDatabase();
-  startServer(PORT);
-}
+  const server = await startServer(PORT);
 
-process.on('SIGINT', async () => {
-  if (mongoose.connection.readyState === 1) {
-    await mongoose.connection.close();
-  }
-  process.exit(0);
-});
+  const gracefulShutdown = createGracefulShutdown({
+    server,
+    startShutdown: inFlightRequests.startShutdown,
+    getActiveRequests: inFlightRequests.getActiveRequests,
+    closeDatabase: async () => {
+      if (mongoose.connection.readyState === 1) {
+        await mongoose.connection.close();
+      }
+    },
+    timeoutMs: GRACEFUL_SHUTDOWN_TIMEOUT_MS,
+    logger: (message) => console.log(message),
+    exit: (code) => process.exit(code)
+  });
+
+  process.on('SIGINT', () => {
+    void gracefulShutdown('SIGINT');
+  });
+
+  process.on('SIGTERM', () => {
+    void gracefulShutdown('SIGTERM');
+  });
+}
 
 bootstrap();

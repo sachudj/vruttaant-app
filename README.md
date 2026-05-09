@@ -90,8 +90,8 @@ vruttaant-app/
 
 ## Project Status
 
-**Test Coverage**: 121/121 tests passing ✅  
-**Overall Progress**: 18/20 items complete (90%)
+**Test Coverage**: 126/126 tests passing ✅  
+**Overall Progress**: 19/20 items complete (95%)
 
 **By Track:**
 - **Track A** (Secure API Baseline): 9/9 (100%) ✅
@@ -103,12 +103,13 @@ vruttaant-app/
   - ✅ B4: Auth middleware for protected routes
   - ✅ B5: Bookmark endpoints with ownership scoping
   - ✅ B6: Role-based access control with admin endpoints
-- **Track C** (Observability): 3/7 (43%) 🔄
+- **Track C** (Observability): 4/7 (57%) 🔄
   - ✅ C1: Structured JSON request logging with request IDs
   - ✅ C2: Request/response timing logs (`durationMs`) for API calls
   - ✅ C3: Readiness probe endpoint at `/ready`
+  - ✅ C4: Graceful shutdown with in-flight request draining and DB cleanup
 - **Track D** (Testing): 1/7 (14%) 🔄
-  - ✅ D1: 121 unit tests (ingestion, auth, bookmarks, RBAC, observability)
+  - ✅ D1: 126 unit tests (ingestion, auth, bookmarks, RBAC, observability)
   - ⏳ D2-D7: Integration tests, contract tests, E2E tests
 - **Track E** (Data Governance): 0/6 (0%) ⏳
 - **Track F** (Feature Milestones): 0/4 (0%) ⏳
