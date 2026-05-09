@@ -64,6 +64,8 @@ class NewsApiService {
   Future<List<NewsItem>> fetchCards({
     String language = 'en',
     String? category,
+    String? q,
+    String sort = 'latest',
     int page = 1,
     int limit = 20,
   }) async {
@@ -75,6 +77,16 @@ class NewsApiService {
 
     if ((category ?? '').trim().isNotEmpty) {
       query['category'] = category!.trim();
+    }
+
+    final trimmedQuery = (q ?? '').trim();
+    if (trimmedQuery.isNotEmpty) {
+      query['q'] = trimmedQuery;
+    }
+
+    final normalizedSort = sort.trim().toLowerCase();
+    if (normalizedSort.isNotEmpty) {
+      query['sort'] = normalizedSort;
     }
 
     final uri = Uri.parse(

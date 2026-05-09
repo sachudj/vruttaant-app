@@ -108,4 +108,46 @@ void main() {
     // Verify sheet closed
     expect(find.text('Language Preference'), findsNothing);
   });
+
+  testWidgets('opens search sheet and applies query', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        newsLoader: (page) async {
+          return const [
+            NewsItem(
+              title: 'Market Story',
+              summary: 'Summary market',
+              imageUrl: 'https://example.com/market.jpg',
+              source: 'Source Market',
+              category: 'Business',
+            ),
+          ];
+        },
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final searchButton = find.byIcon(Icons.manage_search);
+    expect(searchButton, findsOneWidget);
+    await tester.tap(searchButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Search & Sort'), findsOneWidget);
+    expect(find.byKey(const ValueKey('search-query-input')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('search-query-input')),
+      'market',
+    );
+    await tester.tap(find.text('Relevance'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Search & Sort'), findsNothing);
+    expect(find.text('Market Story'), findsOneWidget);
+  });
 }

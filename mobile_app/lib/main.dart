@@ -69,6 +69,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   int _currentPage = 1;
   String _language = 'en';
   String? _selectedCategory;
+  String _searchQuery = '';
+  String _sort = 'latest';
 
   @override
   void initState() {
@@ -102,6 +104,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     return _newsApiService.fetchCards(
       language: _language,
       category: _selectedCategory,
+      q: _searchQuery.isEmpty ? null : _searchQuery,
+      sort: _sort,
       page: page,
       limit: 20,
     );
@@ -220,6 +224,138 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       _selectedCategory = category;
     });
 
+    await _loadInitialFeed();
+  }
+
+  Future<void> _openSearchSheet() async {
+    var pendingQuery = _searchQuery;
+    var pendingSort = _sort;
+
+    final result = await showModalBottomSheet<Map<String, String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF121212),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 12,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Search & Sort',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        key: const ValueKey('search-query-input'),
+                        initialValue: pendingQuery,
+                        onChanged: (value) {
+                          pendingQuery = value;
+                        },
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Search by title, summary, source...',
+                          hintStyle: const TextStyle(color: Colors.white54),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.08),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        textInputAction: TextInputAction.search,
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          ChoiceChip(
+                            label: const Text('Latest'),
+                            selected: pendingSort == 'latest',
+                            onSelected: (_) {
+                              setModalState(() {
+                                pendingSort = 'latest';
+                              });
+                            },
+                          ),
+                          ChoiceChip(
+                            label: const Text('Relevance'),
+                            selected: pendingSort == 'relevance',
+                            onSelected: (_) {
+                              setModalState(() {
+                                pendingSort = 'relevance';
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(
+                                context,
+                              ).pop({'q': '', 'sort': 'latest'});
+                            },
+                            child: const Text('Clear'),
+                          ),
+                          const Spacer(),
+                          FilledButton(
+                            onPressed: () {
+                              Navigator.of(context).pop({
+                                'q': pendingQuery.trim(),
+                                'sort': pendingSort,
+                              });
+                            },
+                            child: const Text('Apply'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    final nextQuery = (result['q'] ?? '').trim();
+    final nextSort = (result['sort'] ?? 'latest').trim().toLowerCase();
+
+    if (nextQuery == _searchQuery && nextSort == _sort) {
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _searchQuery = nextQuery;
+      _sort = (nextSort == 'relevance') ? 'relevance' : 'latest';
+    });
     await _loadInitialFeed();
   }
 
@@ -632,6 +768,12 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        IconButton.filledTonal(
+                          onPressed: _openSearchSheet,
+                          icon: const Icon(Icons.manage_search),
+                          tooltip: 'Search & Sort',
+                        ),
+                        const SizedBox(width: 8),
                         IconButton.filledTonal(
                           onPressed: _openSettingsSheet,
                           icon: const Icon(Icons.language),
