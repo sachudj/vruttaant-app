@@ -20,6 +20,7 @@ const {
   metricsMiddleware,
   metricsHandler
 } = require('./observability/metrics');
+const { startNewsSyncJob, stopNewsSyncJob } = require('./jobs/newsSyncJob');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -156,11 +157,14 @@ async function bootstrap() {
   await connectDatabase();
   const server = await startServer(PORT);
 
+  startNewsSyncJob();
+
   const gracefulShutdown = createGracefulShutdown({
     server,
     startShutdown: inFlightRequests.startShutdown,
     getActiveRequests: inFlightRequests.getActiveRequests,
     closeDatabase: async () => {
+      stopNewsSyncJob();
       if (mongoose.connection.readyState === 1) {
         await mongoose.connection.close();
       }

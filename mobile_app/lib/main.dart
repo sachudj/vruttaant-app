@@ -42,12 +42,6 @@ class NewsFeedPage extends StatefulWidget {
 }
 
 class _NewsFeedPageState extends State<NewsFeedPage> {
-  static const List<String> _sourceUrls = [
-    'https://www.bbc.com/news',
-    'https://www.reuters.com/world/',
-    'https://www.aljazeera.com/news/',
-  ];
-
   final NewsApiService _newsApiService = NewsApiService();
   final PageController _pageController = PageController();
   final List<NewsItem> _feed = [];
@@ -118,17 +112,6 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
 
     try {
       var firstPage = await _fetchNewsPage(1);
-
-      if (firstPage.isEmpty) {
-        for (final sourceUrl in _sourceUrls) {
-          await _newsApiService.ingestNews(
-            sourceUrl: sourceUrl,
-            language: _language,
-            maxItems: 20,
-          );
-        }
-        firstPage = await _fetchNewsPage(1);
-      }
 
       if (firstPage.isEmpty) {
         throw Exception('No stories available for the selected filters yet.');
