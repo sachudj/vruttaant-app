@@ -120,4 +120,40 @@ describe('newsIngestionService fixtures and deterministic llm mocks', () => {
       language: 'en'
     });
   });
+
+  it('fetchNewsCards filters out cards that fail source quality rules', async () => {
+    delete process.env.LLM_API_KEY;
+
+    const qualityFixtureHtml = `
+      <html><body>
+        <article>
+          <h2>Short title</h2>
+          <a href="/news/short">Read</a>
+          <img src="/images/short.jpg" />
+        </article>
+        <article>
+          <h2>This is a sufficiently long title but has no image url</h2>
+          <a href="/news/no-image">Read</a>
+        </article>
+        <article>
+          <h2>This is a sufficiently long title with valid url and image</h2>
+          <a href="/news/valid">Read</a>
+          <img src="/images/valid.jpg" />
+        </article>
+      </body></html>
+    `;
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => qualityFixtureHtml
+    });
+
+    const result = await fetchNewsCards('https://example.com/news', 'en', 10);
+
+    expect(result.totalFound).toBe(1);
+    expect(result.cards).toHaveLength(1);
+    expect(result.cards[0].title).toBe('This is a sufficiently long title with valid url and image');
+    expect(result.cards[0].url).toBe('https://example.com/news/valid');
+    expect(result.cards[0].imageUrl).toBe('https://example.com/images/valid.jpg');
+  });
 });

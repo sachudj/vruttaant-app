@@ -4,6 +4,7 @@ const {
   parseDate,
   resolveUrl,
   cleanText,
+  validateCardQuality,
   toLanguageLabel
 } = require('../newsIngestionService');
 
@@ -160,5 +161,50 @@ describe('newsIngestionService - Language Labels', () => {
   test('returns English for unrecognized codes', () => {
     expect(toLanguageLabel('xx')).toBe('English');
     expect(toLanguageLabel(null)).toBe('English');
+  });
+});
+
+describe('newsIngestionService - Source Quality Rules', () => {
+  test('passes card with valid title length, URL, and image URL', () => {
+    const result = validateCardQuality({
+      title: 'Metro expansion approved by city council after review',
+      url: 'https://example.com/news/metro-expansion',
+      imageUrl: 'https://example.com/images/metro.jpg'
+    });
+
+    expect(result).toEqual({ pass: true, reasons: [] });
+  });
+
+  test('fails card with short title', () => {
+    const result = validateCardQuality({
+      title: 'Short title',
+      url: 'https://example.com/news/item',
+      imageUrl: 'https://example.com/images/item.jpg'
+    });
+
+    expect(result.pass).toBe(false);
+    expect(result.reasons).toContain('title_length');
+  });
+
+  test('fails card with invalid URL', () => {
+    const result = validateCardQuality({
+      title: 'A sufficiently long title for this quality test case',
+      url: 'notaurl',
+      imageUrl: 'https://example.com/images/item.jpg'
+    });
+
+    expect(result.pass).toBe(false);
+    expect(result.reasons).toContain('invalid_url');
+  });
+
+  test('fails card with missing image URL', () => {
+    const result = validateCardQuality({
+      title: 'A sufficiently long title for this quality test case',
+      url: 'https://example.com/news/item',
+      imageUrl: ''
+    });
+
+    expect(result.pass).toBe(false);
+    expect(result.reasons).toContain('missing_image');
   });
 });

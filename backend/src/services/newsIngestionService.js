@@ -44,6 +44,11 @@ const LANGUAGE_LABELS = {
   ml: 'Malayalam'
 };
 
+const QUALITY_RULES = {
+  minTitleLength: 25,
+  maxTitleLength: 180
+};
+
 function parseDate(value) {
   if (!value) {
     return null;
@@ -80,6 +85,42 @@ function toLanguageLabel(language) {
 
 function normalizeCategory(category) {
   return normalizeToTaxonomy(category);
+}
+
+function hasValidHttpUrl(value) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function validateCardQuality(card) {
+  const title = cleanText(card?.title);
+  const url = cleanText(card?.url);
+  const imageUrl = cleanText(card?.imageUrl);
+  const reasons = [];
+
+  if (
+    title.length < QUALITY_RULES.minTitleLength ||
+    title.length > QUALITY_RULES.maxTitleLength
+  ) {
+    reasons.push('title_length');
+  }
+
+  if (!hasValidHttpUrl(url)) {
+    reasons.push('invalid_url');
+  }
+
+  if (!imageUrl || !hasValidHttpUrl(imageUrl)) {
+    reasons.push('missing_image');
+  }
+
+  return {
+    pass: reasons.length === 0,
+    reasons
+  };
 }
 
 async function summarizeWithLlm(card, language) {
@@ -212,6 +253,11 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
       return;
     }
 
+    const quality = validateCardQuality({ title, url: link, imageUrl });
+    if (!quality.pass) {
+      return;
+    }
+
     const key = `${title.toLowerCase()}::${link}`;
     if (seenKeys.has(key)) {
       return;
@@ -228,7 +274,8 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
       publishedAt,
       titleFingerprint: computeTitleFingerprint(title),
       rawMetadata: {
-        selectorMatched: true
+        selectorMatched: true,
+        qualityChecks: quality.reasons
       }
     });
   });
@@ -247,7 +294,8 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
         return;
       }
 
-      if (title.length < 25) {
+      const quality = validateCardQuality({ title, url: link, imageUrl: '' });
+      if (!quality.pass) {
         return;
       }
 
@@ -267,7 +315,8 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
         publishedAt: null,
         titleFingerprint: computeTitleFingerprint(title),
         rawMetadata: {
-          selectorMatched: false
+          selectorMatched: false,
+          qualityChecks: quality.reasons
         }
       });
     });
@@ -308,6 +357,7 @@ module.exports = {
   parseDate,
   resolveUrl,
   cleanText,
+  validateCardQuality,
   toLanguageLabel,
   summarizeWithLlm
 };

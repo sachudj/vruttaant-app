@@ -90,8 +90,8 @@ vruttaant-app/
 
 ## Project Status
 
-**Test Coverage**: 240/240 tests passing ✅  
-**Overall Progress**: 32/39 items complete (82%)
+**Test Coverage**: 245/245 tests passing ✅  
+**Overall Progress**: 33/39 items complete (85%)
 
 **By Track:**
 - **Track A** (Secure API Baseline): 9/9 (100%) ✅
@@ -119,10 +119,11 @@ vruttaant-app/
   - ✅ D5: Test fixtures and deterministic LLM response mocks
   - ✅ D6: CI coverage threshold gates (Jest global coverage minimums)
   - ✅ D7: Dependency vulnerability checks with CI fail-on-high rule
-- **Track E** (Data Governance): 3/6 (50%) 🔄
+- **Track E** (Data Governance): 4/6 (67%) 🔄
   - ✅ E1: Strict 10-label category taxonomy (`src/constants/categories.js`)
   - ✅ E2: Keyword-based fallback mapping for LLM category variants
   - ✅ E3: Cross-source duplicate detection via title fingerprint (`src/utils/fingerprint.js`)
+  - ✅ E4: Source-level quality rules (title length, URL validity, image availability)
 - **Track F** (Feature Milestones): 0/4 (0%) ⏳
 
 For detailed roadmap, see [docs/ROADMAP.md](./docs/ROADMAP.md).
