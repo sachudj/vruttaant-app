@@ -1,6 +1,3 @@
-const { normalizeToTaxonomy } = require('../constants/categories');
-const { SUPPORTED_LANGUAGE_ALIASES } = require('../services/newsIngestionService');
-
 function validateProfileUpdate(req, res, next) {
   const { preferences } = req.body;
 
