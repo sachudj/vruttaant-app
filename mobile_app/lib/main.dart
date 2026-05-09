@@ -67,7 +67,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   bool _isBookmarkSheetLoading = false;
   String? _errorMessage;
   int _currentPage = 1;
-  final String _language = 'en';
+  String _language = 'en';
   String? _selectedCategory;
 
   @override
@@ -295,6 +295,68 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text('$error')));
     }
+  }
+
+  Future<void> _openSettingsSheet() async {
+    final selectedLanguage = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: const Color(0xFF121212),
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                const Text(
+                  'Language Preference',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Divider(color: Colors.white24, height: 1),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      _buildLanguageTile(context, 'en', 'English'),
+                      _buildLanguageTile(context, 'hi', 'Hindi'),
+                      _buildLanguageTile(context, 'bn', 'Bengali'),
+                      _buildLanguageTile(context, 'mr', 'Marathi'),
+                      _buildLanguageTile(context, 'te', 'Telugu'),
+                      _buildLanguageTile(context, 'ta', 'Tamil'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedLanguage != null && selectedLanguage != _language) {
+      if (!mounted) return;
+      setState(() {
+        _language = selectedLanguage;
+        // Optionally clear bookmarks since they might be language specific,
+        // but for now, we'll keep them as is and just reload the feed.
+      });
+      await _loadInitialFeed();
+    }
+  }
+
+  Widget _buildLanguageTile(BuildContext context, String code, String name) {
+    return ListTile(
+      title: Text(name, style: const TextStyle(color: Colors.white)),
+      trailing: _language == code
+          ? const Icon(Icons.check, color: Colors.indigoAccent)
+          : null,
+      onTap: () => Navigator.of(context).pop(code),
+    );
   }
 
   Future<void> _openBookmarksSheet() async {
@@ -547,18 +609,31 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                   alignment: Alignment.topRight,
                   child: Padding(
                     padding: const EdgeInsets.only(right: 8, top: 8),
-                    child: IconButton.filledTonal(
-                      onPressed: _isBookmarkSheetLoading
-                          ? null
-                          : _openBookmarksSheet,
-                      icon: _isBookmarkSheetLoading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.bookmarks_outlined),
-                      tooltip: 'Bookmarks',
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton.filledTonal(
+                          onPressed: _openSettingsSheet,
+                          icon: const Icon(Icons.language),
+                          tooltip: 'Language Preferences',
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          onPressed: _isBookmarkSheetLoading
+                              ? null
+                              : _openBookmarksSheet,
+                          icon: _isBookmarkSheetLoading
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.bookmarks_outlined),
+                          tooltip: 'Bookmarks',
+                        ),
+                      ],
                     ),
                   ),
                 ),

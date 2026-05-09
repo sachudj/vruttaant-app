@@ -68,4 +68,44 @@ void main() {
 
     expect(find.text('Story Three'), findsOneWidget);
   });
+
+  testWidgets('opens language preference settings and selects Hindi', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        newsLoader: (page) async {
+          return const [
+            NewsItem(
+              title: 'Story Localized',
+              summary: 'Summary local',
+              imageUrl: 'https://example.com/loc.jpg',
+              source: 'Source Loc',
+              category: 'General',
+            ),
+          ];
+        },
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.text('Story Localized'), findsOneWidget);
+
+    // Find and tap Language Preferences button
+    final langButton = find.byIcon(Icons.language);
+    expect(langButton, findsOneWidget);
+    await tester.tap(langButton);
+    await tester.pumpAndSettle();
+
+    // Verify sheet opened
+    expect(find.text('Language Preference'), findsOneWidget);
+    expect(find.text('Hindi'), findsOneWidget);
+
+    // Tap Hindi
+    await tester.tap(find.text('Hindi'));
+    await tester.pumpAndSettle();
+
+    // Verify sheet closed
+    expect(find.text('Language Preference'), findsNothing);
+  });
 }
