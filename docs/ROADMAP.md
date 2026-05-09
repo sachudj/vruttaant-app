@@ -70,7 +70,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 
 - [x] Add backend unit tests for ingestion parsing and category normalization
 - [x] Add backend integration tests for `/api/news/ingest`
-- [ ] Add backend integration tests for `/api/news/cards`
+- [x] Add backend integration tests for `/api/news/cards`
 - [ ] Add API contract tests for response shape stability
 - [ ] Add test data fixtures and deterministic mocks for LLM responses
 - [ ] Add minimum coverage threshold gates in CI
@@ -89,7 +89,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 
 ### Milestone 1: Secure API Baseline
 - [x] All Track A items 1-9 completed
-- [x] Track D item 1 completed (143 unit/integration tests passing)
+- [x] Track D item 1 completed (147 unit/integration tests passing)
 
 ### Milestone 2: Authenticated User Flows
 - [x] All Track B items 1-6 completed
@@ -123,3 +123,4 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 9, 2026_: Completed C6 metrics export. Added Prometheus-compatible `/metrics` endpoint with default process metrics and custom HTTP metrics (`vruttaant_http_requests_total`, `vruttaant_http_request_duration_seconds`, `vruttaant_http_errors_total`) labeled by method/path/status. Added metrics middleware + unit tests and extended smoke checks to validate metrics output (total 137 passing). Commit: `ea94cb4`.
 - _May 9, 2026_: Completed C7 alerting rules. Added Prometheus alert rule spec for backend uptime (`VruttaantBackendDown`), 5xx spike detection (`VruttaantHigh5xxRate`), and DB disconnect (`VruttaantDatabaseDisconnected`) in `docs/alerts/vruttaant-alert-rules.yml` plus runbook guidance in `docs/ALERTING.md`. Added `vruttaant_database_connected` gauge to metrics export to support DB connectivity alerting and extended metrics tests/smoke checks (total 139 passing). Commit: `9a05322`.
 - _May 9, 2026_: Completed D2 integration tests for `/api/v1/news/ingest` using Supertest with mocked ingestion/database boundaries. Covered validation failure (`400`), successful ingest with and without persistence, DB-connected persistence path, and DB-disconnected fallback path. Added app export guard in `index.js` (`require.main === module`) for testability without changing runtime startup behavior. Total tests now 143 passing. Commit: pending.
+- _May 9, 2026_: Completed D3 integration tests for `/api/v1/news/cards` using Supertest with mocked query chain on `NewsCard.find()`. Covered query validation failure (`400`), DB unavailable behavior (`503`), pagination metadata (`page`, `limit`, `totalPages`, `hasMore`), language normalization, and category filter regex behavior. Total tests now 147 passing. Commit: pending.
