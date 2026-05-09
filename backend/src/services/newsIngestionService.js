@@ -1,4 +1,5 @@
 const cheerio = require('cheerio');
+const { normalizeToTaxonomy } = require('../constants/categories');
 
 const DEFAULT_LLM_API_URL = 'https://api.openai.com/v1/chat/completions';
 const DEFAULT_LLM_MODEL = 'gpt-4o-mini';
@@ -77,21 +78,7 @@ function toLanguageLabel(language) {
 }
 
 function normalizeCategory(category) {
-  const raw = cleanText(category);
-  if (!raw) {
-    return 'General';
-  }
-
-  const compact = raw.replace(/[^a-zA-Z\s/-]/g, '').trim();
-  if (!compact) {
-    return 'General';
-  }
-
-  return compact
-    .split(/\s+/)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(' ')
-    .slice(0, 40);
+  return normalizeToTaxonomy(category);
 }
 
 async function summarizeWithLlm(card, language) {

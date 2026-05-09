@@ -37,8 +37,9 @@ describe('newsIngestionService - Category Normalization', () => {
     expect(normalizeCategory('sports')).toBe('Sports');
   });
 
-  test('capitalizes multi-word categories', () => {
-    expect(normalizeCategory('world news')).toBe('World News');
+  test('maps multi-word categories containing a taxonomy keyword', () => {
+    // "world news" contains keyword "world" → canonical "World"
+    expect(normalizeCategory('world news')).toBe('World');
   });
 
   test('defaults to General for empty input', () => {
@@ -46,17 +47,17 @@ describe('newsIngestionService - Category Normalization', () => {
     expect(normalizeCategory(null)).toBe('General');
   });
 
-  test('removes most special characters', () => {
-    expect(normalizeCategory('tech & science')).toBe('Tech Science');
-    expect(normalizeCategory('arts@culture')).toBe('Artsculture');
+  test('maps keyword-matching strings to taxonomy labels', () => {
+    // "tech & science" matches "tech" keyword → "Tech"
+    expect(normalizeCategory('tech & science')).toBe('Tech');
+    // "artsculture" has no taxonomy keyword → General
+    expect(normalizeCategory('arts@culture')).toBe('General');
   });
 
-  test('preserves slashes and dashes in output', () => {
-    const result1 = normalizeCategory('food/lifestyle');
-    expect(result1).toMatch(/[Ff]ood/);
-    
-    const result2 = normalizeCategory('mother-child');
-    expect(result2).toMatch(/[Mm]other/);
+  test('maps strings containing taxonomy keywords regardless of surrounding chars', () => {
+    // "food/lifestyle" and "mother-child" have no taxonomy keyword → General
+    expect(normalizeCategory('food/lifestyle')).toBe('General');
+    expect(normalizeCategory('mother-child')).toBe('General');
   });
 
   test('truncates to 40 characters', () => {
