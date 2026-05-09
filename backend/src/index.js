@@ -179,4 +179,12 @@ async function bootstrap() {
   });
 }
 
-bootstrap();
+if (require.main === module) {
+  bootstrap();
+}
+
+module.exports = {
+  app,
+  startServer,
+  bootstrap
+};

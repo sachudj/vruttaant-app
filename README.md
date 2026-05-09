@@ -90,7 +90,7 @@ vruttaant-app/
 
 ## Project Status
 
-**Test Coverage**: 139/139 tests passing ✅  
+**Test Coverage**: 143/143 tests passing ✅  
 **Overall Progress**: 20/20 items complete (100%)
 
 **By Track:**
@@ -111,9 +111,10 @@ vruttaant-app/
   - ✅ C5: External error tracking integration (Sentry, optional via env)
   - ✅ C6: Metrics export endpoint (`/metrics`) with latency/error counters
   - ✅ C7: Alert rules for uptime, 5xx spikes, and DB disconnects
-- **Track D** (Testing): 1/7 (14%) 🔄
-  - ✅ D1: 139 unit tests (ingestion, auth, bookmarks, RBAC, observability)
-  - ⏳ D2-D7: Integration tests, contract tests, E2E tests
+- **Track D** (Testing): 2/7 (29%) 🔄
+  - ✅ D1: 143 tests (ingestion, auth, bookmarks, RBAC, observability)
+  - ✅ D2: Integration tests for `/api/v1/news/ingest`
+  - ⏳ D3-D7: More integration tests, contract tests, E2E tests
 - **Track E** (Data Governance): 0/6 (0%) ⏳
 - **Track F** (Feature Milestones): 0/4 (0%) ⏳
 

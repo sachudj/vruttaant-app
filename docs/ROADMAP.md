@@ -69,7 +69,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 ## Track D: Testing & Quality Gates
 
 - [x] Add backend unit tests for ingestion parsing and category normalization
-- [ ] Add backend integration tests for `/api/news/ingest`
+- [x] Add backend integration tests for `/api/news/ingest`
 - [ ] Add backend integration tests for `/api/news/cards`
 - [ ] Add API contract tests for response shape stability
 - [ ] Add test data fixtures and deterministic mocks for LLM responses
@@ -89,7 +89,7 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 
 ### Milestone 1: Secure API Baseline
 - [x] All Track A items 1-9 completed
-- [x] Track D item 1 completed (139 unit tests passing)
+- [x] Track D item 1 completed (143 unit/integration tests passing)
 
 ### Milestone 2: Authenticated User Flows
 - [x] All Track B items 1-6 completed
@@ -121,4 +121,5 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 9, 2026_: Completed C4 graceful shutdown. Added in-flight request tracking middleware that rejects new requests during shutdown (`503` + `Connection: close`), shutdown-aware readiness (`/ready` reports `not_ready` while draining), and signal handlers for `SIGINT`/`SIGTERM` that drain requests, close HTTP server, and close MongoDB connections with configurable timeout fallback (`GRACEFUL_SHUTDOWN_TIMEOUT_MS`). Added unit tests for graceful shutdown lifecycle (total 126 passing). Commit: `92b3dd2`.
 - _May 9, 2026_: Completed C5 external error tracking integration. Added optional Sentry integration initialized at bootstrap via `SENTRY_DSN`, wired 5xx error capture from global error handler with request context (`requestId`, route, method, userId), and included `requestId` in API error payloads for easier correlation. Added tracker and error-handler tests (total 131 passing). Commit: `e92bf75`.
 - _May 9, 2026_: Completed C6 metrics export. Added Prometheus-compatible `/metrics` endpoint with default process metrics and custom HTTP metrics (`vruttaant_http_requests_total`, `vruttaant_http_request_duration_seconds`, `vruttaant_http_errors_total`) labeled by method/path/status. Added metrics middleware + unit tests and extended smoke checks to validate metrics output (total 137 passing). Commit: `ea94cb4`.
-- _May 9, 2026_: Completed C7 alerting rules. Added Prometheus alert rule spec for backend uptime (`VruttaantBackendDown`), 5xx spike detection (`VruttaantHigh5xxRate`), and DB disconnect (`VruttaantDatabaseDisconnected`) in `docs/alerts/vruttaant-alert-rules.yml` plus runbook guidance in `docs/ALERTING.md`. Added `vruttaant_database_connected` gauge to metrics export to support DB connectivity alerting and extended metrics tests/smoke checks (total 139 passing). Commit: pending.
+- _May 9, 2026_: Completed C7 alerting rules. Added Prometheus alert rule spec for backend uptime (`VruttaantBackendDown`), 5xx spike detection (`VruttaantHigh5xxRate`), and DB disconnect (`VruttaantDatabaseDisconnected`) in `docs/alerts/vruttaant-alert-rules.yml` plus runbook guidance in `docs/ALERTING.md`. Added `vruttaant_database_connected` gauge to metrics export to support DB connectivity alerting and extended metrics tests/smoke checks (total 139 passing). Commit: `9a05322`.
+- _May 9, 2026_: Completed D2 integration tests for `/api/v1/news/ingest` using Supertest with mocked ingestion/database boundaries. Covered validation failure (`400`), successful ingest with and without persistence, DB-connected persistence path, and DB-disconnected fallback path. Added app export guard in `index.js` (`require.main === module`) for testability without changing runtime startup behavior. Total tests now 143 passing. Commit: pending.
