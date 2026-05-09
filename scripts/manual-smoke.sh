@@ -149,6 +149,19 @@ main() {
   assert_http_code 200 "GET /ready returns 200"
   assert_json_expr_true '.status == "ready"' "GET /ready has ready status"
 
+  request GET "$BASE_URL/metrics"
+  assert_http_code 200 "GET /metrics returns 200"
+  if [[ "$HTTP_BODY" == *"vruttaant_http_requests_total"* ]]; then
+    log_pass "GET /metrics exports request counter"
+  else
+    log_fail "GET /metrics exports request counter"
+  fi
+  if [[ "$HTTP_BODY" == *"vruttaant_http_request_duration_seconds"* ]]; then
+    log_pass "GET /metrics exports request duration histogram"
+  else
+    log_fail "GET /metrics exports request duration histogram"
+  fi
+
   request GET "$BASE_URL/health"
   assert_http_code 200 "GET /health returns 200"
   assert_json_expr_true '.status == "ok"' "GET /health has status ok"

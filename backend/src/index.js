@@ -15,6 +15,11 @@ const {
   createGracefulShutdown
 } = require('./server/gracefulShutdown');
 const { initErrorTracker } = require('./observability/errorTracker');
+const {
+  initializeMetrics,
+  metricsMiddleware,
+  metricsHandler
+} = require('./observability/metrics');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -88,6 +93,7 @@ app.use(express.json({
   limit: process.env.JSON_PAYLOAD_LIMIT || '10kb'
 }));
 app.use(requestLogger);
+app.use(metricsMiddleware);
 app.use(inFlightRequests.middleware);
 app.use('/api', apiLimiter);
 app.use('/api', apiRouter);
@@ -102,6 +108,7 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/ready', readyHandler);
+app.get('/metrics', metricsHandler);
 
 app.get('/', (req, res) => {
   res.json({
@@ -137,6 +144,8 @@ function startServer(preferredPort) {
 }
 
 async function bootstrap() {
+  initializeMetrics();
+
   const tracker = initErrorTracker();
   if (tracker.enabled) {
     console.log('[observability] External error tracking enabled (Sentry).');
