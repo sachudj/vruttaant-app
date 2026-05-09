@@ -22,6 +22,18 @@ const userSchema = new mongoose.Schema(
     lastLoginAt: {
       type: Date,
       default: null
+    },
+    preferences: {
+      language: {
+        type: String,
+        default: 'en',
+        trim: true,
+        lowercase: true
+      },
+      categories: {
+        type: [String],
+        default: []
+      }
     }
   },
   {
