@@ -91,7 +91,7 @@ vruttaant-app/
 ## Project Status
 
 **Test Coverage**: 253/253 tests passing ✅  
-**Overall Progress**: 35/39 items complete (90%)
+**Overall Progress**: 36/39 items complete (92%)
 
 **By Track:**
 - **Track A** (Secure API Baseline): 9/9 (100%) ✅
@@ -126,7 +126,8 @@ vruttaant-app/
   - ✅ E4: Source-level quality rules (title length, URL validity, image availability)
   - ✅ E5: Structured audit logs for LLM summary/category failure paths
   - ✅ E6: Reprocessing job for cards missing summary/category (`npm run job:reprocess-missing-metadata`)
-- **Track F** (Feature Milestones): 0/4 (0%) ⏳
+- **Track F** (Feature Milestones): 1/4 (25%) 🔄
+  - ✅ Milestone 2 mobile bookmark flow available in Flutter app
 
 For detailed roadmap, see [docs/ROADMAP.md](./docs/ROADMAP.md).
 

@@ -10,6 +10,7 @@ Flutter client for Vruttaant with an InShorts-style vertical swipe feed.
 - Pull-to-refresh
 - Pull-up pagination (append batches)
 - Image prefetching for upcoming cards
+- Bookmark flow (add/remove/list) using authenticated backend endpoints
 
 ## Key Paths
 
@@ -30,6 +31,11 @@ flutter run --dart-define=API_BASE_URL=http://localhost:5000
 
 # Android emulator
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
+
+# Enable bookmark APIs (requires JWT access token from backend auth/login)
+flutter run \
+	--dart-define=API_BASE_URL=http://localhost:5000 \
+	--dart-define=API_ACCESS_TOKEN=<jwt_access_token>
 ```
 
 ## Verify
@@ -37,6 +43,11 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
 ```bash
 flutter analyze
 flutter test -r compact
+
+# Optional: verify bookmark APIs from app UI
+# 1) Open any story card and tap bookmark icon.
+# 2) Tap top-right bookmarks button to open saved list.
+# 3) Delete a bookmark from the list and confirm it disappears.
 ```
 
 For broader project docs, see `../docs/MOBILE_APP.md` and `../docs/INDEX.md`.

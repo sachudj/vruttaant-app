@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_app/models/bookmark_item.dart';
 import 'package:mobile_app/models/news_item.dart';
 import 'package:mobile_app/services/news_api_service.dart';
 import 'package:mobile_app/widgets/news_card.dart';
@@ -50,6 +51,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   final NewsApiService _newsApiService = NewsApiService();
   final PageController _pageController = PageController();
   final List<NewsItem> _feed = [];
+  final List<BookmarkItem> _bookmarks = [];
+  final Set<String> _bookmarkedUrls = <String>{};
 
   static const List<String?> _categories = [
     null,
@@ -67,6 +70,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
 
   bool _isInitialLoading = true;
   bool _isLoadingMore = false;
+  bool _isBookmarkSheetLoading = false;
   String? _errorMessage;
   int _currentPage = 1;
   final String _language = 'en';
@@ -139,6 +143,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
         _currentPage = 1;
         _isInitialLoading = false;
       });
+      await _refreshBookmarks();
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -216,6 +221,216 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     });
 
     await _loadInitialFeed();
+  }
+
+  Future<void> _refreshBookmarks() async {
+    if (!_newsApiService.hasAccessToken) {
+      if (!mounted) return;
+      setState(() {
+        _bookmarks.clear();
+        _bookmarkedUrls.clear();
+      });
+      return;
+    }
+
+    try {
+      final bookmarks = await _newsApiService.fetchBookmarks();
+      if (!mounted) return;
+      setState(() {
+        _bookmarks
+          ..clear()
+          ..addAll(bookmarks);
+        _bookmarkedUrls
+          ..clear()
+          ..addAll(
+            bookmarks.map((b) => b.url.trim()).where((u) => u.isNotEmpty),
+          );
+      });
+    } catch (_) {
+      // Keep feed usable even if bookmark API is unavailable.
+    }
+  }
+
+  bool _isBookmarked(NewsItem news) {
+    final url = news.originalUrl;
+    if (url.isEmpty) return false;
+    return _bookmarkedUrls.contains(url);
+  }
+
+  Future<void> _toggleBookmark(NewsItem news) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final url = news.originalUrl;
+
+    if (!_newsApiService.hasAccessToken) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Bookmark actions require API_ACCESS_TOKEN. Run with --dart-define=API_ACCESS_TOKEN=<jwt>.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (url.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('This story cannot be bookmarked (missing URL).'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      if (_bookmarkedUrls.contains(url)) {
+        final existing = _bookmarks
+            .where((b) => b.url == url)
+            .toList(growable: false);
+        if (existing.isNotEmpty) {
+          await _newsApiService.deleteBookmark(existing.first.id);
+        }
+        if (!mounted) return;
+        setState(() {
+          _bookmarks.removeWhere((b) => b.url == url);
+          _bookmarkedUrls.remove(url);
+        });
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Bookmark removed.')),
+        );
+        return;
+      }
+
+      final created = await _newsApiService.addBookmark(news);
+      await _refreshBookmarks();
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(created ? 'Bookmarked.' : 'Already bookmarked.'),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
+  Future<void> _openBookmarksSheet() async {
+    if (!_newsApiService.hasAccessToken) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Bookmark list requires API_ACCESS_TOKEN. Run with --dart-define=API_ACCESS_TOKEN=<jwt>.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isBookmarkSheetLoading = true;
+    });
+    await _refreshBookmarks();
+    if (!mounted) return;
+    setState(() {
+      _isBookmarkSheetLoading = false;
+    });
+
+    final selected = await showModalBottomSheet<BookmarkItem>(
+      context: context,
+      backgroundColor: const Color(0xFF121212),
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.75,
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                const Text(
+                  'Bookmarks',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Divider(color: Colors.white24, height: 1),
+                Expanded(
+                  child: _bookmarks.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No bookmarks yet.',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        )
+                      : ListView.separated(
+                          itemCount: _bookmarks.length,
+                          separatorBuilder: (_, index) =>
+                              const Divider(color: Colors.white12, height: 1),
+                          itemBuilder: (context, index) {
+                            final bookmark = _bookmarks[index];
+                            return ListTile(
+                              title: Text(
+                                bookmark.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              subtitle: Text(
+                                bookmark.source,
+                                style: const TextStyle(color: Colors.white70),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.white70,
+                                ),
+                                onPressed: () async {
+                                  await _newsApiService.deleteBookmark(
+                                    bookmark.id,
+                                  );
+                                  if (!mounted) return;
+                                  setState(() {
+                                    _bookmarks.removeWhere(
+                                      (b) => b.id == bookmark.id,
+                                    );
+                                    _bookmarkedUrls.remove(bookmark.url);
+                                  });
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Bookmark removed.'),
+                                    ),
+                                  );
+                                },
+                              ),
+                              onTap: () => Navigator.of(context).pop(bookmark),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected == null || !mounted) {
+      return;
+    }
+
+    final news = selected.toNewsItem();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _StoryPager(
+          news: news,
+          isBookmarked: true,
+          onBookmarkPressed: () async {},
+        ),
+      ),
+    );
   }
 
   @override
@@ -305,7 +520,11 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                     }
 
                     final news = _feed[index];
-                    return _StoryPager(news: news);
+                    return _StoryPager(
+                      news: news,
+                      isBookmarked: _isBookmarked(news),
+                      onBookmarkPressed: () => _toggleBookmark(news),
+                    );
                   },
                 ),
               ),
@@ -340,6 +559,27 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                   ),
                 ),
               ),
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8, top: 8),
+                    child: IconButton.filledTonal(
+                      onPressed: _isBookmarkSheetLoading
+                          ? null
+                          : _openBookmarksSheet,
+                      icon: _isBookmarkSheetLoading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.bookmarks_outlined),
+                      tooltip: 'Bookmarks',
+                    ),
+                  ),
+                ),
+              ),
             ],
           );
         },
@@ -349,9 +589,15 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
 }
 
 class _StoryPager extends StatefulWidget {
-  const _StoryPager({required this.news});
+  const _StoryPager({
+    required this.news,
+    required this.isBookmarked,
+    required this.onBookmarkPressed,
+  });
 
   final NewsItem news;
+  final bool isBookmarked;
+  final VoidCallback onBookmarkPressed;
 
   @override
   State<_StoryPager> createState() => _StoryPagerState();
@@ -386,6 +632,8 @@ class _StoryPagerState extends State<_StoryPager> {
           summary: widget.news.summary,
           imageUrl: widget.news.imageUrl,
           source: widget.news.source,
+          isBookmarked: widget.isBookmarked,
+          onBookmarkPressed: widget.onBookmarkPressed,
         ),
         _buildReaderPage(),
       ],

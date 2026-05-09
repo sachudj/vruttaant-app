@@ -7,12 +7,16 @@ class NewsCard extends StatelessWidget {
     required this.summary,
     required this.imageUrl,
     this.source,
+    this.isBookmarked = false,
+    this.onBookmarkPressed,
   });
 
   final String title;
   final String summary;
   final String imageUrl;
   final String? source;
+  final bool isBookmarked;
+  final VoidCallback? onBookmarkPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +31,11 @@ class NewsCard extends StatelessWidget {
               return const ColoredBox(
                 color: Color(0xFF1A1A1A),
                 child: Center(
-                  child: Icon(Icons.broken_image_outlined, color: Colors.white54, size: 40),
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    color: Colors.white54,
+                    size: 40,
+                  ),
                 ),
               );
             },
@@ -52,24 +60,44 @@ class NewsCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (source != null && source!.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
-                      ),
-                      child: Text(
-                        source!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.2,
+                  Row(
+                    children: [
+                      if (source != null && source!.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.24),
+                            ),
+                          ),
+                          child: Text(
+                            source!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
                         ),
+                      const Spacer(),
+                      IconButton.filledTonal(
+                        onPressed: onBookmarkPressed,
+                        icon: Icon(
+                          isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                          color: isBookmarked ? Colors.amber : Colors.white,
+                        ),
+                        tooltip: isBookmarked
+                            ? 'Remove bookmark'
+                            : 'Add bookmark',
                       ),
-                    ),
+                    ],
+                  ),
                   const Spacer(),
                   Text(
                     title,

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:mobile_app/models/bookmark_item.dart';
 import 'package:mobile_app/models/news_item.dart';
 
 class NewsApiService {
@@ -11,10 +12,31 @@ class NewsApiService {
             'API_BASE_URL',
             defaultValue: 'http://localhost:5000',
           ),
+      accessToken = (() {
+        final token = const String.fromEnvironment('API_ACCESS_TOKEN').trim();
+        return token.isEmpty ? null : token;
+      })(),
       _client = client ?? http.Client();
 
   final String baseUrl;
+  final String? accessToken;
   final http.Client _client;
+
+  bool get hasAccessToken => (accessToken ?? '').isNotEmpty;
+
+  Map<String, String> _authHeaders() {
+    if (!hasAccessToken) {
+      throw Exception(
+        'API_ACCESS_TOKEN is required for bookmark operations. '
+        'Run flutter with --dart-define=API_ACCESS_TOKEN=<jwt>.',
+      );
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $accessToken',
+    };
+  }
 
   Future<void> ingestNews({
     required String sourceUrl,
@@ -80,5 +102,84 @@ class NewsApiService {
         .toList(growable: false);
 
     return items;
+  }
+
+  Future<bool> addBookmark(NewsItem item) async {
+    final url = item.originalUrl;
+    if (url.isEmpty) {
+      throw Exception('Cannot bookmark a story without URL.');
+    }
+
+    final uri = Uri.parse('$baseUrl/api/v1/user/bookmarks');
+    final response = await _client.post(
+      uri,
+      headers: _authHeaders(),
+      body: jsonEncode({
+        'title': item.title,
+        'url': url,
+        'summary': item.summary,
+        'category': item.category,
+        'imageUrl': item.imageUrl,
+        'source': item.source,
+        'language': item.language ?? 'en',
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return true;
+    }
+
+    if (response.statusCode == 409) {
+      return false;
+    }
+
+    throw Exception('Failed to add bookmark (${response.statusCode}).');
+  }
+
+  Future<List<BookmarkItem>> fetchBookmarks({
+    int page = 1,
+    int limit = 100,
+  }) async {
+    final uri = Uri.parse(
+      '$baseUrl/api/v1/user/bookmarks',
+    ).replace(queryParameters: {'page': '$page', 'limit': '$limit'});
+
+    final response = await _client.get(uri, headers: _authHeaders());
+    if (response.statusCode != 200) {
+      throw Exception('Failed to fetch bookmarks (${response.statusCode}).');
+    }
+
+    final dynamic payload = jsonDecode(response.body);
+    if (payload is! Map<String, dynamic>) {
+      throw Exception('Unexpected bookmarks response format.');
+    }
+
+    final data = payload['data'];
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Missing bookmarks data in response.');
+    }
+
+    final dynamic bookmarks = data['bookmarks'];
+    if (bookmarks is! List) {
+      throw Exception('No bookmarks list found in response.');
+    }
+
+    return bookmarks
+        .whereType<Map<String, dynamic>>()
+        .map(BookmarkItem.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<void> deleteBookmark(String id) async {
+    final bookmarkId = id.trim();
+    if (bookmarkId.isEmpty) {
+      throw Exception('Bookmark id is required.');
+    }
+
+    final uri = Uri.parse('$baseUrl/api/v1/user/bookmarks/$bookmarkId');
+    final response = await _client.delete(uri, headers: _authHeaders());
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete bookmark (${response.statusCode}).');
+    }
   }
 }
