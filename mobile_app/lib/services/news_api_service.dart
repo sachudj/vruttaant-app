@@ -287,4 +287,27 @@ class NewsApiService {
 
     return updated;
   }
+
+  Future<void> registerNotificationDevice({
+    required String token,
+    required String platform,
+    String? deviceName,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/user/notifications/device');
+    final response = await _client.post(
+      uri,
+      headers: _authHeaders(),
+      body: jsonEncode({
+        'token': token,
+        'platform': platform,
+        if (deviceName != null) 'deviceName': deviceName,
+      }),
+    );
+
+    if (response.statusCode != 201) {
+      throw Exception(
+        'Failed to register notification device (${response.statusCode}).',
+      );
+    }
+  }
 }

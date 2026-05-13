@@ -2,6 +2,9 @@ const User = require('../models/User');
 const Bookmark = require('../models/Bookmark');
 const NewsCard = require('../models/NewsCard');
 const RefreshToken = require('../models/RefreshToken');
+const NotificationDevice = require('../models/NotificationDevice');
+const pushNotificationService = require('../services/pushNotificationService');
+const { AppError } = require('../middleware/errorHandler');
 
 /**
  * Get detailed health information (admin only)
@@ -146,7 +149,65 @@ async function getSystemStats(req, res, next) {
   }
 }
 
+
+
+/**
+ * Send a manual notification (admin only)
+ * Payload: { title, body, audience: 'all' | 'breakingNews' }
+ */
+async function sendAdminNotification(req, res, next) {
+  try {
+    const { title, body, audience } = req.body;
+
+    if (!title || !body) {
+      throw new AppError(400, 'Title and body are required for notification');
+    }
+
+    let usersCursor;
+    if (audience === 'breakingNews') {
+      usersCursor = User.find({ 'preferences.notifications.breakingNews': true }).select('_id').cursor();
+    } else {
+      usersCursor = User.find().select('_id').cursor();
+    }
+
+    let usersProcessed = 0;
+    let tokensPushed = 0;
+
+    for await (const user of usersCursor) {
+      usersProcessed++;
+      const devices = await NotificationDevice.find({
+        userId: user._id,
+        enabled: true
+      }).lean();
+
+      const tokens = devices.map(d => d.token);
+      if (tokens.length > 0) {
+        await pushNotificationService.sendMulticast(
+          tokens,
+          title,
+          body,
+          { type: audience === 'breakingNews' ? 'breaking_news' : 'admin_alert' }
+        );
+        tokensPushed += tokens.length;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        message: 'Notifications dispatched successfully',
+        audience,
+        usersProcessed,
+        tokensPushed
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getDetailedHealth,
-  getSystemStats
+  getSystemStats,
+  sendAdminNotification
 };

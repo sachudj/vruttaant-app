@@ -3,7 +3,8 @@ const { verifyAccessToken, verifyUserExists } = require('../middleware/authMiddl
 const { requireAdmin } = require('../middleware/roleGuard');
 const {
   getDetailedHealth,
-  getSystemStats
+  getSystemStats,
+  sendAdminNotification
 } = require('../controllers/adminController');
 
 const router = express.Router();
@@ -16,5 +17,8 @@ router.get('/health', getDetailedHealth);
 
 // GET /admin/stats - System statistics
 router.get('/stats', getSystemStats);
+
+// POST /admin/notifications/send - Send manual notification
+router.post('/notifications/send', sendAdminNotification);
 
 module.exports = router;

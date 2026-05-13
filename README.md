@@ -143,7 +143,7 @@ Detailed implementation sequencing now lives in [docs/ROADMAP.md](./docs/ROADMAP
 - [x] Bookmark/save articles feature
 - [x] Language preference settings
 - [x] Background news sync
-- [ ] Push notifications
+- [x] Push notifications
 - [x] Advanced search & filtering
 
 ### Industry-Standard Secure App Checklist

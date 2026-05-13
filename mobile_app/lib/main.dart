@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:mobile_app/models/bookmark_item.dart';
 import 'package:mobile_app/models/news_item.dart';
 import 'package:mobile_app/services/news_api_service.dart';
+import 'package:mobile_app/services/push_notification_service.dart';
 import 'package:mobile_app/widgets/news_card.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -71,14 +73,18 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   String? _selectedCategory;
   String _searchQuery = '';
   String _sort = 'latest';
+  late final PushNotificationService _pushService;
 
   @override
   void initState() {
     super.initState();
+    _pushService = PushNotificationService(_newsApiService);
     _initApp();
   }
 
   Future<void> _initApp() async {
+    await _pushService.initialize();
+
     if (_newsApiService.hasAccessToken) {
       try {
         final profileData = await _newsApiService.fetchProfile();
