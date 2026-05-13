@@ -209,12 +209,31 @@ async function summarizeWithLlm(card, language) {
 async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
   const normalizedLanguage = normalizeLanguage(language);
 
-  let normalizedUrl;
+  let parsedUrl;
   try {
-    normalizedUrl = new URL(sourceUrl).toString();
+    parsedUrl = new URL(sourceUrl);
   } catch {
     throw new Error('Invalid source URL');
   }
+
+  // SSRF Mitigation
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    throw new Error('Invalid URL protocol. Only HTTP and HTTPS are allowed.');
+  }
+
+  const hostname = parsedUrl.hostname.toLowerCase();
+  
+  const isLocalhost = hostname === 'localhost' || hostname.endsWith('.local');
+  const isLoopback = /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) || hostname === '[::1]';
+  const isPrivateIPv4 = /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})$/.test(hostname);
+  const isAwsMetadata = hostname === '169.254.169.254';
+  const isZeroAddress = hostname === '0.0.0.0' || hostname === '[::]';
+
+  if (isLocalhost || isLoopback || isPrivateIPv4 || isAwsMetadata || isZeroAddress) {
+    throw new Error('Requests to internal or private networks are not allowed.');
+  }
+
+  const normalizedUrl = parsedUrl.toString();
 
   const response = await fetch(normalizedUrl, {
     headers: {

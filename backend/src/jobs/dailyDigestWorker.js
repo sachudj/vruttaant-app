@@ -3,14 +3,13 @@ const User = require('../models/User');
 const NewsCard = require('../models/NewsCard');
 const NotificationDevice = require('../models/NotificationDevice');
 const pushNotificationService = require('../services/pushNotificationService');
-const logger = require('../observability/logger');
 
 /**
  * Job to send Daily Digest to users who have opted in.
  */
 async function sendDailyDigest() {
   const jobId = `digest_${Date.now()}`;
-  logger.info({ jobId }, 'Starting daily digest job');
+  console.info({ jobId }, 'Starting daily digest job');
 
   try {
     // 1. Fetch top 3 latest cards from the last 24 hours
@@ -23,7 +22,7 @@ async function sendDailyDigest() {
       .lean();
 
     if (latestCards.length === 0) {
-      logger.info({ jobId }, 'No new cards in the last 24 hours, skipping digest');
+      console.info({ jobId }, 'No new cards in the last 24 hours, skipping digest');
       return;
     }
 
@@ -78,7 +77,7 @@ async function sendDailyDigest() {
                  res.error.code === 'messaging/registration-token-not-registered'
                ) {
                  NotificationDevice.deleteOne({ token: tokens[idx] }).catch(err => 
-                   logger.error({ err: err.message, token: tokens[idx] }, 'Failed to delete invalid token')
+                   console.error({ err: err.message, token: tokens[idx] }, 'Failed to delete invalid token')
                  );
                }
              }
@@ -87,9 +86,9 @@ async function sendDailyDigest() {
       }
     }
 
-    logger.info({ jobId, usersProcessed, tokensPushed }, 'Daily digest job completed successfully');
+    console.info({ jobId, usersProcessed, tokensPushed }, 'Daily digest job completed successfully');
   } catch (error) {
-    logger.error({ jobId, error: error.message, stack: error.stack }, 'Daily digest job failed');
+    console.error({ jobId, error: error.message, stack: error.stack }, 'Daily digest job failed');
   }
 }
 
@@ -99,7 +98,7 @@ async function sendDailyDigest() {
  * Cron expression: "0 8 * * *"
  */
 function startCronJob(schedule = '0 8 * * *') {
-  logger.info({ schedule }, 'Registering daily digest cron job');
+  console.info({ schedule }, 'Registering daily digest cron job');
   cron.schedule(schedule, () => {
     sendDailyDigest();
   });

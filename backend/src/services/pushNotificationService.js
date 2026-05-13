@@ -1,5 +1,4 @@
 const admin = require('firebase-admin');
-const logger = require('../observability/logger');
 
 let isInitialized = false;
 
@@ -17,16 +16,16 @@ function initialize() {
         credential: admin.credential.cert(serviceAccount)
       });
       isInitialized = true;
-      logger.info('Firebase Admin initialized with explicit service account JSON.');
+      console.info('Firebase Admin initialized with explicit service account JSON.');
     } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.FIREBASE_CONFIG) {
       admin.initializeApp();
       isInitialized = true;
-      logger.info('Firebase Admin initialized via default credentials.');
+      console.info('Firebase Admin initialized via default credentials.');
     } else {
-      logger.warn('Firebase Admin credentials not found. PushNotificationService will run in mock mode.');
+      console.warn('Firebase Admin credentials not found. PushNotificationService will run in mock mode.');
     }
   } catch (error) {
-    logger.error({ error: error.message }, 'Failed to initialize Firebase Admin');
+    console.error({ error: error.message }, 'Failed to initialize Firebase Admin');
   }
 }
 
@@ -70,16 +69,16 @@ async function sendToDevice(token, title, body, data = {}) {
   const message = createMessage(token, title, body, data);
 
   if (!isInitialized) {
-    logger.info({ message }, '[MOCK PUSH] Would send notification to single device');
+    console.info({ message }, '[MOCK PUSH] Would send notification to single device');
     return { mock: true, success: true, messageId: 'mock-id' };
   }
 
   try {
     const response = await admin.messaging().send(message);
-    logger.debug({ token, messageId: response }, 'Successfully sent push notification');
+    console.debug({ token, messageId: response }, 'Successfully sent push notification');
     return { success: true, messageId: response };
   } catch (error) {
-    logger.error({ token, error: error.message }, 'Failed to send push notification');
+    console.error({ token, error: error.message }, 'Failed to send push notification');
     // We can also handle specific errors like token unregistered here
     throw error;
   }
@@ -107,13 +106,13 @@ async function sendMulticast(tokens, title, body, data = {}) {
   };
 
   if (!isInitialized) {
-    logger.info({ tokensCount: tokens.length, title }, '[MOCK PUSH] Would send multicast notification');
+    console.info({ tokensCount: tokens.length, title }, '[MOCK PUSH] Would send multicast notification');
     return { mock: true, successCount: tokens.length, failureCount: 0, responses: [] };
   }
 
   try {
     const response = await admin.messaging().sendEachForMulticast(message);
-    logger.info(
+    console.info(
       { successCount: response.successCount, failureCount: response.failureCount },
       'Multicast push notification complete'
     );
@@ -121,7 +120,7 @@ async function sendMulticast(tokens, title, body, data = {}) {
     // Optionally return failed tokens so the caller can clean them up from the DB
     return response;
   } catch (error) {
-    logger.error({ error: error.message }, 'Failed to send multicast push notification');
+    console.error({ error: error.message }, 'Failed to send multicast push notification');
     throw error;
   }
 }
