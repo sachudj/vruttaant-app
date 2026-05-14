@@ -300,7 +300,7 @@ class NewsApiService {
       body: jsonEncode({
         'token': token,
         'platform': platform,
-        if (deviceName != null) 'deviceName': deviceName,
+        'deviceName': ?deviceName,
       }),
     );
 

@@ -14,7 +14,7 @@ Please check the table below to see which versions of Vruttaant are currently be
 We take the security of our project seriously. If you discover a security vulnerability in this project, please follow these steps to report it securely:
 
 1. **Do not open a public issue.** This could expose the vulnerability to malicious actors before we have a chance to fix it.
-2. Please report the vulnerability by emailing us at **[INSERT YOUR EMAIL HERE]**.
+2. Please report the vulnerability by emailing us at **help@vruttaant.in**.
 3. Include detailed information about the vulnerability, such as:
    - Steps to reproduce the issue.
    - The potential impact of the vulnerability.
