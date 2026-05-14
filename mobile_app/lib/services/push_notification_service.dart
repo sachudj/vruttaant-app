@@ -20,6 +20,15 @@ class PushNotificationService {
   PushNotificationService(this._apiService);
 
   Future<void> initialize() async {
+    bool isTest = false;
+    if (!kIsWeb) {
+      isTest = Platform.environment.containsKey('FLUTTER_TEST');
+    }
+    if (isTest) {
+      debugPrint('Skipping push notifications initialization during tests.');
+      return;
+    }
+
     try {
       await Firebase.initializeApp();
       _messaging = FirebaseMessaging.instance;
