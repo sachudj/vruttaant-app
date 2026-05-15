@@ -47,7 +47,7 @@ class NewsApiService {
     String language = 'en',
     int maxItems = 20,
   }) async {
-    final uri = Uri.parse('$baseUrl/api/news/ingest');
+    final uri = Uri.parse('$baseUrl/api/v1/news/ingest');
 
     final response = await _client.post(
       uri,
@@ -94,7 +94,7 @@ class NewsApiService {
     }
 
     final uri = Uri.parse(
-      '$baseUrl/api/news/cards',
+      '$baseUrl/api/v1/news/cards',
     ).replace(queryParameters: query);
     final response = await _client.get(uri);
 
@@ -293,7 +293,7 @@ class NewsApiService {
     required String platform,
     String? deviceName,
   }) async {
-    final uri = Uri.parse('$baseUrl/api/v1/user/notifications/device');
+    final uri = Uri.parse('$baseUrl/api/v1/user/notifications/devices');
     final response = await _client.post(
       uri,
       headers: _authHeaders(),
