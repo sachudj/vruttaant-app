@@ -43,10 +43,13 @@ describe('newsIngestionService fixtures and deterministic llm mocks', () => {
       'en'
     );
 
-    expect(result).toEqual({
-      aiSummary: 'Public transit expansion moves forward with budget controls and staged delivery milestones.',
-      category: 'Business'
-    });
+    expect(result.category).toBe('Business');
+    expect(result.aiSummary).toContain(
+      'Public transit expansion moves forward with budget controls and staged delivery milestones.'
+    );
+    expect(result.aiSummary).toContain(
+      'Metro expansion approved by city council A transit plan was approved by city officials.'
+    );
   });
 
   it('summarizeWithLlm falls back predictably when model content is not JSON', async () => {
@@ -67,10 +70,11 @@ describe('newsIngestionService fixtures and deterministic llm mocks', () => {
       'en'
     );
 
-    expect(result).toEqual({
-      aiSummary: 'This is plain text from the model and not valid JSON.',
-      category: 'General'
-    });
+    expect(result.category).toBe('General');
+    expect(result.aiSummary).toContain(
+      'This is plain text from the model and not valid JSON.'
+    );
+    expect(result.aiSummary).toContain('Startup raises funding Funding round announced');
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringContaining('llm_summary_category_invalid_json')
     );
