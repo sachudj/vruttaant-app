@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_app/models/bookmark_item.dart';
 import 'package:mobile_app/models/news_item.dart';
+import 'package:mobile_app/services/auth_service.dart';
 import 'package:mobile_app/services/news_api_service.dart';
 import 'package:mobile_app/services/push_notification_service.dart';
 import 'package:mobile_app/widgets/news_card.dart';
@@ -44,7 +45,13 @@ class NewsFeedPage extends StatefulWidget {
 }
 
 class _NewsFeedPageState extends State<NewsFeedPage> {
-  final NewsApiService _newsApiService = NewsApiService();
+  final AuthService _authService = AuthService(
+    baseUrl: const String.fromEnvironment(
+      'API_BASE_URL',
+      defaultValue: 'http://localhost:5000',
+    ),
+  );
+  late final NewsApiService _newsApiService;
   final PageController _pageController = PageController();
   final List<NewsItem> _feed = [];
   final List<BookmarkItem> _bookmarks = [];
@@ -78,11 +85,13 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   @override
   void initState() {
     super.initState();
+    _newsApiService = NewsApiService(authService: _authService);
     _pushService = PushNotificationService(_newsApiService);
     _initApp();
   }
 
   Future<void> _initApp() async {
+    await _authService.init();
     await _pushService.initialize();
 
     if (_newsApiService.hasAccessToken) {
@@ -365,6 +374,126 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     await _loadInitialFeed();
   }
 
+  Future<void> _openLoginSheet() async {
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    String? loginError;
+    bool isLoading = false;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF121212),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            Future<void> doLogin() async {
+              setModalState(() {
+                isLoading = true;
+                loginError = null;
+              });
+              final result = await _authService.login(
+                emailController.text,
+                passwordController.text,
+              );
+              if (!context.mounted) return;
+              if (result.success) {
+                Navigator.of(context).pop();
+                if (mounted) setState(() {});
+                await _refreshBookmarks();
+              } else {
+                setModalState(() {
+                  loginError = result.errorMessage;
+                  isLoading = false;
+                });
+              }
+            }
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 24,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Sign In',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      autocorrect: false,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        labelStyle: TextStyle(color: Colors.white70),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white30),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.indigoAccent),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        labelText: 'Password',
+                        labelStyle: TextStyle(color: Colors.white70),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white30),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.indigoAccent),
+                        ),
+                      ),
+                      onSubmitted: (_) => doLogin(),
+                    ),
+                    if (loginError != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        loginError!,
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: isLoading ? null : doLogin,
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Sign In'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _refreshBookmarks() async {
     if (!_newsApiService.hasAccessToken) {
       if (!mounted) return;
@@ -405,10 +534,9 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
 
     if (!_newsApiService.hasAccessToken) {
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Bookmark actions require API_ACCESS_TOKEN. Run with --dart-define=API_ACCESS_TOKEN=<jwt>.',
-          ),
+        SnackBar(
+          content: const Text('Sign in to bookmark stories.'),
+          action: SnackBarAction(label: 'Sign In', onPressed: _openLoginSheet),
         ),
       );
       return;
@@ -564,7 +692,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                   children: [
                     const SizedBox(height: 10),
                     const Text(
-                      'Language Preference',
+                      'Settings',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -576,26 +704,94 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                     Expanded(
                       child: SingleChildScrollView(
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            const Padding(
+                              padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                              child: Text(
+                                'Language',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
                             languageTile('en', 'English'),
                             languageTile('hi', 'Hindi'),
                             languageTile('bn', 'Bengali'),
                             languageTile('mr', 'Marathi'),
                             languageTile('te', 'Telugu'),
                             languageTile('ta', 'Tamil'),
+                            const Divider(color: Colors.white24),
+                            const Padding(
+                              padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+                              child: Text(
+                                'Account',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                            if (_authService.isLoggedIn) ...[
+                              ListTile(
+                                leading: const Icon(
+                                  Icons.account_circle,
+                                  color: Colors.white70,
+                                ),
+                                title: Text(
+                                  _authService.userEmail ?? 'Signed in',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                                subtitle: const Text(
+                                  'Tap to sign out',
+                                  style: TextStyle(color: Colors.white54),
+                                ),
+                                onTap: () async {
+                                  final nav = Navigator.of(context);
+                                  final sm = ScaffoldMessenger.of(context);
+                                  nav.pop();
+                                  await _authService.logout();
+                                  if (!mounted) return;
+                                  setState(() {
+                                    _bookmarks.clear();
+                                    _bookmarkedUrls.clear();
+                                  });
+                                  sm.showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Signed out.'),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ] else ...[
+                              ListTile(
+                                leading: const Icon(
+                                  Icons.login,
+                                  color: Colors.white70,
+                                ),
+                                title: const Text(
+                                  'Sign In',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                onTap: () {
+                                  Navigator.of(context).pop();
+                                  _openLoginSheet();
+                                },
+                              ),
+                            ],
                             if (_newsApiService.hasAccessToken) ...[
                               const Divider(color: Colors.white24),
                               const Padding(
-                                padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    'Notifications',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                    ),
+                                padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+                                child: Text(
+                                  'Notifications',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
                                   ),
                                 ),
                               ),
@@ -744,14 +940,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
 
   Future<void> _openBookmarksSheet() async {
     if (!_newsApiService.hasAccessToken) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Bookmark list requires API_ACCESS_TOKEN. Run with --dart-define=API_ACCESS_TOKEN=<jwt>.',
-          ),
-        ),
-      );
-      return;
+      await _openLoginSheet();
+      if (!mounted || !_authService.isLoggedIn) return;
     }
 
     setState(() {
@@ -1003,8 +1193,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                         const SizedBox(width: 8),
                         IconButton.filledTonal(
                           onPressed: _openSettingsSheet,
-                          icon: const Icon(Icons.language),
-                          tooltip: 'Language Preferences',
+                          icon: const Icon(Icons.settings_outlined),
+                          tooltip: 'Settings',
                         ),
                         const SizedBox(width: 8),
                         IconButton.filledTonal(

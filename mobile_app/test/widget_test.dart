@@ -9,9 +9,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mobile_app/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/models/news_item.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('renders feed, swipes, and paginates near the end', (
     WidgetTester tester,
   ) async {
@@ -92,13 +97,13 @@ void main() {
     expect(find.text('Story Localized'), findsOneWidget);
 
     // Find and tap Language Preferences button
-    final langButton = find.byIcon(Icons.language);
+    final langButton = find.byIcon(Icons.settings_outlined);
     expect(langButton, findsOneWidget);
     await tester.tap(langButton);
     await tester.pumpAndSettle();
 
     // Verify sheet opened
-    expect(find.text('Language Preference'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Hindi'), findsOneWidget);
 
     // Tap Hindi and save
@@ -108,7 +113,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify sheet closed
-    expect(find.text('Language Preference'), findsNothing);
+    expect(find.text('Settings'), findsNothing);
   });
 
   testWidgets('opens search sheet and applies query', (

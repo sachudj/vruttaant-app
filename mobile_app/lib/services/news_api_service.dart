@@ -3,44 +3,90 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mobile_app/models/bookmark_item.dart';
 import 'package:mobile_app/models/news_item.dart';
+import 'package:mobile_app/services/auth_service.dart';
 
 class NewsApiService {
-  NewsApiService({String? baseUrl, String? accessToken, http.Client? client})
-    : baseUrl =
-          baseUrl ??
-          const String.fromEnvironment(
-            'API_BASE_URL',
-            defaultValue: 'http://localhost:5000',
-          ),
-      accessToken = (() {
-        final explicitToken = (accessToken ?? '').trim();
-        if (explicitToken.isNotEmpty) {
-          return explicitToken;
-        }
-        final token = const String.fromEnvironment('API_ACCESS_TOKEN').trim();
-        return token.isEmpty ? null : token;
-      })(),
-      _client = client ?? http.Client();
+  NewsApiService({
+    String? baseUrl,
+    String? accessToken,
+    AuthService? authService,
+    http.Client? client,
+  }) : baseUrl =
+           baseUrl ??
+           const String.fromEnvironment(
+             'API_BASE_URL',
+             defaultValue: 'http://localhost:5000',
+           ),
+       _staticToken = (() {
+         final explicitToken = (accessToken ?? '').trim();
+         if (explicitToken.isNotEmpty) return explicitToken;
+         final token = const String.fromEnvironment('API_ACCESS_TOKEN').trim();
+         return token.isEmpty ? null : token;
+       })(),
+       _authService = authService,
+       _client = client ?? http.Client();
 
   final String baseUrl;
-  final String? accessToken;
+
+  /// Static token (from constructor / --dart-define). Used only when no
+  /// [AuthService] is provided (e.g. in tests).
+  final String? _staticToken;
+
+  final AuthService? _authService;
   final http.Client _client;
 
-  bool get hasAccessToken => (accessToken ?? '').isNotEmpty;
+  /// Back-compat getter for [PushNotificationService].
+  String? get accessToken => _staticToken ?? _authService?.rawAccessToken;
 
-  Map<String, String> _authHeaders() {
-    if (!hasAccessToken) {
-      throw Exception(
-        'API_ACCESS_TOKEN is required for bookmark operations. '
-        'Run flutter with --dart-define=API_ACCESS_TOKEN=<jwt>.',
-      );
+  bool get hasAccessToken {
+    if (_authService != null) return _authService.isLoggedIn;
+    return (_staticToken ?? '').isNotEmpty;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Auth header helpers
+  // ---------------------------------------------------------------------------
+
+  /// Returns auth headers with a valid (possibly refreshed) access token.
+  Future<Map<String, String>> _getAuthHeaders() async {
+    String? token;
+    if (_authService != null) {
+      token = await _authService.getValidAccessToken();
+    } else {
+      token = _staticToken;
+    }
+
+    if (token == null || token.isEmpty) {
+      throw Exception('Not authenticated. Please sign in to continue.');
     }
 
     return {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer $accessToken',
+      'Authorization': 'Bearer $token',
     };
   }
+
+  /// Runs [fn] with auth headers, retrying once with a fresh token on 401.
+  Future<http.Response> _authRequest(
+    Future<http.Response> Function(Map<String, String> headers) fn,
+  ) async {
+    final headers = await _getAuthHeaders();
+    final response = await fn(headers);
+
+    if (response.statusCode == 401 && _authService != null) {
+      final refreshed = await _authService.refreshTokens();
+      if (refreshed) {
+        final freshHeaders = await _getAuthHeaders();
+        return fn(freshHeaders);
+      }
+    }
+
+    return response;
+  }
+
+  // ---------------------------------------------------------------------------
+  // News
+  // ---------------------------------------------------------------------------
 
   Future<void> ingestNews({
     required String sourceUrl,
@@ -48,7 +94,6 @@ class NewsApiService {
     int maxItems = 20,
   }) async {
     final uri = Uri.parse('$baseUrl/api/v1/news/ingest');
-
     final response = await _client.post(
       uri,
       headers: {'Content-Type': 'application/json'},
@@ -83,9 +128,9 @@ class NewsApiService {
       query['category'] = category!.trim();
     }
 
-    final trimmedQuery = (q ?? '').trim();
-    if (trimmedQuery.isNotEmpty) {
-      query['q'] = trimmedQuery;
+    final trimmedQ = (q ?? '').trim();
+    if (trimmedQ.isNotEmpty) {
+      query['q'] = trimmedQ;
     }
 
     final normalizedSort = sort.trim().toLowerCase();
@@ -112,13 +157,15 @@ class NewsApiService {
       throw Exception('No cards found in cards response.');
     }
 
-    final items = cards
+    return cards
         .whereType<Map<String, dynamic>>()
         .map(NewsItem.fromJson)
         .toList(growable: false);
-
-    return items;
   }
+
+  // ---------------------------------------------------------------------------
+  // Bookmarks
+  // ---------------------------------------------------------------------------
 
   Future<bool> addBookmark(NewsItem item) async {
     final url = item.originalUrl;
@@ -127,28 +174,22 @@ class NewsApiService {
     }
 
     final uri = Uri.parse('$baseUrl/api/v1/user/bookmarks');
-    final response = await _client.post(
-      uri,
-      headers: _authHeaders(),
-      body: jsonEncode({
-        'title': item.title,
-        'url': url,
-        'summary': item.summary,
-        'category': item.category,
-        'imageUrl': item.imageUrl,
-        'source': item.source,
-        'language': item.language ?? 'en',
-      }),
+    final body = jsonEncode({
+      'title': item.title,
+      'url': url,
+      'summary': item.summary,
+      'category': item.category,
+      'imageUrl': item.imageUrl,
+      'source': item.source,
+      'language': item.language ?? 'en',
+    });
+
+    final response = await _authRequest(
+      (h) => _client.post(uri, headers: h, body: body),
     );
 
-    if (response.statusCode == 201) {
-      return true;
-    }
-
-    if (response.statusCode == 409) {
-      return false;
-    }
-
+    if (response.statusCode == 201) return true;
+    if (response.statusCode == 409) return false;
     throw Exception('Failed to add bookmark (${response.statusCode}).');
   }
 
@@ -160,7 +201,8 @@ class NewsApiService {
       '$baseUrl/api/v1/user/bookmarks',
     ).replace(queryParameters: {'page': '$page', 'limit': '$limit'});
 
-    final response = await _client.get(uri, headers: _authHeaders());
+    final response = await _authRequest((h) => _client.get(uri, headers: h));
+
     if (response.statusCode != 200) {
       throw Exception('Failed to fetch bookmarks (${response.statusCode}).');
     }
@@ -193,43 +235,53 @@ class NewsApiService {
     }
 
     final uri = Uri.parse('$baseUrl/api/v1/user/bookmarks/$bookmarkId');
-    final response = await _client.delete(uri, headers: _authHeaders());
+    final response = await _authRequest((h) => _client.delete(uri, headers: h));
+
     if (response.statusCode != 200) {
       throw Exception('Failed to delete bookmark (${response.statusCode}).');
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // User profile
+  // ---------------------------------------------------------------------------
+
   Future<Map<String, dynamic>> fetchProfile() async {
     final uri = Uri.parse('$baseUrl/api/v1/user/profile');
-    final response = await _client.get(uri, headers: _authHeaders());
+    final response = await _authRequest((h) => _client.get(uri, headers: h));
+
     if (response.statusCode != 200) {
       throw Exception('Failed to fetch profile (${response.statusCode}).');
     }
-    final dynamic payload = jsonDecode(response.body);
-    return payload as Map<String, dynamic>;
+    return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
   Future<void> updateProfile({String? language}) async {
     final uri = Uri.parse('$baseUrl/api/v1/user/profile');
-
     final prefs = <String, dynamic>{};
-    if (language != null) {
-      prefs['language'] = language;
-    }
+    if (language != null) prefs['language'] = language;
 
-    final response = await _client.patch(
-      uri,
-      headers: _authHeaders(),
-      body: jsonEncode({'preferences': prefs}),
+    final response = await _authRequest(
+      (h) => _client.patch(
+        uri,
+        headers: h,
+        body: jsonEncode({'preferences': prefs}),
+      ),
     );
+
     if (response.statusCode != 200) {
       throw Exception('Failed to update profile (${response.statusCode}).');
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Notification preferences
+  // ---------------------------------------------------------------------------
+
   Future<Map<String, dynamic>> fetchNotificationPreferences() async {
     final uri = Uri.parse('$baseUrl/api/v1/user/notifications/preferences');
-    final response = await _client.get(uri, headers: _authHeaders());
+    final response = await _authRequest((h) => _client.get(uri, headers: h));
+
     if (response.statusCode != 200) {
       throw Exception(
         'Failed to fetch notification preferences (${response.statusCode}).',
@@ -258,10 +310,10 @@ class NewsApiService {
     required Map<String, dynamic> notifications,
   }) async {
     final uri = Uri.parse('$baseUrl/api/v1/user/notifications/preferences');
-    final response = await _client.patch(
-      uri,
-      headers: _authHeaders(),
-      body: jsonEncode({'notifications': notifications}),
+    final body = jsonEncode({'notifications': notifications});
+
+    final response = await _authRequest(
+      (h) => _client.patch(uri, headers: h, body: body),
     );
 
     if (response.statusCode != 200) {
@@ -294,14 +346,14 @@ class NewsApiService {
     String? deviceName,
   }) async {
     final uri = Uri.parse('$baseUrl/api/v1/user/notifications/devices');
-    final response = await _client.post(
-      uri,
-      headers: _authHeaders(),
-      body: jsonEncode({
-        'token': token,
-        'platform': platform,
-        'deviceName': ?deviceName,
-      }),
+    final body = jsonEncode({
+      'token': token,
+      'platform': platform,
+      'deviceName': deviceName,
+    });
+
+    final response = await _authRequest(
+      (h) => _client.post(uri, headers: h, body: body),
     );
 
     if (response.statusCode != 201) {
