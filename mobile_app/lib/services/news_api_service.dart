@@ -256,10 +256,14 @@ class NewsApiService {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
-  Future<void> updateProfile({String? language}) async {
+  Future<void> updateProfile({
+    String? language,
+    List<String>? categories,
+  }) async {
     final uri = Uri.parse('$baseUrl/api/v1/user/profile');
     final prefs = <String, dynamic>{};
     if (language != null) prefs['language'] = language;
+    if (categories != null) prefs['categories'] = categories;
 
     final response = await _authRequest(
       (h) => _client.patch(
@@ -359,6 +363,52 @@ class NewsApiService {
     if (response.statusCode != 201) {
       throw Exception(
         'Failed to register notification device (${response.statusCode}).',
+      );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchNotificationDevices() async {
+    final uri = Uri.parse('$baseUrl/api/v1/user/notifications/devices');
+    final response = await _authRequest((h) => _client.get(uri, headers: h));
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to fetch notification devices (${response.statusCode}).',
+      );
+    }
+
+    final dynamic payload = jsonDecode(response.body);
+    if (payload is! Map<String, dynamic>) {
+      throw Exception('Unexpected notification devices response format.');
+    }
+
+    final dynamic data = payload['data'];
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Missing notification devices data in response.');
+    }
+
+    final dynamic devices = data['devices'];
+    if (devices is! List) {
+      throw Exception('Missing devices list in response.');
+    }
+
+    return devices.whereType<Map<String, dynamic>>().toList(growable: false);
+  }
+
+  Future<void> deleteNotificationDevice(String deviceId) async {
+    final trimmedId = deviceId.trim();
+    if (trimmedId.isEmpty) {
+      throw Exception('Device id is required.');
+    }
+
+    final uri = Uri.parse(
+      '$baseUrl/api/v1/user/notifications/devices/$trimmedId',
+    );
+    final response = await _authRequest((h) => _client.delete(uri, headers: h));
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to delete notification device (${response.statusCode}).',
       );
     }
   }

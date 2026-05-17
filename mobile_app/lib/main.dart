@@ -71,12 +71,26 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     'General',
   ];
 
+  static const List<String> _profileCategoryOptions = [
+    'Tech',
+    'Politics',
+    'Sports',
+    'Business',
+    'World',
+    'Health',
+    'Entertainment',
+    'Science',
+    'Education',
+    'General',
+  ];
+
   bool _isInitialLoading = true;
   bool _isLoadingMore = false;
   bool _isBookmarkSheetLoading = false;
   String? _errorMessage;
   int _currentPage = 1;
   String _language = 'en';
+  List<String> _preferredCategories = <String>[];
   String? _selectedCategory;
   String _searchQuery = '';
   String _sort = 'latest';
@@ -94,20 +108,51 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     await _authService.init();
     await _pushService.initialize();
 
-    if (_newsApiService.hasAccessToken) {
-      try {
-        final profileData = await _newsApiService.fetchProfile();
-        final prefs =
-            profileData['profile']?['preferences'] as Map<String, dynamic>?;
-        if (prefs != null) {
-          final profileLang = prefs['language'] as String?;
-          if (profileLang != null && profileLang.isNotEmpty) {
-            _language = profileLang;
-          }
-        }
-      } catch (_) {}
-    }
+    await _syncProfileFromServer(updateState: false);
     await _loadInitialFeed();
+  }
+
+  Future<void> _syncProfileFromServer({bool updateState = true}) async {
+    if (!_newsApiService.hasAccessToken) {
+      return;
+    }
+
+    try {
+      final profileData = await _newsApiService.fetchProfile();
+      final profile = profileData['profile'];
+      final prefs = profile is Map<String, dynamic>
+          ? profile['preferences'] as Map<String, dynamic>?
+          : null;
+      if (prefs == null) {
+        return;
+      }
+
+      final profileLang = prefs['language'] as String?;
+      final profileCategories = (prefs['categories'] as List?)
+          ?.whereType<String>()
+          .map((c) => c.trim())
+          .where((c) => c.isNotEmpty)
+          .toSet()
+          .toList(growable: false);
+
+      final nextLanguage = (profileLang != null && profileLang.isNotEmpty)
+          ? profileLang
+          : _language;
+      final nextCategories = profileCategories ?? _preferredCategories;
+
+      if (!updateState || !mounted) {
+        _language = nextLanguage;
+        _preferredCategories = nextCategories;
+        return;
+      }
+
+      setState(() {
+        _language = nextLanguage;
+        _preferredCategories = nextCategories;
+      });
+    } catch (_) {
+      // Keep feed usable even if profile API is unavailable.
+    }
   }
 
   Future<List<NewsItem>> _fetchNewsPage(int page) {
@@ -400,6 +445,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
               if (result.success) {
                 Navigator.of(context).pop();
                 if (mounted) setState(() {});
+                await _syncProfileFromServer();
                 await _refreshBookmarks();
               } else {
                 setModalState(() {
@@ -647,294 +693,62 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   }
 
   Future<void> _openSettingsSheet() async {
-    final messenger = ScaffoldMessenger.of(context);
-    var pendingLanguage = _language;
-    var pendingNotifications = _defaultNotificationPreferences();
-    var hasServerNotificationPrefs = false;
-
-    if (_newsApiService.hasAccessToken) {
-      try {
-        final fetched = await _newsApiService.fetchNotificationPreferences();
-        pendingNotifications = _normalizeNotificationPreferences(fetched);
-        hasServerNotificationPrefs = true;
-      } catch (_) {
-        pendingNotifications = _normalizeNotificationPreferences(null);
-      }
-    }
-
-    if (!mounted) return;
-
-    final result = await showModalBottomSheet<Map<String, dynamic>>(
-      context: context,
-      backgroundColor: const Color(0xFF121212),
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            Widget languageTile(String code, String name) {
-              return ListTile(
-                title: Text(name, style: const TextStyle(color: Colors.white)),
-                trailing: pendingLanguage == code
-                    ? const Icon(Icons.check, color: Colors.indigoAccent)
-                    : null,
-                onTap: () {
-                  setModalState(() {
-                    pendingLanguage = code;
-                  });
-                },
-              );
-            }
-
-            return SafeArea(
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.82,
-                child: Column(
-                  children: [
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Settings',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Divider(color: Colors.white24, height: 1),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Padding(
-                              padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-                              child: Text(
-                                'Language',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                            languageTile('en', 'English'),
-                            languageTile('hi', 'Hindi'),
-                            languageTile('bn', 'Bengali'),
-                            languageTile('mr', 'Marathi'),
-                            languageTile('te', 'Telugu'),
-                            languageTile('ta', 'Tamil'),
-                            const Divider(color: Colors.white24),
-                            const Padding(
-                              padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
-                              child: Text(
-                                'Account',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                            if (_authService.isLoggedIn) ...[
-                              ListTile(
-                                leading: const Icon(
-                                  Icons.account_circle,
-                                  color: Colors.white70,
-                                ),
-                                title: Text(
-                                  _authService.userEmail ?? 'Signed in',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                                subtitle: const Text(
-                                  'Tap to sign out',
-                                  style: TextStyle(color: Colors.white54),
-                                ),
-                                onTap: () async {
-                                  final nav = Navigator.of(context);
-                                  final sm = ScaffoldMessenger.of(context);
-                                  nav.pop();
-                                  await _authService.logout();
-                                  if (!mounted) return;
-                                  setState(() {
-                                    _bookmarks.clear();
-                                    _bookmarkedUrls.clear();
-                                  });
-                                  sm.showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Signed out.'),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ] else ...[
-                              ListTile(
-                                leading: const Icon(
-                                  Icons.login,
-                                  color: Colors.white70,
-                                ),
-                                title: const Text(
-                                  'Sign In',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                onTap: () {
-                                  Navigator.of(context).pop();
-                                  _openLoginSheet();
-                                },
-                              ),
-                            ],
-                            if (_newsApiService.hasAccessToken) ...[
-                              const Divider(color: Colors.white24),
-                              const Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
-                                child: Text(
-                                  'Notifications',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                              if (!hasServerNotificationPrefs)
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 4,
-                                  ),
-                                  child: Text(
-                                    'Using defaults because server preferences could not be loaded.',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              SwitchListTile.adaptive(
-                                title: const Text(
-                                  'Enable Notifications',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                value: pendingNotifications['enabled'] as bool,
-                                onChanged: (value) {
-                                  setModalState(() {
-                                    pendingNotifications['enabled'] = value;
-                                  });
-                                },
-                              ),
-                              SwitchListTile.adaptive(
-                                title: const Text(
-                                  'Breaking News Alerts',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                value:
-                                    pendingNotifications['breakingNews']
-                                        as bool,
-                                onChanged: (value) {
-                                  setModalState(() {
-                                    pendingNotifications['breakingNews'] =
-                                        value;
-                                  });
-                                },
-                              ),
-                              SwitchListTile.adaptive(
-                                title: const Text(
-                                  'Bookmark Alerts',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                value:
-                                    pendingNotifications['bookmarkAlerts']
-                                        as bool,
-                                onChanged: (value) {
-                                  setModalState(() {
-                                    pendingNotifications['bookmarkAlerts'] =
-                                        value;
-                                  });
-                                },
-                              ),
-                              SwitchListTile.adaptive(
-                                title: const Text(
-                                  'Daily Digest',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                value:
-                                    pendingNotifications['dailyDigest'] as bool,
-                                onChanged: (value) {
-                                  setModalState(() {
-                                    pendingNotifications['dailyDigest'] = value;
-                                  });
-                                },
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                      child: Row(
-                        children: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('Cancel'),
-                          ),
-                          const Spacer(),
-                          FilledButton(
-                            onPressed: () {
-                              Navigator.of(context).pop({
-                                'language': pendingLanguage,
-                                if (_newsApiService.hasAccessToken)
-                                  'notifications': pendingNotifications,
-                              });
-                            },
-                            child: const Text('Save'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (_) => _SettingsProfilePage(
+          authService: _authService,
+          newsApiService: _newsApiService,
+          currentLanguage: _language,
+          currentCategories: _preferredCategories,
+          defaultNotificationPreferences: _defaultNotificationPreferences(),
+          normalizeNotificationPreferences: _normalizeNotificationPreferences,
+          categoryOptions: _profileCategoryOptions,
+        ),
+      ),
     );
 
-    if (result == null) {
+    if (result == null || !mounted) return;
+
+    if (result['signInRequested'] == true) {
+      await _openLoginSheet();
+      await _syncProfileFromServer();
+      return;
+    }
+
+    if (result['signedOut'] == true) {
+      setState(() {
+        _bookmarks.clear();
+        _bookmarkedUrls.clear();
+        _preferredCategories = <String>[];
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Signed out.')));
       return;
     }
 
     final selectedLanguage = result['language'] as String?;
+    final selectedCategories = (result['categories'] as List?)
+        ?.whereType<String>()
+        .toList(growable: false);
+
+    var shouldReloadFeed = false;
+
     if (selectedLanguage != null && selectedLanguage != _language) {
-      if (!mounted) return;
       setState(() {
         _language = selectedLanguage;
       });
-      if (_newsApiService.hasAccessToken) {
-        try {
-          await _newsApiService.updateProfile(language: selectedLanguage);
-        } catch (_) {}
-      }
-      await _loadInitialFeed();
+      shouldReloadFeed = true;
     }
 
-    if (_newsApiService.hasAccessToken) {
-      final dynamic rawNotifications = result['notifications'];
-      if (rawNotifications is Map<String, dynamic>) {
-        final normalized = _normalizeNotificationPreferences(rawNotifications);
-        try {
-          await _newsApiService.updateNotificationPreferences(
-            notifications: normalized,
-          );
-          if (!mounted) return;
-          messenger.showSnackBar(
-            const SnackBar(content: Text('Notification preferences saved.')),
-          );
-        } catch (error) {
-          if (!mounted) return;
-          messenger.showSnackBar(SnackBar(content: Text('$error')));
-        }
-      }
+    if (selectedCategories != null) {
+      setState(() {
+        _preferredCategories = selectedCategories;
+      });
+    }
+
+    if (shouldReloadFeed) {
+      await _loadInitialFeed();
     }
   }
 
@@ -1238,6 +1052,483 @@ class _StoryPager extends StatefulWidget {
 
   @override
   State<_StoryPager> createState() => _StoryPagerState();
+}
+
+class _SettingsProfilePage extends StatefulWidget {
+  const _SettingsProfilePage({
+    required this.authService,
+    required this.newsApiService,
+    required this.currentLanguage,
+    required this.currentCategories,
+    required this.defaultNotificationPreferences,
+    required this.normalizeNotificationPreferences,
+    required this.categoryOptions,
+  });
+
+  final AuthService authService;
+  final NewsApiService newsApiService;
+  final String currentLanguage;
+  final List<String> currentCategories;
+  final Map<String, dynamic> defaultNotificationPreferences;
+  final Map<String, dynamic> Function(Map<String, dynamic>?)
+  normalizeNotificationPreferences;
+  final List<String> categoryOptions;
+
+  @override
+  State<_SettingsProfilePage> createState() => _SettingsProfilePageState();
+}
+
+class _SettingsProfilePageState extends State<_SettingsProfilePage> {
+  static const Map<String, String> _languageLabels = {
+    'en': 'English',
+    'hi': 'Hindi',
+    'bn': 'Bengali',
+    'mr': 'Marathi',
+    'te': 'Telugu',
+    'ta': 'Tamil',
+  };
+
+  late String _pendingLanguage;
+  late Set<String> _pendingCategories;
+  late Map<String, dynamic> _pendingNotifications;
+
+  bool _isLoading = false;
+  bool _isSaving = false;
+  bool _isLoggedIn = false;
+  bool _hasServerNotificationPrefs = false;
+  List<Map<String, dynamic>> _devices = const [];
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _pendingLanguage = widget.currentLanguage;
+    _pendingCategories = widget.currentCategories.toSet();
+    _pendingNotifications = widget.normalizeNotificationPreferences(
+      widget.defaultNotificationPreferences,
+    );
+    _isLoggedIn = widget.authService.isLoggedIn;
+
+    if (_isLoggedIn) {
+      _loadServerData();
+    }
+  }
+
+  Future<void> _loadServerData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final profileData = await widget.newsApiService.fetchProfile();
+      final profile = profileData['profile'];
+      final prefs = profile is Map<String, dynamic>
+          ? profile['preferences'] as Map<String, dynamic>?
+          : null;
+
+      var nextLanguage = _pendingLanguage;
+      var nextCategories = _pendingCategories;
+      if (prefs != null) {
+        final profileLang = prefs['language'] as String?;
+        if (profileLang != null && profileLang.isNotEmpty) {
+          nextLanguage = profileLang;
+        }
+        final profileCategories = (prefs['categories'] as List?)
+            ?.whereType<String>()
+            .map((c) => c.trim())
+            .where((c) => c.isNotEmpty)
+            .toSet();
+        if (profileCategories != null) {
+          nextCategories = profileCategories;
+        }
+      }
+
+      Map<String, dynamic> nextNotifications = _pendingNotifications;
+      var hasNotificationPrefs = false;
+      try {
+        final fetched = await widget.newsApiService
+            .fetchNotificationPreferences();
+        nextNotifications = widget.normalizeNotificationPreferences(fetched);
+        hasNotificationPrefs = true;
+      } catch (_) {
+        nextNotifications = widget.normalizeNotificationPreferences(null);
+      }
+
+      List<Map<String, dynamic>> devices = const [];
+      try {
+        devices = await widget.newsApiService.fetchNotificationDevices();
+      } catch (_) {}
+
+      if (!mounted) return;
+      setState(() {
+        _pendingLanguage = nextLanguage;
+        _pendingCategories = nextCategories;
+        _pendingNotifications = nextNotifications;
+        _hasServerNotificationPrefs = hasNotificationPrefs;
+        _devices = devices;
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = '$error';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _saveSettings() async {
+    if (!_isLoggedIn) {
+      Navigator.of(context).pop({
+        'language': _pendingLanguage,
+        'categories': _pendingCategories.toList(growable: false),
+      });
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _error = null;
+    });
+
+    try {
+      await widget.newsApiService.updateProfile(
+        language: _pendingLanguage,
+        categories: _pendingCategories.toList(growable: false),
+      );
+
+      await widget.newsApiService.updateNotificationPreferences(
+        notifications: widget.normalizeNotificationPreferences(
+          _pendingNotifications,
+        ),
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop({
+        'language': _pendingLanguage,
+        'categories': _pendingCategories.toList(growable: false),
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = '$error';
+        _isSaving = false;
+      });
+    }
+  }
+
+  Future<void> _deleteDevice(String id) async {
+    try {
+      await widget.newsApiService.deleteNotificationDevice(id);
+      if (!mounted) return;
+      setState(() {
+        _devices = _devices
+            .where((d) => '${d['id']}' != id)
+            .toList(growable: false);
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Device removed.')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
+  Future<void> _logout() async {
+    await widget.authService.logout();
+    if (!mounted) return;
+    Navigator.of(context).pop({'signedOut': true});
+  }
+
+  Widget _languageTile(String code, String label) {
+    return ListTile(
+      title: Text(label, style: const TextStyle(color: Colors.white)),
+      trailing: _pendingLanguage == code
+          ? const Icon(Icons.check, color: Colors.indigoAccent)
+          : null,
+      onTap: () {
+        setState(() {
+          _pendingLanguage = code;
+        });
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Settings'),
+        actions: [
+          TextButton(
+            onPressed: _isSaving ? null : _saveSettings,
+            child: _isSaving
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save'),
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.only(bottom: 20),
+              children: [
+                if (_error != null)
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.redAccent.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 6),
+                  child: Text(
+                    'Account',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                if (_isLoggedIn) ...[
+                  ListTile(
+                    leading: const Icon(
+                      Icons.account_circle,
+                      color: Colors.white70,
+                    ),
+                    title: Text(
+                      widget.authService.userEmail ?? 'Signed in',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    subtitle: const Text(
+                      'Profile and notification preferences are synced.',
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.white70),
+                    title: const Text(
+                      'Sign Out',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: _logout,
+                  ),
+                ] else ...[
+                  ListTile(
+                    leading: const Icon(Icons.login, color: Colors.white70),
+                    title: const Text(
+                      'Sign In',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    subtitle: const Text(
+                      'Sign in to manage profile and notifications.',
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                    onTap: () =>
+                        Navigator.of(context).pop({'signInRequested': true}),
+                  ),
+                ],
+                const Divider(color: Colors.white24),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+                  child: Text(
+                    'Language',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                ..._languageLabels.entries.map(
+                  (entry) => _languageTile(entry.key, entry.value),
+                ),
+                const Divider(color: Colors.white24),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+                  child: Text(
+                    'Category Preferences',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: widget.categoryOptions
+                        .map((category) {
+                          final selected = _pendingCategories.contains(
+                            category,
+                          );
+                          return FilterChip(
+                            label: Text(category),
+                            selected: selected,
+                            onSelected: (value) {
+                              setState(() {
+                                if (value) {
+                                  _pendingCategories.add(category);
+                                } else {
+                                  _pendingCategories.remove(category);
+                                }
+                              });
+                            },
+                          );
+                        })
+                        .toList(growable: false),
+                  ),
+                ),
+                if (_isLoggedIn) ...[
+                  const Divider(color: Colors.white24),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+                    child: Text(
+                      'Notifications',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  if (!_hasServerNotificationPrefs)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      child: Text(
+                        'Using defaults because server preferences could not be loaded.',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ),
+                  SwitchListTile.adaptive(
+                    title: const Text(
+                      'Enable Notifications',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    value: _pendingNotifications['enabled'] as bool,
+                    onChanged: (value) {
+                      setState(() {
+                        _pendingNotifications['enabled'] = value;
+                      });
+                    },
+                  ),
+                  SwitchListTile.adaptive(
+                    title: const Text(
+                      'Breaking News Alerts',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    value: _pendingNotifications['breakingNews'] as bool,
+                    onChanged: (value) {
+                      setState(() {
+                        _pendingNotifications['breakingNews'] = value;
+                      });
+                    },
+                  ),
+                  SwitchListTile.adaptive(
+                    title: const Text(
+                      'Bookmark Alerts',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    value: _pendingNotifications['bookmarkAlerts'] as bool,
+                    onChanged: (value) {
+                      setState(() {
+                        _pendingNotifications['bookmarkAlerts'] = value;
+                      });
+                    },
+                  ),
+                  SwitchListTile.adaptive(
+                    title: const Text(
+                      'Daily Digest',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    value: _pendingNotifications['dailyDigest'] as bool,
+                    onChanged: (value) {
+                      setState(() {
+                        _pendingNotifications['dailyDigest'] = value;
+                      });
+                    },
+                  ),
+                  const Divider(color: Colors.white24),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+                    child: Text(
+                      'Registered Devices',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  if (_devices.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Text(
+                        'No notification devices registered yet.',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    )
+                  else
+                    ..._devices.map((device) {
+                      final id = '${device['id'] ?? ''}';
+                      final platform = '${device['platform'] ?? 'unknown'}';
+                      final name = '${device['deviceName'] ?? 'Device'}';
+                      return ListTile(
+                        leading: const Icon(
+                          Icons.phone_android,
+                          color: Colors.white70,
+                        ),
+                        title: Text(
+                          name,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        subtitle: Text(
+                          platform.toUpperCase(),
+                          style: const TextStyle(color: Colors.white54),
+                        ),
+                        trailing: IconButton(
+                          onPressed: id.isEmpty
+                              ? null
+                              : () => _deleteDevice(id),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      );
+                    }),
+                ],
+              ],
+            ),
+    );
+  }
 }
 
 class _StoryPagerState extends State<_StoryPager> {
