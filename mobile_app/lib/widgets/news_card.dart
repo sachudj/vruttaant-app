@@ -111,15 +111,20 @@ class NewsCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    summary,
-                    maxLines: 5,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFE8E8E8),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      height: 1.45,
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(context).height * 0.48,
+                    ),
+                    child: Text(
+                      summary,
+                      maxLines: 12,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFE8E8E8),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        height: 1.45,
+                      ),
                     ),
                   ),
                 ],

@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vruttaant User Guide Screens</title>
+    <style>
+      :root {
+        --bg: #08090b;
+        --panel: #121418;
+        --card: #171a20;
+        --text: #f6f7f9;
+        --muted: #b9c0cb;
+        --accent: #7ed0ff;
+        --accent-2: #69f1bf;
+        --chip: #21262f;
+        --danger: #ff6d7a;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: "Avenir Next", "SF Pro Display", "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(1200px 600px at -10% -20%, #183245 0%, transparent 60%),
+          radial-gradient(900px 700px at 110% 10%, #24311d 0%, transparent 55%),
+          var(--bg);
+        padding: 28px;
+      }
+
+      .title {
+        margin: 0 0 16px;
+        font-size: 28px;
+        letter-spacing: 0.2px;
+      }
+
+      .subtitle {
+        margin: 0 0 24px;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 26px;
+      }
+
+      .phone {
+        background: linear-gradient(180deg, #13161c, #0f1117);
+        border: 1px solid #2c313b;
+        border-radius: 28px;
+        box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+        padding: 10px;
+      }
+
+      .screen {
+        border-radius: 20px;
+        overflow: hidden;
+        min-height: 740px;
+        background: #0f1218;
+        position: relative;
+      }
+
+      .statusbar {
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 12px;
+        font-size: 12px;
+        color: #d3dae6;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+
+      .header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 14px;
+        gap: 8px;
+      }
+
+      .chips {
+        display: flex;
+        gap: 8px;
+        padding: 8px 12px;
+        overflow: hidden;
+      }
+
+      .chip {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: var(--chip);
+        color: #d4d9e2;
+        font-size: 12px;
+        border: 1px solid #2b303a;
+        white-space: nowrap;
+      }
+
+      .chip.active {
+        background: #e9eef7;
+        color: #111319;
+        border-color: #e9eef7;
+        font-weight: 600;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 8px;
+      }
+
+      .icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: 1px solid #323846;
+        display: grid;
+        place-items: center;
+        background: #1a1f29;
+        font-size: 13px;
+      }
+
+      .news-hero {
+        position: absolute;
+        inset: 94px 0 0 0;
+        background:
+          linear-gradient(180deg, rgba(0, 0, 0, 0.12) 15%, rgba(0, 0, 0, 0.82) 80%),
+          linear-gradient(140deg, #335a77, #1f2939 38%, #453126);
+      }
+
+      .story-content {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 24px;
+      }
+
+      .story-title {
+        margin: 0;
+        font-size: 30px;
+        line-height: 1.1;
+        font-weight: 800;
+      }
+
+      .story-summary {
+        margin: 12px 0 0;
+        font-size: 16px;
+        line-height: 1.5;
+        color: #e5e9ef;
+        max-height: 42vh;
+        overflow: hidden;
+      }
+
+      .panel {
+        margin: 12px;
+        border-radius: 16px;
+        background: var(--panel);
+        border: 1px solid #292f38;
+        padding: 14px;
+      }
+
+      .h1 { margin: 0 0 8px; font-size: 20px; }
+      .h2 { margin: 0 0 8px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+      .line { height: 10px; border-radius: 8px; background: #2a303a; margin: 8px 0; }
+      .line.short { width: 45%; }
+      .line.mid { width: 72%; }
+
+      .toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #22262d;
+        font-size: 14px;
+      }
+
+      .switch {
+        width: 44px;
+        height: 24px;
+        border-radius: 999px;
+        background: #2c3340;
+        position: relative;
+      }
+
+      .switch::after {
+        content: "";
+        width: 18px;
+        height: 18px;
+        background: #fff;
+        border-radius: 50%;
+        position: absolute;
+        top: 3px;
+        left: 3px;
+      }
+
+      .switch.on { background: #3b7ef0; }
+      .switch.on::after { left: 23px; }
+
+      .list-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #22262d;
+      }
+
+      .badge {
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(126, 208, 255, 0.18);
+        border: 1px solid rgba(126, 208, 255, 0.4);
+        color: #cceeff;
+      }
+
+      .danger { color: var(--danger); }
+
+      .caption {
+        margin-top: 10px;
+        color: #c6ced8;
+        font-size: 13px;
+      }
+
+      .screen-title {
+        margin-top: 10px;
+        font-size: 16px;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="title">Vruttaant Expected GUI Screens</h1>
+    <p class="subtitle">User-facing reference screens for docs. Includes implemented and planned translation states.</p>
+
+    <div class="grid">
+      <section id="feed" class="phone">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>5G 83%</span></div>
+          <div class="chips">
+            <div class="chip active">All</div><div class="chip">Tech</div><div class="chip">Business</div><div class="chip">World</div>
+          </div>
+          <div class="header-row">
+            <div class="pill">Source: Global Wire</div>
+            <div class="toolbar"><div class="icon">🔎</div><div class="icon">⚙</div><div class="icon">🔖</div></div>
+          </div>
+          <div class="news-hero"></div>
+          <div class="story-content">
+            <h2 class="story-title">Global Climate Pact Reaches New Milestone</h2>
+            <p class="story-summary">Leaders from multiple regions agreed on an accelerated emissions framework with yearly transparency checks and funding support for vulnerable economies. The updated pact focuses on practical targets, tighter reporting standards, and regional adaptation programs intended to reduce implementation gaps across sectors.</p>
+          </div>
+        </div>
+        <div class="screen-title">Feed Story Card</div>
+        <div class="caption">Implemented reference: swipe-first card with 3-line title cap and expanded summary area.</div>
+      </section>
+
+      <section id="search" class="phone">
+        <div class="screen" style="background:#0d1015;">
+          <div class="statusbar"><span>9:41</span><span>5G 83%</span></div>
+          <div class="panel">
+            <h3 class="h1">Search &amp; Sort</h3>
+            <div class="line"></div>
+            <div class="line mid"></div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <div class="chip">Latest</div>
+              <div class="chip active">Relevance</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:14px;">
+              <div class="chip">Clear</div>
+              <div class="chip active" style="background:#6fb9ff;color:#0f1420;border-color:#6fb9ff;">Apply</div>
+            </div>
+          </div>
+        </div>
+        <div class="screen-title">Search & Sort</div>
+        <div class="caption">Implemented reference: keyword search and ordering controls.</div>
+      </section>
+
+      <section id="settings" class="phone">
+        <div class="screen" style="background:#0d1015;">
+          <div class="statusbar"><span>9:41</span><span>5G 83%</span></div>
+          <div class="header-row"><div class="h1" style="margin:0;">Settings</div><div class="chip active" style="padding:6px 10px;">Save</div></div>
+          <div class="panel">
+            <div class="h2">Account</div>
+            <div class="list-item"><span>you@example.com</span><span class="danger">Sign Out</span></div>
+            <div class="h2" style="margin-top:12px;">Language</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;"><div class="chip">English</div><div class="chip active">Hindi</div><div class="chip">Bengali</div><div class="chip">Marathi</div></div>
+            <div class="h2" style="margin-top:12px;">Category Preferences</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;"><div class="chip active">Business</div><div class="chip active">World</div><div class="chip">Sports</div><div class="chip">Science</div></div>
+          </div>
+        </div>
+        <div class="screen-title">Settings / Profile</div>
+        <div class="caption">Implemented reference: account, language, and preference management.</div>
+      </section>
+
+      <section id="bookmarks" class="phone">
+        <div class="screen" style="background:#0d1015;">
+          <div class="statusbar"><span>9:41</span><span>5G 83%</span></div>
+          <div class="header-row"><div class="h1" style="margin:0;">Bookmarks</div></div>
+          <div class="panel">
+            <div class="list-item"><div><div>Market Update: Global Indexes Rise</div><div style="color:#9ba5b3;font-size:12px;">Global Wire</div></div><span>🗑</span></div>
+            <div class="list-item"><div><div>New Policy Package Released</div><div style="color:#9ba5b3;font-size:12px;">Policy Watch</div></div><span>🗑</span></div>
+            <div class="list-item"><div><div>Space Mission Crosses New Orbit Stage</div><div style="color:#9ba5b3;font-size:12px;">Science Desk</div></div><span>🗑</span></div>
+          </div>
+        </div>
+        <div class="screen-title">Bookmarks</div>
+        <div class="caption">Implemented reference: saved stories list with removal and open actions.</div>
+      </section>
+
+      <section id="reader" class="phone">
+        <div class="screen" style="background:#0d1015;">
+          <div class="statusbar"><span>9:41</span><span>5G 83%</span></div>
+          <div class="panel" style="height:650px;">
+            <div class="h1">Read More</div>
+            <div class="line"></div>
+            <div class="line"></div>
+            <div class="line mid"></div>
+            <div style="margin-top:16px;color:#9ac6ff;">https://example.com/full-article-link</div>
+          </div>
+        </div>
+        <div class="screen-title">Reader / Full Article</div>
+        <div class="caption">Implemented reference: full article page via web view or fallback content.</div>
+      </section>
+
+      <section id="translation" class="phone">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>5G 83%</span></div>
+          <div class="chips">
+            <div class="chip active">Hindi</div><div class="chip">Original</div><div class="badge">Planned</div>
+          </div>
+          <div class="news-hero" style="background:linear-gradient(180deg, rgba(0,0,0,.12) 15%, rgba(0,0,0,.82) 80%), linear-gradient(140deg,#355d49,#1e2a31 38%,#4e2a2a);"></div>
+          <div class="story-content">
+            <h2 class="story-title">ऊर्जा समझौते पर वैश्विक सहमति का नया चरण</h2>
+            <p class="story-summary">नीति निर्माताओं ने उत्सर्जन लक्ष्यों को तेज करने, पारदर्शिता रिपोर्टिंग को मजबूत करने और संवेदनशील क्षेत्रों के लिए वित्तीय सहायता बढ़ाने पर सहमति दी। उपयोगकर्ता अनुवादित और मूल सामग्री के बीच स्विच कर सकेगा, ताकि पढ़ने की सुविधा और स्रोत की विश्वसनीयता दोनों बनी रहें।</p>
+            <div style="margin-top:12px;display:flex;gap:8px;">
+              <div class="chip active" style="background:#6de3b4;color:#0f1f16;border-color:#6de3b4;">Translated</div>
+              <div class="chip">Show Original</div>
+            </div>
+          </div>
+        </div>
+        <div class="screen-title">Planned Translation State</div>
+        <div class="caption">Planned reference: translated summary with clear Original/Translated toggle.</div>
+      </section>
+    </div>
+  </body>
+</html>

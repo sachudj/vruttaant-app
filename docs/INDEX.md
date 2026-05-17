@@ -23,6 +23,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 - **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Daily workflow, debugging, common tasks
 - **[BACKEND.md](./BACKEND.md)** - Server setup, configuration, modules
 - **[MOBILE_APP.md](./MOBILE_APP.md)** - Flutter setup, running, building
+- **[USER_APP_GUIDE.md](./USER_APP_GUIDE.md)** - User-facing app journeys, expected pages, and scenarios
 
 ### Reference Documentation
 - **[API_ENDPOINTS.md](./API_ENDPOINTS.md)** - Complete API reference with examples
@@ -69,6 +70,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 | **DEVELOPMENT.md** | Daily workflow & debugging | Developers |
 | **BACKEND.md** | Server configuration & modules | Backend developers |
 | **MOBILE_APP.md** | Flutter setup & building | Mobile developers |
+| **USER_APP_GUIDE.md** | User journeys, pages, and scenarios | Product, QA, design |
 | **API_ENDPOINTS.md** | Complete API reference | Developers, testers |
 | **DATABASE.md** | MongoDB schema & operations | Backend, DevOps |
 | **DOCKER.md** | Container management | DevOps, backend |

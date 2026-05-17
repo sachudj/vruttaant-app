@@ -50,6 +50,43 @@ const QUALITY_RULES = {
   maxTitleLength: 180
 };
 
+const SUMMARY_WORD_TARGET = 60;
+const SUMMARY_WORD_MIN = Number(process.env.LLM_SUMMARY_MIN_WORDS || 45);
+const SUMMARY_WORD_MAX = Number(process.env.LLM_SUMMARY_MAX_WORDS || 75);
+
+function tokenizeWords(value) {
+  return cleanText(value)
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function enforceSummaryWordRange(summary, fallbackText = '') {
+  const minWords = Math.max(10, SUMMARY_WORD_MIN);
+  const maxWords = Math.max(minWords, SUMMARY_WORD_MAX);
+
+  let words = tokenizeWords(summary);
+
+  if (words.length > maxWords) {
+    words = words.slice(0, maxWords);
+  }
+
+  if (words.length >= minWords) {
+    return words.join(' ');
+  }
+
+  const fallbackWords = tokenizeWords(fallbackText);
+  const needed = minWords - words.length;
+  if (needed > 0 && fallbackWords.length) {
+    words = [...words, ...fallbackWords.slice(0, needed)];
+  }
+
+  if (words.length > maxWords) {
+    words = words.slice(0, maxWords);
+  }
+
+  return cleanText(words.join(' '));
+}
+
 function parseDate(value) {
   if (!value) {
     return null;
@@ -137,7 +174,7 @@ async function summarizeWithLlm(card, language) {
   const model = process.env.LLM_MODEL || DEFAULT_LLM_MODEL;
   const normalizedLanguage = normalizeLanguage(language);
   const languageLabel = toLanguageLabel(normalizedLanguage);
-  const prompt = `Summarize this news in exactly 60 words in ${languageLabel}, keeping a neutral tone. Also classify it into one short category label (examples: Tech, Politics, Sports, Business, World, Health, Entertainment, Science, Education). Return ONLY valid JSON with keys "summary" and "category".`;
+  const prompt = `Summarize this news in ${languageLabel} in a neutral tone. Keep the summary between ${SUMMARY_WORD_MIN} and ${SUMMARY_WORD_MAX} words (target around ${SUMMARY_WORD_TARGET} words). Also classify it into one short category label (examples: Tech, Politics, Sports, Business, World, Health, Entertainment, Science, Education). Return ONLY valid JSON with keys "summary" and "category".`;
 
   const articlePayload = [
     `Title: ${card.title || ''}`,
@@ -200,8 +237,10 @@ async function summarizeWithLlm(card, language) {
     };
   }
 
+  const fallbackSummaryText = `${card?.title || ''} ${card?.summary || ''}`;
+
   return {
-    aiSummary: cleanText(parsed?.summary || ''),
+    aiSummary: enforceSummaryWordRange(parsed?.summary || '', fallbackSummaryText),
     category: normalizeCategory(parsed?.category)
   };
 }
@@ -397,5 +436,6 @@ module.exports = {
   cleanText,
   validateCardQuality,
   toLanguageLabel,
-  summarizeWithLlm
+  summarizeWithLlm,
+  enforceSummaryWordRange
 };
