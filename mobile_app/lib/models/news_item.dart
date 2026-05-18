@@ -42,4 +42,16 @@ class NewsItem {
       language: json['language'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'summary': summary,
+      'imageUrl': imageUrl,
+      'source': source,
+      'category': category,
+      'url': url,
+      'language': language,
+    };
+  }
 }
