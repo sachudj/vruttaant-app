@@ -1,41 +1,66 @@
 version: 2
 updates:
-  # Maintain root level npm dependencies (Husky, scripts)
+  # Root npm (husky, lint-staged)
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
+    groups:
+      root-patch-minor:
+        update-types: ["minor", "patch"]
 
-  # Maintain backend Node.js dependencies
+  # Backend Node.js
   - package-ecosystem: "npm"
     directory: "/backend"
     schedule:
       interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
     commit-message:
       prefix: "chore(deps-backend)"
+    groups:
+      backend-patch-minor:
+        update-types: ["minor", "patch"]
 
-  # Maintain mobile app Flutter/Dart dependencies
+  # Mobile Flutter/Dart
   - package-ecosystem: "pub"
     directory: "/mobile_app"
     schedule:
       interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps-mobile)"
+    groups:
+      mobile-patch-minor:
+        update-types: ["minor", "patch"]
 
-  # Maintain GitHub Actions workflows
+  # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
     commit-message:
       prefix: "ci(deps)"
+    groups:
+      actions-patch-minor:
+        update-types: ["minor", "patch"]
 
-  # Maintain Dockerfile / docker-compose base images
+  # Docker base images
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(deps-docker)"
+    groups:
+      docker-patch-minor:
+        update-types: ["minor", "patch"]
