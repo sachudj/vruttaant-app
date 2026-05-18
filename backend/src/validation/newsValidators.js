@@ -213,8 +213,59 @@ function validateTranslatePayload(payload) {
   };
 }
 
+function validateRecommendedQuery(payload) {
+  const query = payload && typeof payload === 'object' ? payload : {};
+  const errors = [];
+
+  const language = normalizeLanguage(query.language);
+
+  let page = 1;
+  if (query.page !== undefined && query.page !== null && query.page !== '') {
+    const parsedPage = Number(query.page);
+    if (!Number.isFinite(parsedPage)) {
+      errors.push('page must be a number.');
+    } else {
+      page = Math.max(Math.floor(parsedPage), 1);
+    }
+  }
+
+  let limit = 20;
+  if (query.limit !== undefined && query.limit !== null && query.limit !== '') {
+    const parsedLimit = Number(query.limit);
+    if (!Number.isFinite(parsedLimit)) {
+      errors.push('limit must be a number.');
+    } else {
+      limit = Math.min(Math.max(Math.floor(parsedLimit), 1), 100);
+    }
+  }
+
+  // recentlyShown is optional; just validate format if present
+  const recentlyShown = String(query.recentlyShown || '').trim();
+  if (recentlyShown && !/^[a-zA-Z0-9:,\s]*$/.test(recentlyShown)) {
+    errors.push('recentlyShown format must be "category:count,category2:count2".');
+  }
+
+  if (errors.length) {
+    return {
+      valid: false,
+      errors
+    };
+  }
+
+  return {
+    valid: true,
+    value: {
+      language,
+      page,
+      limit,
+      recentlyShown: recentlyShown || undefined
+    }
+  };
+}
+
 module.exports = {
   validateIngestPayload,
   validateCardsQuery,
+  validateRecommendedQuery,
   validateTranslatePayload
 };

@@ -2,6 +2,7 @@
 
 const {
   validateCardsQuery,
+  validateRecommendedQuery,
   validateTranslatePayload
 } = require('../src/validation/newsValidators');
 
@@ -104,5 +105,83 @@ describe('validateTranslatePayload', () => {
 
     expect(result.valid).toBe(false);
     expect(result.errors).toContain('url must be a valid absolute URL.');
+  });
+});
+
+describe('validateRecommendedQuery', () => {
+  it('accepts default query values', () => {
+    const result = validateRecommendedQuery({});
+
+    expect(result.valid).toBe(true);
+    expect(result.value).toEqual({
+      language: 'en',
+      page: 1,
+      limit: 20,
+      recentlyShown: undefined
+    });
+  });
+
+  it('normalizes language and pagination parameters', () => {
+    const result = validateRecommendedQuery({
+      language: 'HINDI',
+      page: '3',
+      limit: '50'
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.value).toEqual({
+      language: 'hi',
+      page: 3,
+      limit: 50,
+      recentlyShown: undefined
+    });
+  });
+
+  it('clamps limit to max 100', () => {
+    const result = validateRecommendedQuery({ limit: '200' });
+
+    expect(result.valid).toBe(true);
+    expect(result.value.limit).toBe(100);
+  });
+
+  it('accepts recentlyShown in format "category:count,category:count"', () => {
+    const result = validateRecommendedQuery({
+      recentlyShown: 'Tech:2,Science:1'
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.value.recentlyShown).toBe('Tech:2,Science:1');
+  });
+
+  it('accepts recentlyShown with spaces', () => {
+    const result = validateRecommendedQuery({
+      recentlyShown: 'Tech: 2, Science: 1'
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.value.recentlyShown).toBe('Tech: 2, Science: 1');
+  });
+
+  it('rejects invalid recentlyShown format with special characters', () => {
+    const result = validateRecommendedQuery({
+      recentlyShown: 'Tech:2@Science:1'
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('recentlyShown format must be "category:count,category2:count2".');
+  });
+
+  it('rejects non-numeric page value', () => {
+    const result = validateRecommendedQuery({ page: 'abc' });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('page must be a number.');
+  });
+
+  it('rejects non-numeric limit value', () => {
+    const result = validateRecommendedQuery({ limit: 'xyz' });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('limit must be a number.');
   });
 });

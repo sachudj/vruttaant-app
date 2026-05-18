@@ -256,3 +256,153 @@ describe('news cards integration', () => {
     expect(mockChain.sort).not.toHaveBeenCalled();
   });
 });
+
+describe('news recommendations', () => {
+  let mockFindChain;
+  let mockRecommendedChain;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    mockFindChain = {
+      sort: jest.fn(),
+      skip: jest.fn(),
+      limit: jest.fn(),
+      lean: jest.fn()
+    };
+
+    mockRecommendedChain = {
+      select: jest.fn(),
+      lean: jest.fn()
+    };
+
+    mockFindChain.sort.mockReturnValue(mockFindChain);
+    mockFindChain.skip.mockReturnValue(mockFindChain);
+    mockFindChain.limit.mockReturnValue(mockFindChain);
+    mockFindChain.lean.mockResolvedValue([]);
+
+    mockRecommendedChain.select.mockReturnValue(mockRecommendedChain);
+
+    NewsCard.find.mockReturnValue(mockFindChain);
+    NewsCard.aggregate.mockResolvedValue([]);
+    NewsCard.countDocuments.mockResolvedValue(0);
+    User.findById.mockReturnValue({ lean: jest.fn().mockResolvedValue(null) });
+    isDatabaseConnected.mockReturnValue(true);
+  });
+
+  it('returns 400 for invalid page parameter', async () => {
+    const response = await request(app)
+      .get('/api/v1/news/recommended')
+      .query({ page: 'not-a-number' });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body.success).toBe(false);
+  });
+
+  it('returns 503 when database is unavailable', async () => {
+    isDatabaseConnected.mockReturnValue(false);
+
+    const response = await request(app)
+      .get('/api/v1/news/recommended')
+      .query({ language: 'en' });
+
+    expect(response.statusCode).toBe(503);
+  });
+
+  it('returns recommended cards with pagination', async () => {
+    const mockCards = [
+      { _id: '1', title: 'Trending tech', category: 'Tech', trendScore: 0.9 },
+      { _id: '2', title: 'Science news', category: 'Science', trendScore: 0.5 }
+    ];
+
+    mockRecommendedChain.lean.mockResolvedValue(mockCards);
+    NewsCard.countDocuments.mockResolvedValue(2);
+    NewsCard.find.mockReturnValue(mockRecommendedChain);
+
+    const response = await request(app)
+      .get('/api/v1/news/recommended')
+      .query({ language: 'en', page: '1', limit: '10' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toMatchObject({
+      message: 'Recommended cards fetched successfully.',
+      page: 1,
+      limit: 10,
+      total: 2,
+      totalPages: 1,
+      hasMore: false,
+      filters: {
+        language: 'en',
+        personalized: 'no'
+      }
+    });
+    expect(response.body.cards).toHaveLength(2);
+  });
+
+  it('indicates personalized feed when user is authenticated', async () => {
+    const mockCards = [];
+    mockRecommendedChain.lean.mockResolvedValue(mockCards);
+    NewsCard.countDocuments.mockResolvedValue(0);
+    NewsCard.find.mockReturnValue(mockRecommendedChain);
+
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { sub: 'user-id-1', role: 'user', email: 'test@example.com' },
+      process.env.JWT_ACCESS_SECRET || 'dev-access-secret-change-me'
+    );
+
+    const response = await request(app)
+      .get('/api/v1/news/recommended')
+      .set('Authorization', `Bearer ${token}`)
+      .query({ language: 'en' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.filters.personalized).toBe('yes');
+  });
+
+  it('accepts optional recentlyShown parameter for diversity tracking', async () => {
+    const mockCards = [];
+    mockRecommendedChain.lean.mockResolvedValue(mockCards);
+    NewsCard.countDocuments.mockResolvedValue(0);
+    NewsCard.find.mockReturnValue(mockRecommendedChain);
+
+    const response = await request(app)
+      .get('/api/v1/news/recommended')
+      .query({ language: 'en', recentlyShown: 'Tech:2,Science:1' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.message).toContain('fetched successfully');
+  });
+
+  it('rejects invalid recentlyShown format', async () => {
+    const response = await request(app)
+      .get('/api/v1/news/recommended')
+      .query({ language: 'en', recentlyShown: 'invalid@#format' });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body.error.details[0]).toContain('recentlyShown');
+  });
+
+  it('paginates with hasMore indication', async () => {
+    const mockCards = Array.from({ length: 10 }, (_, i) => ({
+      _id: String(i + 1),
+      title: `Card ${i + 1}`,
+      category: 'Tech',
+      trendScore: 0.8
+    }));
+
+    mockRecommendedChain.lean.mockResolvedValue(mockCards);
+    NewsCard.countDocuments.mockResolvedValue(25);
+    NewsCard.find.mockReturnValue(mockRecommendedChain);
+
+    const response = await request(app)
+      .get('/api/v1/news/recommended')
+      .query({ language: 'en', page: '1', limit: '10' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.page).toBe(1);
+    expect(response.body.totalPages).toBe(3);
+    expect(response.body.hasMore).toBe(true);
+    expect(response.body.cards).toHaveLength(10);
+  });
+});

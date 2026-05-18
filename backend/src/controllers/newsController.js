@@ -2,6 +2,7 @@ const NewsCard = require('../models/NewsCard');
 const User = require('../models/User');
 const { isDatabaseConnected } = require('../config/database');
 const { fetchNewsCards, translateStoryContent } = require('../services/newsIngestionService');
+const { getRecommendedCards: computeRecommendedCards } = require('../services/recommendationEngine');
 const { AppError } = require('../middleware/errorHandler');
 
 function escapeRegex(value) {
@@ -255,8 +256,79 @@ async function translateNewsStory(req, res, next) {
   }
 }
 
+async function getRecommendedCards(req, res, next) {
+  try {
+    if (!isDatabaseConnected()) {
+      return next(new AppError(503, 'Internal server error.'));
+    }
+
+    const {
+      language = 'en',
+      page = 1,
+      limit = 20
+    } = req.validated?.query || req.query || {};
+
+    const parsedPage = page;
+    const parsedLimit = limit;
+
+    // Resolve optional user preferences for personalization
+    let userCategories = [];
+    if (req.user?.id) {
+      try {
+        const userDoc = await User.findById(req.user.id, 'preferences.categories').lean();
+        userCategories = userDoc?.preferences?.categories || [];
+      } catch {
+        // Personalization is non-critical; continue without it
+      }
+    }
+
+    // Parse recentlyShownCategories from query (session diversity tracking)
+    // Format: ?recentlyShown=tech:2,business:1
+    const recentlyShownCategories = {};
+    const recentlyShownParam = String(req.query.recentlyShown || '').trim();
+    if (recentlyShownParam) {
+      try {
+        recentlyShownParam.split(',').forEach((pair) => {
+          const [category, count] = pair.split(':');
+          if (category && count) {
+            recentlyShownCategories[category.trim()] = parseInt(count, 10) || 0;
+          }
+        });
+      } catch {
+        // Ignore malformed recentlyShown; use empty map
+      }
+    }
+
+    const result = await computeRecommendedCards({
+      userId: req.user?.id,
+      userCategories,
+      language: String(language || 'en').trim().toLowerCase(),
+      page: parsedPage,
+      limit: parsedLimit,
+      recentlyShownCategories
+    });
+
+    return res.status(200).json({
+      message: 'Recommended cards fetched successfully.',
+      page: result.page,
+      limit: result.limit,
+      total: result.total,
+      totalPages: result.totalPages,
+      hasMore: result.hasMore,
+      filters: {
+        language: language,
+        personalized: req.user?.id ? 'yes' : 'no'
+      },
+      cards: result.cards
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   ingestNewsFromUrl,
   getNewsCards,
+  getRecommendedCards,
   translateNewsStory
 };
