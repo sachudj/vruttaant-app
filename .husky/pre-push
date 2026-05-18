@@ -1,0 +1,53 @@
+#!/usr/bin/env sh
+# Pre-push hook — mirrors CI checks locally.
+# To bypass in an emergency: git push --no-verify
+
+set -e
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+fail() {
+  echo ""
+  echo "╔══════════════════════════════════════════════════════╗"
+  echo "║  ✖  PRE-PUSH FAILED: $1"
+  echo "║     Push aborted. Fix the issue or use:"
+  echo "║     git push --no-verify   (emergency bypass only)"
+  echo "╚══════════════════════════════════════════════════════╝"
+  exit 1
+}
+
+echo ""
+echo "┌──────────────────────────────────────────────────────┐"
+echo "│  Running CI checks before push…                      │"
+echo "└──────────────────────────────────────────────────────┘"
+
+# ── 1. Backend lint ─────────────────────────────────────────
+echo ""
+echo "▶ [1/5] Backend lint"
+(cd "$ROOT/backend" && npm run lint --silent) || fail "Backend lint"
+
+# ── 2. Backend tests + coverage gates ───────────────────────
+echo ""
+echo "▶ [2/5] Backend tests (coverage gates)"
+(cd "$ROOT/backend" && npm run test:coverage -- --runInBand) || fail "Backend coverage"
+
+# ── 3. Backend security audit ───────────────────────────────
+echo ""
+echo "▶ [3/5] Backend security audit"
+(cd "$ROOT/backend" && npm run security:audit) || fail "Backend security audit"
+
+# ── 4. Mobile analyze ───────────────────────────────────────
+echo ""
+echo "▶ [4/5] Mobile analyze"
+(cd "$ROOT/mobile_app" && flutter analyze --fatal-infos) || fail "Flutter analyze"
+
+# ── 5. Mobile tests ─────────────────────────────────────────
+echo ""
+echo "▶ [5/5] Mobile tests"
+(cd "$ROOT/mobile_app" && flutter test -r compact) || fail "Flutter tests"
+
+echo ""
+echo "╔══════════════════════════════════════════════════════╗"
+echo "║  ✔  All checks passed — pushing.                    ║"
+echo "╚══════════════════════════════════════════════════════╝"
+echo ""
