@@ -38,6 +38,11 @@ class _SettingsProfilePageState extends State<SettingsProfilePage> {
     'mr',
     'te',
     'ta',
+    'gu',
+    'ur',
+    'kn',
+    'or',
+    'ml',
   ];
 
   late String _pendingLanguage;
