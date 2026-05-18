@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app/features/feed/domain/feed_types.dart';
+import 'package:mobile_app/features/feed/presentation/sheets/bookmarks_sheet.dart';
+import 'package:mobile_app/features/feed/presentation/sheets/login_sheet.dart';
+import 'package:mobile_app/features/feed/presentation/sheets/search_sort_sheet.dart';
+import 'package:mobile_app/features/feed/presentation/widgets/feed_overlays.dart';
 import 'package:mobile_app/features/reader/presentation/story_pager.dart';
 import 'package:mobile_app/features/settings/presentation/settings_profile_page.dart';
 import 'package:mobile_app/l10n/app_localizations.dart';
@@ -346,116 +350,11 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
 
   Future<void> _openSearchSheet() async {
     final localizations = AppLocalizations.of(context);
-    var pendingQuery = _searchQuery;
-    var pendingSort = _sort;
-
-    final result = await showModalBottomSheet<Map<String, String>>(
+    final result = await showSearchSortSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF121212),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return SafeArea(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    top: 12,
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        localizations.searchSort,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        key: const ValueKey('search-query-input'),
-                        initialValue: pendingQuery,
-                        onChanged: (value) {
-                          pendingQuery = value;
-                        },
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: localizations.searchHint,
-                          hintStyle: const TextStyle(color: Colors.white54),
-                          filled: true,
-                          fillColor: Colors.white.withValues(alpha: 0.08),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: Colors.white70,
-                          ),
-                        ),
-                        textInputAction: TextInputAction.search,
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          ChoiceChip(
-                            label: Text(localizations.sortLatest),
-                            selected: pendingSort == 'latest',
-                            onSelected: (_) {
-                              setModalState(() {
-                                pendingSort = 'latest';
-                              });
-                            },
-                          ),
-                          ChoiceChip(
-                            label: Text(localizations.sortRelevance),
-                            selected: pendingSort == 'relevance',
-                            onSelected: (_) {
-                              setModalState(() {
-                                pendingSort = 'relevance';
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(
-                                context,
-                              ).pop({'q': '', 'sort': 'latest'});
-                            },
-                            child: Text(localizations.clear),
-                          ),
-                          const Spacer(),
-                          FilledButton(
-                            onPressed: () {
-                              Navigator.of(context).pop({
-                                'q': pendingQuery.trim(),
-                                'sort': pendingSort,
-                              });
-                            },
-                            child: Text(localizations.apply),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
+      localizations: localizations,
+      initialQuery: _searchQuery,
+      initialSort: _sort,
     );
 
     if (result == null) {
@@ -479,122 +378,18 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
 
   Future<void> _openLoginSheet() async {
     final localizations = AppLocalizations.of(context);
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    String? loginError;
-    bool isLoading = false;
-
-    await showModalBottomSheet<void>(
+    await showLoginSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF121212),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            Future<void> doLogin() async {
-              setModalState(() {
-                isLoading = true;
-                loginError = null;
-              });
-              final result = await _authService.login(
-                emailController.text,
-                passwordController.text,
-              );
-              if (!context.mounted) return;
-              if (result.success) {
-                Navigator.of(context).pop();
-                if (mounted) setState(() {});
-                await _syncProfileFromServer();
-                await _refreshBookmarks();
-              } else {
-                setModalState(() {
-                  loginError = result.errorMessage;
-                  isLoading = false;
-                });
-              }
-            }
-
-            return SafeArea(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: 20,
-                  right: 20,
-                  top: 24,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      localizations.signIn,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 20,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: localizations.email,
-                        labelStyle: TextStyle(color: Colors.white70),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white30),
-                        ),
-                        focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.indigoAccent),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: passwordController,
-                      obscureText: true,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: localizations.password,
-                        labelStyle: TextStyle(color: Colors.white70),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white30),
-                        ),
-                        focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.indigoAccent),
-                        ),
-                      ),
-                      onSubmitted: (_) => doLogin(),
-                    ),
-                    if (loginError != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        loginError!,
-                        style: const TextStyle(color: Colors.redAccent),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: isLoading ? null : doLogin,
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(localizations.signIn),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
+      localizations: localizations,
+      authService: _authService,
+      onSignedIn: () {
+        if (mounted) {
+          setState(() {});
+        }
+      },
+      onLoginSuccess: () async {
+        await _syncProfileFromServer();
+        await _refreshBookmarks();
       },
     );
   }
@@ -854,87 +649,17 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       _isBookmarkSheetLoading = false;
     });
 
-    final selected = await showModalBottomSheet<BookmarkItem>(
+    final selected = await showBookmarksSheet(
       context: context,
-      backgroundColor: const Color(0xFF121212),
-      isScrollControlled: true,
-      builder: (context) {
-        return SafeArea(
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.75,
-            child: Column(
-              children: [
-                const SizedBox(height: 10),
-                Text(
-                  localizations.bookmarks,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Divider(color: Colors.white24, height: 1),
-                Expanded(
-                  child: _bookmarks.isEmpty
-                      ? Center(
-                          child: Text(
-                            localizations.noBookmarks,
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                        )
-                      : ListView.separated(
-                          itemCount: _bookmarks.length,
-                          separatorBuilder: (_, index) =>
-                              const Divider(color: Colors.white12, height: 1),
-                          itemBuilder: (context, index) {
-                            final bookmark = _bookmarks[index];
-                            return ListTile(
-                              title: Text(
-                                bookmark.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                              subtitle: Text(
-                                bookmark.source,
-                                style: const TextStyle(color: Colors.white70),
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.white70,
-                                ),
-                                onPressed: () async {
-                                  await _newsApiService.deleteBookmark(
-                                    bookmark.id,
-                                  );
-                                  if (!mounted) return;
-                                  setState(() {
-                                    _bookmarks.removeWhere(
-                                      (b) => b.id == bookmark.id,
-                                    );
-                                    _bookmarkedUrls.remove(bookmark.url);
-                                  });
-                                  if (!context.mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        localizations.bookmarkRemoved,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              onTap: () => Navigator.of(context).pop(bookmark),
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
-          ),
-        );
+      localizations: localizations,
+      bookmarks: _bookmarks,
+      onDeleteBookmark: (bookmark) async {
+        await _newsApiService.deleteBookmark(bookmark.id);
+        if (!mounted) return;
+        setState(() {
+          _bookmarks.removeWhere((b) => b.id == bookmark.id);
+          _bookmarkedUrls.remove(bookmark.url);
+        });
       },
     );
 
@@ -1066,117 +791,28 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                   },
                 ),
               ),
-              SafeArea(
-                child: SizedBox(
-                  height: 56,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    scrollDirection: Axis.horizontal,
-                    itemBuilder: (context, index) {
-                      final category = _categories[index];
-                      final selected = category == _selectedCategory;
-                      return ChoiceChip(
-                        label: Text(
-                          category == null
-                              ? localizations.all
-                              : localizations.categoryLabel(category),
-                        ),
-                        selected: selected,
-                        onSelected: (_) => _onCategorySelected(category),
-                        selectedColor: Colors.white,
-                        labelStyle: TextStyle(
-                          color: selected ? Colors.black : Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        backgroundColor: Colors.black.withValues(alpha: 0.6),
-                        side: const BorderSide(color: Colors.white38),
-                      );
-                    },
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(width: 8),
-                    itemCount: _categories.length,
-                  ),
-                ),
+              FeedCategoryChips(
+                categories: _categories,
+                selectedCategory: _selectedCategory,
+                localizations: localizations,
+                onCategorySelected: (category) {
+                  _onCategorySelected(category);
+                },
               ),
               if (_showingCachedFeed)
-                SafeArea(
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 12, top: 64),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withValues(alpha: 0.22),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: Colors.amber.withValues(alpha: 0.55),
-                          ),
-                        ),
-                        child: Text(
-                          _cachedFeedAt == null
-                              ? localizations.cachedFeed
-                              : localizations.cachedFeedWithTime(
-                                  _formatCachedFeedTimestamp(
-                                    context,
-                                    _cachedFeedAt!,
-                                  ),
-                                ),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                FeedCacheBadge(
+                  localizations: localizations,
+                  cachedAt: _cachedFeedAt,
+                  formatCachedTime: (savedAt) {
+                    return _formatCachedFeedTimestamp(context, savedAt);
+                  },
                 ),
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 8, top: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton.filledTonal(
-                          onPressed: _openSearchSheet,
-                          icon: const Icon(Icons.manage_search),
-                          tooltip: localizations.searchSort,
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton.filledTonal(
-                          onPressed: _openSettingsSheet,
-                          icon: const Icon(Icons.settings_outlined),
-                          tooltip: localizations.settings,
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton.filledTonal(
-                          onPressed: _isBookmarkSheetLoading
-                              ? null
-                              : _openBookmarksSheet,
-                          icon: _isBookmarkSheetLoading
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.bookmarks_outlined),
-                          tooltip: localizations.bookmarks,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              FeedActionButtons(
+                localizations: localizations,
+                isBookmarkSheetLoading: _isBookmarkSheetLoading,
+                onSearchPressed: _openSearchSheet,
+                onSettingsPressed: _openSettingsSheet,
+                onBookmarksPressed: _openBookmarksSheet,
               ),
             ],
           );
