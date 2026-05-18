@@ -10,6 +10,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "loadtest:baseline": "node src/loadtest/runBaseline.js",
+    "loadtest:baseline:strict": "LOADTEST_STRICT_SLO=true node src/loadtest/runBaseline.js",
     "job:reprocess-missing-metadata": "node src/jobs/reprocessMissingMetadata.js",
     "security:audit": "npm audit --audit-level=high",
     "infra:up": "docker compose -f ../docker-compose.yml up -d",
@@ -41,6 +43,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "autocannon": "^8.0.0",
     "eslint": "^9.39.4",
     "globals": "^17.6.0",
     "jest": "^30.3.0",

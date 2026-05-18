@@ -119,7 +119,7 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 ### ⏳ DevOps & Production
 - [x] CI/CD pipeline (GitHub Actions)
 - [x] Automated tests (Jest, Flutter)
-- [ ] Load testing
+- [x] Load testing baseline + SLO targets
 - [ ] Database migrations strategy
 - [ ] Backup automation
 - [x] Monitoring & alerting
@@ -174,7 +174,7 @@ db.newscards.countDocuments()
 1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` still accepts one source URL per request.
 2. **Partial Localization Depth**: Core feed/settings/auth/bookmarks/reader strings and locale-aware cached-time formatting are localized (`en`/`hi`), but secondary copy polish is still pending.
 3. **No Trending/Recommendation Layer**: Feed ranking is recency/relevance-based, without personalization.
-4. **No Load-Test Baseline**: Performance limits under sustained traffic are not formally benchmarked.
+4. **No Production Load-History Yet**: Baseline load testing exists, but trend history and CI regression tracking are still pending.
 
 ---
 
@@ -184,7 +184,7 @@ db.newscards.countDocuments()
 1. Extend localization polish for secondary copy and backend-originated messages
 2. Add more locale-aware formatting beyond cached-feed timestamp (dates/numbers where applicable)
 3. Continue modularizing `mobile_app/lib/main.dart` by extracting app-shell bootstrap/state wiring into dedicated modules
-4. Add load-test baseline and capture SLO targets
+4. Run baseline load test across environments and publish trend history + regression thresholds
 5. Add production deployment config for mobile/backend environments
 
 ### Short Term (1 week)

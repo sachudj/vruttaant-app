@@ -29,6 +29,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 - **[API_ENDPOINTS.md](./API_ENDPOINTS.md)** - Complete API reference with examples
 - **[DATABASE.md](./DATABASE.md)** - MongoDB schema, queries, backup/restore
 - **[DOCKER.md](./DOCKER.md)** - Container management, troubleshooting
+- **[LOAD_TESTING.md](./LOAD_TESTING.md)** - Baseline performance testing and SLO targets
 
 ## 🎯 Quick Navigation by Role
 
@@ -74,6 +75,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 | **API_ENDPOINTS.md** | Complete API reference | Developers, testers |
 | **DATABASE.md** | MongoDB schema & operations | Backend, DevOps |
 | **DOCKER.md** | Container management | DevOps, backend |
+| **LOAD_TESTING.md** | Baseline performance tests and SLOs | Backend, DevOps |
 
 ## 🚦 Common Tasks
 
@@ -129,8 +131,8 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 
 ## 📝 Document Maintenance
 
-- Last updated: **May 5, 2026**
-- Total documentation: **12 files**
+- Last updated: **May 18, 2026**
+- Total documentation: **13 files**
 - Total word count: **~21,000 words**
 - Coverage: Foundation complete with comprehensive environment setup, ready for feature development
 
