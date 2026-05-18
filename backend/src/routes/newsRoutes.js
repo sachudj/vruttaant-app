@@ -1,6 +1,7 @@
 const express = require('express');
 const { ingestNewsFromUrl, getNewsCards, translateNewsStory } = require('../controllers/newsController');
 const { validateRequest } = require('../middleware/requestValidation');
+const { optionalAuth } = require('../middleware/authMiddleware');
 const {
   validateIngestPayload,
   validateCardsQuery,
@@ -17,7 +18,7 @@ router.get('/ingest/health', (req, res) => {
 });
 
 router.post('/ingest', validateRequest('body', validateIngestPayload), ingestNewsFromUrl);
-router.get('/cards', validateRequest('query', validateCardsQuery), getNewsCards);
+router.get('/cards', optionalAuth, validateRequest('query', validateCardsQuery), getNewsCards);
 router.post('/translate', validateRequest('body', validateTranslatePayload), translateNewsStory);
 
 module.exports = router;

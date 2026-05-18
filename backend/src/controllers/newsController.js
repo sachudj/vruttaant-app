@@ -1,4 +1,5 @@
 const NewsCard = require('../models/NewsCard');
+const User = require('../models/User');
 const { isDatabaseConnected } = require('../config/database');
 const { fetchNewsCards, translateStoryContent } = require('../services/newsIngestionService');
 const { AppError } = require('../middleware/errorHandler');
@@ -132,21 +133,68 @@ async function getNewsCards(req, res, next) {
 
     const normalizedSort = String(sort || 'latest').trim().toLowerCase();
     const useRelevanceSort = normalizedSort === 'relevance' && Boolean(normalizedQuery);
+    const useTrendingSort = normalizedSort === 'trending';
 
-    const projection = useRelevanceSort ? { score: { $meta: 'textScore' } } : undefined;
-    const sortSpec = useRelevanceSort
-      ? { score: { $meta: 'textScore' }, scrapedAt: -1 }
-      : { scrapedAt: -1 };
+    // Resolve optional user preferences for personalization
+    let userCategories = [];
+    if (req.user?.id) {
+      try {
+        const userDoc = await User.findById(req.user.id, 'preferences.categories').lean();
+        userCategories = userDoc?.preferences?.categories || [];
+      } catch {
+        // Personalization is non-critical; continue without it
+      }
+    }
 
-    const [items, total] = await Promise.all([
-      NewsCard.find(filter, projection)
-        .sort(sortSpec)
-        .skip(skip)
-        .limit(parsedLimit)
-        .lean(),
-      NewsCard.countDocuments(filter)
-    ]);
+    const applyPersonalization = useTrendingSort && userCategories.length > 0;
 
+    let items;
+    let total;
+
+    if (applyPersonalization) {
+      // Use aggregation to apply per-category boost for logged-in users
+      const matchStage = { $match: filter };
+      const addFieldsStage = {
+        $addFields: {
+          effectiveScore: {
+            $multiply: [
+              '$trendScore',
+              { $cond: { if: { $in: ['$category', userCategories] }, then: 2.0, else: 1.0 } }
+            ]
+          }
+        }
+      };
+      const sortStage = { $sort: { effectiveScore: -1, scrapedAt: -1 } };
+
+      [items, total] = await Promise.all([
+        NewsCard.aggregate([
+          matchStage,
+          addFieldsStage,
+          sortStage,
+          { $skip: skip },
+          { $limit: parsedLimit }
+        ]),
+        NewsCard.countDocuments(filter)
+      ]);
+    } else {
+      const projection = useRelevanceSort ? { score: { $meta: 'textScore' } } : undefined;
+      const sortSpec = useRelevanceSort
+        ? { score: { $meta: 'textScore' }, scrapedAt: -1 }
+        : useTrendingSort
+        ? { trendScore: -1, scrapedAt: -1 }
+        : { scrapedAt: -1 };
+
+      [items, total] = await Promise.all([
+        NewsCard.find(filter, projection)
+          .sort(sortSpec)
+          .skip(skip)
+          .limit(parsedLimit)
+          .lean(),
+        NewsCard.countDocuments(filter)
+      ]);
+    }
+
+    const effectiveSortLabel = useRelevanceSort ? 'relevance' : useTrendingSort ? 'trending' : 'latest';
     const totalPages = Math.max(Math.ceil(total / parsedLimit), 1);
 
     return res.status(200).json({
@@ -160,7 +208,7 @@ async function getNewsCards(req, res, next) {
         language: filter.language,
         category: category ? String(category).trim() : null,
         q: normalizedQuery || null,
-        sort: useRelevanceSort ? 'relevance' : 'latest'
+        sort: effectiveSortLabel
       },
       cards: items
     });

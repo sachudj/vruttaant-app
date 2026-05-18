@@ -136,9 +136,9 @@ function validateCardsQuery(payload) {
   const q = String(query.q || '').trim().slice(0, 120);
 
   const normalizedSort = String(query.sort || 'latest').trim().toLowerCase();
-  const allowedSorts = new Set(['latest', 'relevance']);
+  const allowedSorts = new Set(['latest', 'relevance', 'trending']);
   if (!allowedSorts.has(normalizedSort)) {
-    errors.push('sort must be one of: latest, relevance.');
+    errors.push('sort must be one of: latest, relevance, trending.');
   }
 
   if (errors.length) {

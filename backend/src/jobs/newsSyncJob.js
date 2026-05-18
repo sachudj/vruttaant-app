@@ -1,22 +1,31 @@
 const cron = require('node-cron');
 const { fetchNewsCards } = require('../services/newsIngestionService');
 const NewsCard = require('../models/NewsCard');
+const NewsSource = require('../models/NewsSource');
 const { isDatabaseConnected } = require('../config/database');
 
-const DEFAULT_SOURCES = [
-  'https://www.bbc.com/news',
-  'https://www.reuters.com/world/',
-  'https://www.aljazeera.com/news/'
+// Fallback sources used when the DB has no sources configured yet.
+const FALLBACK_SOURCES = [
+  { url: 'https://www.bbc.com/news',       language: 'en', maxItems: 20, name: 'BBC News' },
+  { url: 'https://www.reuters.com/world/', language: 'en', maxItems: 20, name: 'Reuters' },
+  { url: 'https://www.aljazeera.com/news/', language: 'en', maxItems: 20, name: 'Al Jazeera' }
 ];
 
-// Languages to sync (start with English for now, can be expanded)
-const DEFAULT_LANGUAGES = ['en'];
+async function loadSources() {
+  try {
+    const dbSources = await NewsSource.find({ enabled: true }).lean();
+    if (dbSources.length) return dbSources;
+  } catch (err) {
+    console.warn('[newsSyncJob] Failed to load sources from DB, using fallback.', err.message);
+  }
+  return FALLBACK_SOURCES;
+}
 
 let cronJob = null;
 
-async function syncSource(url, language) {
+async function syncSource(url, language, maxItems = 20) {
   try {
-    const parsedCards = await fetchNewsCards(url, language, 20);
+    const parsedCards = await fetchNewsCards(url, language, maxItems);
 
     if (!parsedCards.cards.length) {
       return { url, status: 'no_cards_found' };
@@ -58,7 +67,8 @@ async function syncSource(url, language) {
             titleFingerprint: card.titleFingerprint || '',
             rawMetadata: card.rawMetadata,
             scrapedAt: new Date()
-          }
+          },
+          $inc: { ingestCount: 1 }
         },
         upsert: true
       }
@@ -67,9 +77,22 @@ async function syncSource(url, language) {
     const writeResult = await NewsCard.bulkWrite(operations, { ordered: false });
     const persistedCount = (writeResult.upsertedCount || 0) + (writeResult.modifiedCount || 0);
 
+    // Update lastSyncedAt and reset failCount on success
+    await NewsSource.findOneAndUpdate(
+      { url },
+      { $set: { lastSyncedAt: new Date(), failCount: 0 } }
+    ).catch(() => {}); // non-critical
+
     return { url, status: 'success', persistedCount };
   } catch (error) {
     console.error(`[newsSyncJob] Failed to sync ${url}:`, error.message);
+
+    // Track consecutive failures on the source record
+    await NewsSource.findOneAndUpdate(
+      { url },
+      { $inc: { failCount: 1 } }
+    ).catch(() => {}); // non-critical
+
     return { url, status: 'error', error: error.message };
   }
 }
@@ -81,14 +104,17 @@ async function runSyncCycle() {
   }
 
   console.log('[newsSyncJob] Starting background sync cycle...');
-  for (const lang of DEFAULT_LANGUAGES) {
-    for (const sourceUrl of DEFAULT_SOURCES) {
-      const result = await syncSource(sourceUrl, lang);
-      if (result.status === 'success') {
-        console.log(`[newsSyncJob] Synced ${sourceUrl} (${lang}) - ${result.persistedCount} new stories.`);
-      }
+
+  const sources = await loadSources();
+  for (const source of sources) {
+    const result = await syncSource(source.url, source.language, source.maxItems);
+    if (result.status === 'success') {
+      console.log(
+        `[newsSyncJob] Synced ${source.url} (${source.language}) - ${result.persistedCount} stories.`
+      );
     }
   }
+
   console.log('[newsSyncJob] Background sync cycle completed.');
 }
 

@@ -9,7 +9,12 @@ const mockChain = {
 
 jest.mock('../src/models/NewsCard', () => ({
   find: jest.fn(() => mockChain),
+  aggregate: jest.fn(),
   countDocuments: jest.fn()
+}));
+
+jest.mock('../src/models/User', () => ({
+  findById: jest.fn()
 }));
 
 jest.mock('../src/config/database', () => ({
@@ -19,6 +24,7 @@ jest.mock('../src/config/database', () => ({
 }));
 
 const NewsCard = require('../src/models/NewsCard');
+const User = require('../src/models/User');
 const { isDatabaseConnected } = require('../src/config/database');
 const { app } = require('../src/index');
 
@@ -33,6 +39,8 @@ describe('news cards integration', () => {
 
     isDatabaseConnected.mockReturnValue(true);
     NewsCard.countDocuments.mockResolvedValue(0);
+    NewsCard.aggregate.mockResolvedValue([]);
+    User.findById.mockReturnValue({ lean: jest.fn().mockResolvedValue(null) });
   });
 
   it('returns 400 for invalid query payload', async () => {
@@ -56,7 +64,7 @@ describe('news cards integration', () => {
       .query({ sort: 'oldest' });
 
     expect(response.statusCode).toBe(400);
-    expect(response.body.error.details).toContain('sort must be one of: latest, relevance.');
+    expect(response.body.error.details).toContain('sort must be one of: latest, relevance, trending.');
   });
 
   it('returns 503 when database is unavailable', async () => {
@@ -202,5 +210,49 @@ describe('news cards integration', () => {
       undefined
     );
     expect(mockChain.sort).toHaveBeenCalledWith({ scrapedAt: -1 });
+  });
+
+  it('returns trending sort using trendScore when sort=trending', async () => {
+    const mockCards = [{ _id: '1', title: 'Trending news', trendScore: 0.8 }];
+    mockChain.lean.mockResolvedValue(mockCards);
+    NewsCard.countDocuments.mockResolvedValue(1);
+
+    const response = await request(app)
+      .get('/api/v1/news/cards')
+      .query({ language: 'en', sort: 'trending' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.filters.sort).toBe('trending');
+    expect(NewsCard.find).toHaveBeenCalled();
+    expect(mockChain.sort).toHaveBeenCalledWith({ trendScore: -1, scrapedAt: -1 });
+  });
+
+  it('uses personalized aggregation for sort=trending when user is authenticated', async () => {
+    const mockAggResult = [{ _id: '1', title: 'Tech news', category: 'Technology', trendScore: 1.2 }];
+    NewsCard.aggregate.mockResolvedValue(mockAggResult);
+    NewsCard.countDocuments.mockResolvedValue(1);
+
+    // Mock a user with category preferences
+    User.findById.mockReturnValue({
+      lean: jest.fn().mockResolvedValue({ preferences: { categories: ['Technology'] } })
+    });
+
+    // Sign a JWT for the test user
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { sub: 'user-id-1', role: 'user', email: 'test@example.com' },
+      process.env.JWT_ACCESS_SECRET || 'dev-access-secret-change-me'
+    );
+
+    const response = await request(app)
+      .get('/api/v1/news/cards')
+      .set('Authorization', `Bearer ${token}`)
+      .query({ language: 'en', sort: 'trending' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.filters.sort).toBe('trending');
+    expect(NewsCard.aggregate).toHaveBeenCalled();
+    // find() should NOT be called when aggregate is used
+    expect(mockChain.sort).not.toHaveBeenCalled();
   });
 });

@@ -21,6 +21,8 @@ const {
   metricsHandler
 } = require('./observability/metrics');
 const { startNewsSyncJob, stopNewsSyncJob } = require('./jobs/newsSyncJob');
+const { startTrendScoreJob, stopTrendScoreJob } = require('./jobs/trendScoreJob');
+const { runMigrations } = require('./migrations/runner');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -155,9 +157,11 @@ async function bootstrap() {
   }
 
   await connectDatabase();
+  await runMigrations();
   const server = await startServer(PORT);
 
   startNewsSyncJob();
+  startTrendScoreJob();
 
   const gracefulShutdown = createGracefulShutdown({
     server,
@@ -165,6 +169,7 @@ async function bootstrap() {
     getActiveRequests: inFlightRequests.getActiveRequests,
     closeDatabase: async () => {
       stopNewsSyncJob();
+      stopTrendScoreJob();
       if (mongoose.connection.readyState === 1) {
         await mongoose.connection.close();
       }

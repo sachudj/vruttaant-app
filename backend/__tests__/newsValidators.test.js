@@ -44,7 +44,7 @@ describe('validateCardsQuery', () => {
     const result = validateCardsQuery({ sort: 'oldest' });
 
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain('sort must be one of: latest, relevance.');
+    expect(result.errors).toContain('sort must be one of: latest, relevance, trending.');
   });
 
   it('trims and clamps q length to 120 characters', () => {

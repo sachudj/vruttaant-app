@@ -201,10 +201,32 @@ async function verifyUserExists(req, res, next) {
   }
 }
 
+/**
+ * Optional auth middleware — extracts user from JWT if present but does NOT reject
+ * requests without a token. Use on public endpoints that support personalization.
+ */
+function optionalAuth(req, res, next) {
+  const token = extractTokenFromHeader(req.headers.authorization);
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, resolveJwtAccessSecret());
+    req.tokenClaims = decoded;
+    req.user = { id: decoded.sub, role: decoded.role, email: decoded.email };
+  } catch {
+    // Invalid / expired token — treat as anonymous
+  }
+
+  return next();
+}
+
 module.exports = {
   verifyAccessToken,
   verifyRefreshToken,
   verifyRefreshTokenNotRevoked,
   verifyUserExists,
+  optionalAuth,
   extractTokenFromHeader
 };

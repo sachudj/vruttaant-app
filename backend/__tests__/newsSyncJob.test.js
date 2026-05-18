@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const { startNewsSyncJob, stopNewsSyncJob, runSyncCycle } = require('../src/jobs/newsSyncJob');
 const { fetchNewsCards } = require('../src/services/newsIngestionService');
 const NewsCard = require('../src/models/NewsCard');
+const NewsSource = require('../src/models/NewsSource');
 const { isDatabaseConnected } = require('../src/config/database');
 
 jest.mock('node-cron', () => ({
@@ -15,6 +16,11 @@ jest.mock('../src/services/newsIngestionService', () => ({
 jest.mock('../src/models/NewsCard', () => ({
   find: jest.fn(),
   bulkWrite: jest.fn()
+}));
+
+jest.mock('../src/models/NewsSource', () => ({
+  find: jest.fn(),
+  findOneAndUpdate: jest.fn()
 }));
 
 jest.mock('../src/config/database', () => ({
@@ -72,6 +78,15 @@ describe('newsSyncJob', () => {
 
     it('should run sync successfully when db is connected and cards are found', async () => {
       isDatabaseConnected.mockReturnValue(true);
+      // Return sources from DB
+      NewsSource.find.mockReturnValue({
+        lean: jest.fn().mockResolvedValue([
+          { url: 'https://www.bbc.com/news',       language: 'en', maxItems: 20, name: 'BBC News' },
+          { url: 'https://www.reuters.com/world/', language: 'en', maxItems: 20, name: 'Reuters' },
+          { url: 'https://www.aljazeera.com/news/', language: 'en', maxItems: 20, name: 'Al Jazeera' }
+        ])
+      });
+      NewsSource.findOneAndUpdate.mockResolvedValue(null);
       fetchNewsCards.mockResolvedValue({
         cards: [
           {
@@ -101,6 +116,12 @@ describe('newsSyncJob', () => {
 
     it('should handle errors gracefully during syncSource', async () => {
       isDatabaseConnected.mockReturnValue(true);
+      NewsSource.find.mockReturnValue({
+        lean: jest.fn().mockResolvedValue([
+          { url: 'https://www.bbc.com/news', language: 'en', maxItems: 20 }
+        ])
+      });
+      NewsSource.findOneAndUpdate.mockResolvedValue(null);
       fetchNewsCards.mockRejectedValue(new Error('Network error'));
 
       await runSyncCycle();
