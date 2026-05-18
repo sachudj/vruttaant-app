@@ -146,40 +146,6 @@ vruttaant-app/
 **In Progress:**
 - ⏳ **Track K** (User Engagement Features): 0/6 items
 - ⏳ **Track L** (Performance Optimization): 0/6 items
-  - ✅ B1: User model with secure password storage
-  - ✅ B2: JWT signup/login endpoints
-  - ✅ B3: Refresh token rotation & revocation
-  - ✅ B4: Auth middleware for protected routes
-  - ✅ B5: Bookmark endpoints with ownership scoping
-  - ✅ B6: Role-based access control with admin endpoints
-- **Track C** (Observability): 7/7 (100%) ✅
-  - ✅ C1: Structured JSON request logging with request IDs
-  - ✅ C2: Request/response timing logs (`durationMs`) for API calls
-  - ✅ C3: Readiness probe endpoint at `/ready`
-  - ✅ C4: Graceful shutdown with in-flight request draining and DB cleanup
-  - ✅ C5: External error tracking integration (Sentry, optional via env)
-  - ✅ C6: Metrics export endpoint (`/metrics`) with latency/error counters
-  - ✅ C7: Alert rules for uptime, 5xx spikes, and DB disconnects
-- **Track D** (Testing): 7/7 (100%) ✅
-  - ✅ D1: 272 tests (ingestion, auth, profiles, bookmarks, RBAC, observability)
-  - ✅ D2: Integration tests for `/api/v1/news/ingest`
-  - ✅ D3: Integration tests for `/api/v1/news/cards`
-  - ✅ D4: API contract tests for response-shape stability
-  - ✅ D5: Test fixtures and deterministic LLM response mocks
-  - ✅ D6: CI coverage threshold gates (Jest global coverage minimums)
-  - ✅ D7: Dependency vulnerability checks with CI fail-on-high rule
-- **Track E** (Data Governance): 6/6 (100%) ✅
-  - ✅ E1: Strict 10-label category taxonomy (`src/constants/categories.js`)
-  - ✅ E2: Keyword-based fallback mapping for LLM category variants
-  - ✅ E3: Cross-source duplicate detection via title fingerprint (`src/utils/fingerprint.js`)
-  - ✅ E4: Source-level quality rules (title length, URL validity, image availability)
-  - ✅ E5: Structured audit logs for LLM summary/category failure paths
-  - ✅ E6: Reprocessing job for cards missing summary/category (`npm run job:reprocess-missing-metadata`)
-- **Track F** (Feature Milestones): 4/4 (100%) ✅
-  - ✅ Milestone 1: Secure API Baseline complete
-  - ✅ Milestone 2: Authenticated user flows complete (mobile bookmark flow included)
-  - ✅ Milestone 3: Production reliability complete
-  - ✅ Milestone 4: Data quality at scale complete
 
 For detailed roadmap, see [docs/ROADMAP.md](./docs/ROADMAP.md).
 
