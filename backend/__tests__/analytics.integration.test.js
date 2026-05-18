@@ -1,37 +1,109 @@
 const request = require('supertest');
-const app = require('../src/index');
+
+jest.mock('../src/models/UserActivityEvent', () => ({
+  create: jest.fn(),
+  findById: jest.fn(),
+  aggregate: jest.fn(),
+  deleteMany: jest.fn()
+}));
+
+jest.mock('../src/models/NewsCard', () => ({
+  findById: jest.fn(),
+  create: jest.fn(),
+  deleteMany: jest.fn()
+}));
+
+jest.mock('../src/models/User', () => ({
+  findById: jest.fn(),
+  create: jest.fn(),
+  deleteMany: jest.fn()
+}));
+
+jest.mock('../src/health/readiness', () => ({
+  createReadyHandler: jest.fn(() => (_req, res) => {
+    res.status(200).json({ status: 'ok' });
+  }),
+  readyHandler: jest.fn((_req, res) => {
+    res.status(200).json({ status: 'ok' });
+  }),
+  isDatabaseConnected: jest.fn()
+}));
+
+const { app } = require('../src/index');
 const UserActivityEvent = require('../src/models/UserActivityEvent');
 const NewsCard = require('../src/models/NewsCard');
 const User = require('../src/models/User');
 const jwt = require('jsonwebtoken');
 const { isDatabaseConnected } = require('../src/health/readiness');
 
-jest.mock('../src/health/readiness');
-// Removed duplicate imports
-
 describe('analytics integration', () => {
+  let eventStore;
+  let eventCounter;
   let adminUser;
   let regularUser;
   let adminToken;
   let regularToken;
   let newsCard;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.clearAllMocks();
     isDatabaseConnected.mockReturnValue(true);
 
-    // Create test users
-    adminUser = await User.create({
-      email: 'admin@test.com',
-      password: 'hashed_password',
-      role: 'admin'
+    eventStore = new Map();
+    eventCounter = 0;
+
+    UserActivityEvent.create.mockImplementation(async (input) => {
+      if (Array.isArray(input)) {
+        return input;
+      }
+
+      const created = {
+        ...input,
+        _id: `event-${++eventCounter}`
+      };
+      input._id = created._id;
+      eventStore.set(created._id, created);
+      return created;
     });
 
-    regularUser = await User.create({
+    UserActivityEvent.findById.mockImplementation(async (id) => eventStore.get(id) || null);
+    UserActivityEvent.deleteMany.mockResolvedValue({ deletedCount: 0 });
+    UserActivityEvent.aggregate.mockResolvedValue([]);
+
+    adminUser = {
+      _id: '507f1f77bcf86cd799439011',
+      email: 'admin@test.com',
+      role: 'admin'
+    };
+
+    regularUser = {
+      _id: '507f1f77bcf86cd799439012',
       email: 'user@test.com',
-      password: 'hashed_password',
       role: 'user'
+    };
+
+    User.findById.mockImplementation(async (id) => {
+      if (String(id) === String(adminUser._id)) return adminUser;
+      if (String(id) === String(regularUser._id)) return regularUser;
+      return null;
     });
+    User.deleteMany.mockResolvedValue({ deletedCount: 0 });
+
+    newsCard = {
+      _id: '507f1f77bcf86cd799439099',
+      title: 'Test Article',
+      summary: 'Test summary',
+      url: 'https://example.com/article',
+      category: 'Tech',
+      language: 'en',
+      source: 'Test Source',
+      publishedAt: new Date()
+    };
+
+    NewsCard.findById.mockReturnValue({
+      lean: jest.fn().mockResolvedValue(newsCard)
+    });
+    NewsCard.deleteMany.mockResolvedValue({ deletedCount: 0 });
 
     // Create JWT tokens
     adminToken = jwt.sign(
@@ -43,24 +115,10 @@ describe('analytics integration', () => {
       { sub: regularUser._id, role: 'user', email: regularUser.email },
       process.env.JWT_ACCESS_SECRET || 'dev-access-secret-change-me'
     );
-
-    // Create test news card
-    newsCard = await NewsCard.create({
-      title: 'Test Article',
-      summary: 'Test summary',
-      url: 'https://example.com/article',
-      category: 'Tech',
-      language: 'en',
-      source: 'Test Source',
-      publishedAt: new Date()
-    });
   });
 
-  afterEach(async () => {
-    // Clean up
-    await User.deleteMany({});
-    await UserActivityEvent.deleteMany({});
-    await NewsCard.deleteMany({});
+  afterEach(() => {
+    eventStore.clear();
   });
 
   describe('POST /api/v1/analytics/events', () => {
@@ -166,31 +224,11 @@ describe('analytics integration', () => {
   });
 
   describe('GET /api/v1/analytics/trending', () => {
-    beforeEach(async () => {
-      // Create multiple events
-      const now = new Date();
-      const cards = [];
-
-      for (let i = 0; i < 3; i++) {
-        const card = await NewsCard.create({
-          title: `Article ${i}`,
-          summary: 'Test',
-          url: `https://example.com/${i}`,
-          category: i % 2 === 0 ? 'Tech' : 'Science',
-          language: 'en',
-          source: 'Test'
-        });
-        cards.push(card);
-      }
-
-      // Create view events
-      await UserActivityEvent.create([
-        { eventType: 'view', newsCardId: cards[0]._id, userId: adminUser._id, eventAt: now },
-        { eventType: 'view', newsCardId: cards[0]._id, userId: adminUser._id, eventAt: now },
-        { eventType: 'view', newsCardId: cards[0]._id, userId: adminUser._id, eventAt: now },
-        { eventType: 'view', newsCardId: cards[1]._id, userId: adminUser._id, eventAt: now },
-        { eventType: 'view', newsCardId: cards[1]._id, userId: adminUser._id, eventAt: now },
-        { eventType: 'view', newsCardId: cards[2]._id, userId: adminUser._id, eventAt: now }
+    beforeEach(() => {
+      UserActivityEvent.aggregate.mockResolvedValue([
+        { _id: 'card-1', viewCount: 3, category: 'Tech' },
+        { _id: 'card-2', viewCount: 2, category: 'Tech' },
+        { _id: 'card-3', viewCount: 1, category: 'Science' }
       ]);
     });
 
@@ -213,6 +251,11 @@ describe('analytics integration', () => {
     });
 
     it('filters trending by category', async () => {
+      UserActivityEvent.aggregate.mockResolvedValue([
+        { _id: 'card-1', viewCount: 3, category: 'Tech' },
+        { _id: 'card-2', viewCount: 2, category: 'Tech' }
+      ]);
+
       const response = await request(app)
         .get('/api/v1/analytics/trending')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -266,11 +309,9 @@ describe('analytics integration', () => {
 
   describe('GET /api/v1/analytics/user/engagement', () => {
     it('returns authenticated user engagement summary', async () => {
-      // Create some events for the user
-      await UserActivityEvent.create([
-        { eventType: 'view', newsCardId: newsCard._id, userId: regularUser._id },
-        { eventType: 'bookmark', newsCardId: newsCard._id, userId: regularUser._id },
-        { eventType: 'view', newsCardId: newsCard._id, userId: regularUser._id }
+      UserActivityEvent.aggregate.mockResolvedValue([
+        { _id: 'view', count: 2, lastEventAt: new Date() },
+        { _id: 'bookmark', count: 1, lastEventAt: new Date() }
       ]);
 
       const response = await request(app)

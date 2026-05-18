@@ -26,7 +26,7 @@ const submitEvent = async (req, res, next) => {
 
     // Create event document
     const event = {
-      userId: req.user?._id || undefined,
+      userId: req.user?._id || req.user?.id || undefined,
       sessionId: req.sessionId || undefined,
       eventType,
       newsCardId,
