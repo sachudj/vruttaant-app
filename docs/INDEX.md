@@ -30,6 +30,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 - **[DATABASE.md](./DATABASE.md)** - MongoDB schema, queries, backup/restore
 - **[DOCKER.md](./DOCKER.md)** - Container management, troubleshooting
 - **[LOAD_TESTING.md](./LOAD_TESTING.md)** - Baseline performance testing and SLO targets
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Environment profiles, rollout steps, rollback playbook, and CI deployment gate
 
 ## 🎯 Quick Navigation by Role
 
@@ -76,6 +77,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 | **DATABASE.md** | MongoDB schema & operations | Backend, DevOps |
 | **DOCKER.md** | Container management | DevOps, backend |
 | **LOAD_TESTING.md** | Baseline performance tests and SLOs | Backend, DevOps |
+| **DEPLOYMENT.md** | Deployment profiles, rollout and rollback runbook | DevOps, backend, release managers |
 
 ## 🚦 Common Tasks
 
@@ -132,7 +134,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 ## 📝 Document Maintenance
 
 - Last updated: **May 18, 2026**
-- Total documentation: **13 files**
+- Total documentation: **14 files**
 - Total word count: **~21,000 words**
 - Coverage: Foundation complete with comprehensive environment setup, ready for feature development
 

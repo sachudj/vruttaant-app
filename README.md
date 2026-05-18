@@ -61,6 +61,7 @@ vruttaant-app/
 **Infrastructure:**
 - [Docker/MongoDB](./docs/DOCKER.md) - Container management & troubleshooting
 - [Mobile App](./docs/MOBILE_APP.md) - Flutter setup & building
+- [Deployment Runbook](./docs/DEPLOYMENT.md) - Environment profiles, rollout/rollback, CI deployment gate
 
 ## Tech Stack
 
@@ -188,6 +189,8 @@ This repository now includes CI and release automation:
   - Maintains a draft release note from merged changes
 - `.github/workflows/release.yml`
   - Publishes a GitHub Release automatically when a `v*` tag is pushed
+- `.github/workflows/deploy-gate.yml`
+  - Runs smoke checks and strict load SLO baseline before deployment progression
 
 ### Release Flow
 

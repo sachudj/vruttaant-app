@@ -174,7 +174,7 @@ db.newscards.countDocuments()
 1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` still accepts one source URL per request.
 2. **Partial Localization Depth**: Core feed/settings/auth/bookmarks/reader strings and locale-aware cached-time formatting are localized (`en`/`hi`), but secondary copy polish is still pending.
 3. **No Trending/Recommendation Layer**: Feed ranking is recency/relevance-based, without personalization.
-4. **No Production Load-History Yet**: Baseline load testing exists, but trend history and CI regression tracking are still pending.
+4. **No Production Load-History Yet**: Baseline load testing and CI regression gate exist, but cross-environment trend history is still pending.
 
 ---
 
@@ -185,7 +185,7 @@ db.newscards.countDocuments()
 2. Add more locale-aware formatting beyond cached-feed timestamp (dates/numbers where applicable)
 3. Continue modularizing `mobile_app/lib/main.dart` by extracting app-shell bootstrap/state wiring into dedicated modules
 4. Run baseline load test across environments and publish trend history + regression thresholds
-5. Add production deployment config for mobile/backend environments
+5. Run production release drill using the rollout/rollback checklist
 
 ### Short Term (1 week)
 1. Add trending stories endpoint and ranking pipeline
@@ -196,7 +196,7 @@ db.newscards.countDocuments()
 ### Medium Term (2-4 weeks)
 1. Add database migration strategy
 2. Add backup automation and restore runbook
-3. Add production deployment config and roll-forward/rollback playbooks
+3. Add release telemetry dashboard for rollout health and regression trends
 4. Extend multi-language source coverage with ingestion quality scoring
 
 ---
