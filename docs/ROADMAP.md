@@ -116,6 +116,49 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] Add widget and integration tests for translation flow
 - [x] Complete localization coverage for core mobile surfaces (feed/settings/auth/bookmarks/reader)
 
+## Track H: Feed Intelligence (Trending & Personalization)
+
+- [x] Add trending score calculation using gravity formula (ingestCount, time decay)
+- [x] Add hourly background job for trending score recalculation
+- [x] Add soft-auth endpoint support (optionalAuth middleware)
+- [x] Add database-driven news source registry with enable/disable controls
+- [x] Add schema migration infrastructure with version tracking
+
+## Track I: Recommendation Engine
+
+- [x] Create recommendation scoring service with multi-factor blending (trending × category boost × diversity penalty + bookmark signal)
+- [x] Add `GET /api/v1/news/recommended` endpoint with personalization support
+- [x] Add query validation for pagination and diversity tracking parameters
+- [x] Wire recommendation route with optional authentication
+- [x] Add comprehensive unit and integration tests for recommendation logic
+
+## Track J: Analytics & User Behavior Tracking
+
+- [ ] J1. Add user activity event model (view, bookmark, translate, share events)
+- [ ] J2. Add backend event capture middleware (track page views, article interactions)
+- [ ] J3. Add event aggregation service for content performance metrics
+- [ ] J4. Add `/api/v1/analytics/events` endpoint for event submission (client + server tracking)
+- [ ] J5. Add analytics API for editorial dashboard (trending content, user segments, engagement)
+- [ ] J6. Add mobile event tracking service and integration
+
+## Track K: User Engagement Features
+
+- [ ] K1. Add engagement-driven recommendation refinement (boost articles from bookmarked categories)
+- [ ] K2. Add reading-time estimation on article cards
+- [ ] K3. Add user activity history/reading feed feature
+- [ ] K4. Add engagement badges and achievement system (reader milestones)
+- [ ] K5. Add digest email template generation and scheduling (in addition to push)
+- [ ] K6. Add user cohort segmentation for A/B testing (language, category, device)
+
+## Track L: Performance Optimization & Caching
+
+- [ ] L1. Add Redis caching layer for trending cards and user recommendations
+- [ ] L2. Add database query optimization (indexing strategy review + execution plans)
+- [ ] L3. Add image CDN integration for card artwork delivery
+- [ ] L4. Add API response compression (gzip)
+- [ ] L5. Add mobile app bundle optimization (lazy loading, tree shaking verification)
+- [ ] L6. Add comprehensive load testing with regression gates (p95 latency, throughput SLOs)
+
 ## Session Notes
 
 - _Add short notes here after each implementation session._

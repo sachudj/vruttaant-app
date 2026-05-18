@@ -23,6 +23,7 @@ const {
 const { startNewsSyncJob, stopNewsSyncJob } = require('./jobs/newsSyncJob');
 const { startTrendScoreJob, stopTrendScoreJob } = require('./jobs/trendScoreJob');
 const { runMigrations } = require('./migrations/runner');
+const { eventCaptureMiddleware } = require('./middleware/eventCapture');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -97,6 +98,7 @@ app.use(express.json({
 }));
 app.use(requestLogger);
 app.use(metricsMiddleware);
+app.use(eventCaptureMiddleware);
 app.use(inFlightRequests.middleware);
 app.use('/api', apiLimiter);
 app.use('/api', apiRouter);

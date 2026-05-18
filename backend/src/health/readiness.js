@@ -37,5 +37,6 @@ const readyHandler = createReadyHandler();
 module.exports = {
   getReadinessStatus,
   createReadyHandler,
-  readyHandler
+  readyHandler,
+  isDatabaseConnected
 };
