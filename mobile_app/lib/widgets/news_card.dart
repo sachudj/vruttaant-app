@@ -13,6 +13,13 @@ class NewsCard extends StatelessWidget {
     this.isTranslating = false,
     this.onTranslatePressed,
     this.translationErrorLabel,
+    this.translateTooltip,
+    this.showOriginalTooltip,
+    this.addBookmarkTooltip,
+    this.removeBookmarkTooltip,
+    this.statusOriginalLabel,
+    this.statusTranslatedLabel,
+    this.statusTranslatingLabel,
   });
 
   final String title;
@@ -25,6 +32,13 @@ class NewsCard extends StatelessWidget {
   final bool isTranslating;
   final VoidCallback? onTranslatePressed;
   final String? translationErrorLabel;
+  final String? translateTooltip;
+  final String? showOriginalTooltip;
+  final String? addBookmarkTooltip;
+  final String? removeBookmarkTooltip;
+  final String? statusOriginalLabel;
+  final String? statusTranslatedLabel;
+  final String? statusTranslatingLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +124,9 @@ class NewsCard extends StatelessWidget {
                                     : Icons.g_translate,
                                 color: Colors.white,
                               ),
-                        tooltip: isTranslated ? 'Show original' : 'Translate',
+                        tooltip: isTranslated
+                            ? (showOriginalTooltip ?? 'Show original')
+                            : (translateTooltip ?? 'Translate'),
                       ),
                       IconButton.filledTonal(
                         onPressed: onBookmarkPressed,
@@ -119,8 +135,8 @@ class NewsCard extends StatelessWidget {
                           color: isBookmarked ? Colors.amber : Colors.white,
                         ),
                         tooltip: isBookmarked
-                            ? 'Remove bookmark'
-                            : 'Add bookmark',
+                            ? (removeBookmarkTooltip ?? 'Remove bookmark')
+                            : (addBookmarkTooltip ?? 'Add bookmark'),
                       ),
                     ],
                   ),
@@ -142,10 +158,10 @@ class NewsCard extends StatelessWidget {
                         ),
                         child: Text(
                           isTranslating
-                              ? 'Translating...'
+                              ? (statusTranslatingLabel ?? 'Translating...')
                               : isTranslated
-                              ? 'Translated'
-                              : 'Original',
+                              ? (statusTranslatedLabel ?? 'Translated')
+                              : (statusOriginalLabel ?? 'Original'),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,

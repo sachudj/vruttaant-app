@@ -106,7 +106,7 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] Settings/profile screens
 - [x] Local storage (feed cache with TTL + offline fallback)
 - [x] Theme/dark mode
-- [ ] Localization (i18n)
+- [x] Localization (i18n) for feed/settings/auth/bookmarks/reader core surfaces
 
 ### ⏳ Advanced Backend Features
 - [x] Saved articles/bookmarks
@@ -172,7 +172,7 @@ db.newscards.countDocuments()
 ## Known Limitations
 
 1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` still accepts one source URL per request.
-2. **Localization Is Foundation-Only**: App-level localization delegates and Hindi labels are wired, but most user-facing strings are still English-only.
+2. **Partial Localization Depth**: Core feed/settings/auth/bookmarks/reader strings are localized (`en`/`hi`), but locale-aware formatting and secondary copy polish are still pending.
 3. **No Trending/Recommendation Layer**: Feed ranking is recency/relevance-based, without personalization.
 4. **No Load-Test Baseline**: Performance limits under sustained traffic are not formally benchmarked.
 
@@ -181,8 +181,8 @@ db.newscards.countDocuments()
 ## Next Steps for Continuation
 
 ### Immediate (1-2 days)
-1. Complete full-string localization coverage across feed/settings/auth surfaces
-2. Add locale-aware formatting and language-switch smoke tests
+1. Add locale-aware formatting and language-switch smoke tests
+2. Extend localization polish for secondary copy and backend-originated messages
 3. Add load-test baseline and capture SLO targets
 4. Add production deployment config for mobile/backend environments
 

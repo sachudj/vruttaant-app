@@ -27,6 +27,82 @@ class AppLocalizations {
       'theme_system': 'System',
       'theme_light': 'Light',
       'theme_dark': 'Dark',
+      'search_sort': 'Search & Sort',
+      'search_hint': 'Search by title, summary, source...',
+      'sort_latest': 'Latest',
+      'sort_relevance': 'Relevance',
+      'clear': 'Clear',
+      'apply': 'Apply',
+      'sign_in': 'Sign In',
+      'email': 'Email',
+      'password': 'Password',
+      'sign_in_to_bookmark': 'Sign in to bookmark stories.',
+      'bookmark_missing_url': 'This story cannot be bookmarked (missing URL).',
+      'bookmark_removed': 'Bookmark removed.',
+      'bookmarked': 'Bookmarked.',
+      'already_bookmarked': 'Already bookmarked.',
+      'signed_out': 'Signed out.',
+      'bookmarks': 'Bookmarks',
+      'no_bookmarks': 'No bookmarks yet.',
+      'feed_load_failed': 'Could not load news feed',
+      'retry': 'Retry',
+      'no_stories_now': 'No stories available right now.',
+      'no_stories_filters':
+          'No stories available for the selected filters yet.',
+      'all': 'All',
+      'cached_feed': 'Cached feed',
+      'cached_feed_with_time': 'Cached feed ({time})',
+      'account': 'Account',
+      'signed_in_state': 'Signed in',
+      'profile_sync_hint': 'Profile and notification preferences are synced.',
+      'sign_out': 'Sign Out',
+      'sign_in_manage': 'Sign in to manage profile and notifications.',
+      'language': 'Language',
+      'category_preferences': 'Category Preferences',
+      'notifications': 'Notifications',
+      'notification_defaults_hint':
+          'Using defaults because server preferences could not be loaded.',
+      'enable_notifications': 'Enable Notifications',
+      'breaking_news_alerts': 'Breaking News Alerts',
+      'bookmark_alerts': 'Bookmark Alerts',
+      'daily_digest': 'Daily Digest',
+      'registered_devices': 'Registered Devices',
+      'no_notification_devices': 'No notification devices registered yet.',
+      'device_removed': 'Device removed.',
+      'read_more': 'Read More',
+      'reader_hint':
+          'Swipe left from the news card to open the full article in supported mobile platforms.',
+      'no_original_url': 'No original article URL available.',
+      'translating': 'Translating...',
+      'translated': 'Translated',
+      'original': 'Original',
+      'show_original': 'Show original',
+      'translate': 'Translate',
+      'translation_unavailable': 'Translation unavailable',
+      'translation_unavailable_snack':
+          'Translation unavailable for this story. Showing original.',
+      'translation_failed': 'Translation failed',
+      'translation_failed_snack': 'Could not translate this story right now.',
+      'add_bookmark': 'Add bookmark',
+      'remove_bookmark': 'Remove bookmark',
+      'tech': 'Tech',
+      'politics': 'Politics',
+      'sports': 'Sports',
+      'business': 'Business',
+      'world': 'World',
+      'health': 'Health',
+      'entertainment': 'Entertainment',
+      'science': 'Science',
+      'education': 'Education',
+      'general': 'General',
+      'lang_en': 'English',
+      'lang_hi': 'Hindi',
+      'lang_bn': 'Bengali',
+      'lang_mr': 'Marathi',
+      'lang_te': 'Telugu',
+      'lang_ta': 'Tamil',
+      'unknown_platform': 'unknown',
+      'device_fallback_name': 'Device',
     },
     'hi': {
       'app_title': 'वृत्तांत',
@@ -36,6 +112,83 @@ class AppLocalizations {
       'theme_system': 'सिस्टम',
       'theme_light': 'लाइट',
       'theme_dark': 'डार्क',
+      'search_sort': 'खोज और क्रम',
+      'search_hint': 'शीर्षक, सारांश, स्रोत से खोजें...',
+      'sort_latest': 'नवीनतम',
+      'sort_relevance': 'प्रासंगिक',
+      'clear': 'साफ करें',
+      'apply': 'लागू करें',
+      'sign_in': 'साइन इन',
+      'email': 'ईमेल',
+      'password': 'पासवर्ड',
+      'sign_in_to_bookmark': 'स्टोरी बुकमार्क करने के लिए साइन इन करें।',
+      'bookmark_missing_url':
+          'यह स्टोरी बुकमार्क नहीं की जा सकती (URL नहीं मिला)।',
+      'bookmark_removed': 'बुकमार्क हटा दिया गया।',
+      'bookmarked': 'बुकमार्क किया गया।',
+      'already_bookmarked': 'पहले से बुकमार्क है।',
+      'signed_out': 'साइन आउट हो गया।',
+      'bookmarks': 'बुकमार्क',
+      'no_bookmarks': 'अभी कोई बुकमार्क नहीं है।',
+      'feed_load_failed': 'न्यूज़ फ़ीड लोड नहीं हो सकी',
+      'retry': 'फिर से प्रयास करें',
+      'no_stories_now': 'अभी कोई स्टोरी उपलब्ध नहीं है।',
+      'no_stories_filters': 'चुने गए फ़िल्टर के लिए कोई स्टोरी उपलब्ध नहीं है।',
+      'all': 'सभी',
+      'cached_feed': 'कैश किया गया फ़ीड',
+      'cached_feed_with_time': 'कैश किया गया फ़ीड ({time})',
+      'account': 'खाता',
+      'signed_in_state': 'साइन इन है',
+      'profile_sync_hint': 'प्रोफाइल और नोटिफिकेशन प्राथमिकताएँ सिंक हैं।',
+      'sign_out': 'साइन आउट',
+      'sign_in_manage':
+          'प्रोफाइल और नोटिफिकेशन प्रबंधित करने के लिए साइन इन करें।',
+      'language': 'भाषा',
+      'category_preferences': 'श्रेणी प्राथमिकताएँ',
+      'notifications': 'नोटिफिकेशन',
+      'notification_defaults_hint':
+          'सर्वर प्राथमिकताएँ लोड न होने के कारण डिफॉल्ट का उपयोग हो रहा है।',
+      'enable_notifications': 'नोटिफिकेशन सक्षम करें',
+      'breaking_news_alerts': 'ब्रेकिंग न्यूज़ अलर्ट',
+      'bookmark_alerts': 'बुकमार्क अलर्ट',
+      'daily_digest': 'डेली डाइजेस्ट',
+      'registered_devices': 'रजिस्टर्ड डिवाइस',
+      'no_notification_devices': 'अभी कोई नोटिफिकेशन डिवाइस रजिस्टर्ड नहीं है।',
+      'device_removed': 'डिवाइस हटा दिया गया।',
+      'read_more': 'और पढ़ें',
+      'reader_hint':
+          'समर्थित मोबाइल प्लेटफॉर्म पर पूरा लेख खोलने के लिए न्यूज़ कार्ड से बाएं स्वाइप करें।',
+      'no_original_url': 'मूल लेख का URL उपलब्ध नहीं है।',
+      'translating': 'अनुवाद हो रहा है...',
+      'translated': 'अनूदित',
+      'original': 'मूल',
+      'show_original': 'मूल दिखाएँ',
+      'translate': 'अनुवाद करें',
+      'translation_unavailable': 'अनुवाद उपलब्ध नहीं है',
+      'translation_unavailable_snack':
+          'इस स्टोरी का अनुवाद उपलब्ध नहीं है। मूल दिखाया जा रहा है।',
+      'translation_failed': 'अनुवाद विफल',
+      'translation_failed_snack': 'अभी इस स्टोरी का अनुवाद नहीं हो सका।',
+      'add_bookmark': 'बुकमार्क जोड़ें',
+      'remove_bookmark': 'बुकमार्क हटाएँ',
+      'tech': 'टेक',
+      'politics': 'राजनीति',
+      'sports': 'खेल',
+      'business': 'बिजनेस',
+      'world': 'विश्व',
+      'health': 'स्वास्थ्य',
+      'entertainment': 'मनोरंजन',
+      'science': 'विज्ञान',
+      'education': 'शिक्षा',
+      'general': 'सामान्य',
+      'lang_en': 'अंग्रेज़ी',
+      'lang_hi': 'हिंदी',
+      'lang_bn': 'बंगाली',
+      'lang_mr': 'मराठी',
+      'lang_te': 'तेलुगु',
+      'lang_ta': 'तमिल',
+      'unknown_platform': 'अज्ञात',
+      'device_fallback_name': 'डिवाइस',
     },
   };
 
@@ -52,6 +205,91 @@ class AppLocalizations {
   String get themeSystem => _t('theme_system');
   String get themeLight => _t('theme_light');
   String get themeDark => _t('theme_dark');
+  String get searchSort => _t('search_sort');
+  String get searchHint => _t('search_hint');
+  String get sortLatest => _t('sort_latest');
+  String get sortRelevance => _t('sort_relevance');
+  String get clear => _t('clear');
+  String get apply => _t('apply');
+  String get signIn => _t('sign_in');
+  String get email => _t('email');
+  String get password => _t('password');
+  String get signInToBookmark => _t('sign_in_to_bookmark');
+  String get bookmarkMissingUrl => _t('bookmark_missing_url');
+  String get bookmarkRemoved => _t('bookmark_removed');
+  String get bookmarked => _t('bookmarked');
+  String get alreadyBookmarked => _t('already_bookmarked');
+  String get signedOut => _t('signed_out');
+  String get bookmarks => _t('bookmarks');
+  String get noBookmarks => _t('no_bookmarks');
+  String get feedLoadFailed => _t('feed_load_failed');
+  String get retry => _t('retry');
+  String get noStoriesNow => _t('no_stories_now');
+  String get noStoriesForFilters => _t('no_stories_filters');
+  String get all => _t('all');
+  String get cachedFeed => _t('cached_feed');
+  String cachedFeedWithTime(String time) =>
+      _t('cached_feed_with_time').replaceAll('{time}', time);
+  String get account => _t('account');
+  String get signedInState => _t('signed_in_state');
+  String get profileSyncHint => _t('profile_sync_hint');
+  String get signOut => _t('sign_out');
+  String get signInManage => _t('sign_in_manage');
+  String get language => _t('language');
+  String get categoryPreferences => _t('category_preferences');
+  String get notifications => _t('notifications');
+  String get notificationDefaultsHint => _t('notification_defaults_hint');
+  String get enableNotifications => _t('enable_notifications');
+  String get breakingNewsAlerts => _t('breaking_news_alerts');
+  String get bookmarkAlerts => _t('bookmark_alerts');
+  String get dailyDigest => _t('daily_digest');
+  String get registeredDevices => _t('registered_devices');
+  String get noNotificationDevices => _t('no_notification_devices');
+  String get deviceRemoved => _t('device_removed');
+  String get readMore => _t('read_more');
+  String get readerHint => _t('reader_hint');
+  String get noOriginalUrl => _t('no_original_url');
+  String get translating => _t('translating');
+  String get translated => _t('translated');
+  String get original => _t('original');
+  String get showOriginal => _t('show_original');
+  String get translate => _t('translate');
+  String get translationUnavailable => _t('translation_unavailable');
+  String get translationUnavailableSnack => _t('translation_unavailable_snack');
+  String get translationFailed => _t('translation_failed');
+  String get translationFailedSnack => _t('translation_failed_snack');
+  String get addBookmark => _t('add_bookmark');
+  String get removeBookmark => _t('remove_bookmark');
+  String get unknownPlatform => _t('unknown_platform');
+  String get deviceFallbackName => _t('device_fallback_name');
+
+  String categoryLabel(String category) {
+    return switch (category.trim().toLowerCase()) {
+      'tech' => _t('tech'),
+      'politics' => _t('politics'),
+      'sports' => _t('sports'),
+      'business' => _t('business'),
+      'world' => _t('world'),
+      'health' => _t('health'),
+      'entertainment' => _t('entertainment'),
+      'science' => _t('science'),
+      'education' => _t('education'),
+      'general' => _t('general'),
+      _ => category,
+    };
+  }
+
+  String languageLabel(String code) {
+    return switch (code.trim().toLowerCase()) {
+      'en' => _t('lang_en'),
+      'hi' => _t('lang_hi'),
+      'bn' => _t('lang_bn'),
+      'mr' => _t('lang_mr'),
+      'te' => _t('lang_te'),
+      'ta' => _t('lang_ta'),
+      _ => code,
+    };
+  }
 }
 
 class _AppLocalizationsDelegate

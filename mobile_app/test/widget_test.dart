@@ -95,6 +95,14 @@ void main() {
 
     // Verify sheet closed
     expect(find.text('Settings'), findsNothing);
+
+    // Re-open settings and verify localized Hindi labels are applied.
+    await tester.tap(langButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('सेटिंग्स'), findsOneWidget);
+    expect(find.text('सेव करें'), findsOneWidget);
+    expect(find.text('भाषा'), findsOneWidget);
   });
 
   testWidgets('opens search sheet and applies query', (

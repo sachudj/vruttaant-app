@@ -325,6 +325,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   }
 
   Future<void> _loadInitialFeed() async {
+    final localizations = AppLocalizations.of(context);
+
     setState(() {
       _isInitialLoading = true;
       _errorMessage = null;
@@ -353,7 +355,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       var firstPage = await _fetchNewsPage(1);
 
       if (firstPage.isEmpty) {
-        throw Exception('No stories available for the selected filters yet.');
+        throw Exception(localizations.noStoriesForFilters);
       }
 
       if (!mounted) return;
@@ -469,6 +471,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   }
 
   Future<void> _openSearchSheet() async {
+    final localizations = AppLocalizations.of(context);
     var pendingQuery = _searchQuery;
     var pendingSort = _sort;
 
@@ -492,8 +495,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Search & Sort',
+                      Text(
+                        localizations.searchSort,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -509,7 +512,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                         },
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          hintText: 'Search by title, summary, source...',
+                          hintText: localizations.searchHint,
                           hintStyle: const TextStyle(color: Colors.white54),
                           filled: true,
                           fillColor: Colors.white.withValues(alpha: 0.08),
@@ -529,7 +532,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                         spacing: 8,
                         children: [
                           ChoiceChip(
-                            label: const Text('Latest'),
+                            label: Text(localizations.sortLatest),
                             selected: pendingSort == 'latest',
                             onSelected: (_) {
                               setModalState(() {
@@ -538,7 +541,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                             },
                           ),
                           ChoiceChip(
-                            label: const Text('Relevance'),
+                            label: Text(localizations.sortRelevance),
                             selected: pendingSort == 'relevance',
                             onSelected: (_) {
                               setModalState(() {
@@ -557,7 +560,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                                 context,
                               ).pop({'q': '', 'sort': 'latest'});
                             },
-                            child: const Text('Clear'),
+                            child: Text(localizations.clear),
                           ),
                           const Spacer(),
                           FilledButton(
@@ -567,7 +570,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                                 'sort': pendingSort,
                               });
                             },
-                            child: const Text('Apply'),
+                            child: Text(localizations.apply),
                           ),
                         ],
                       ),
@@ -601,6 +604,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   }
 
   Future<void> _openLoginSheet() async {
+    final localizations = AppLocalizations.of(context);
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
     String? loginError;
@@ -648,8 +652,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
-                      'Sign In',
+                    Text(
+                      localizations.signIn,
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -662,8 +666,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
                       style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
+                      decoration: InputDecoration(
+                        labelText: localizations.email,
                         labelStyle: TextStyle(color: Colors.white70),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: Colors.white30),
@@ -678,8 +682,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                       controller: passwordController,
                       obscureText: true,
                       style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
+                      decoration: InputDecoration(
+                        labelText: localizations.password,
                         labelStyle: TextStyle(color: Colors.white70),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: Colors.white30),
@@ -709,7 +713,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text('Sign In'),
+                          : Text(localizations.signIn),
                     ),
                   ],
                 ),
@@ -756,14 +760,18 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   }
 
   Future<void> _toggleBookmark(NewsItem news) async {
+    final localizations = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final url = news.originalUrl;
 
     if (!_newsApiService.hasAccessToken) {
       messenger.showSnackBar(
         SnackBar(
-          content: const Text('Sign in to bookmark stories.'),
-          action: SnackBarAction(label: 'Sign In', onPressed: _openLoginSheet),
+          content: Text(localizations.signInToBookmark),
+          action: SnackBarAction(
+            label: localizations.signIn,
+            onPressed: _openLoginSheet,
+          ),
         ),
       );
       return;
@@ -771,9 +779,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
 
     if (url.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('This story cannot be bookmarked (missing URL).'),
-        ),
+        SnackBar(content: Text(localizations.bookmarkMissingUrl)),
       );
       return;
     }
@@ -792,7 +798,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
           _bookmarkedUrls.remove(url);
         });
         messenger.showSnackBar(
-          const SnackBar(content: Text('Bookmark removed.')),
+          SnackBar(content: Text(localizations.bookmarkRemoved)),
         );
         return;
       }
@@ -802,7 +808,11 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
-          content: Text(created ? 'Bookmarked.' : 'Already bookmarked.'),
+          content: Text(
+            created
+                ? localizations.bookmarked
+                : localizations.alreadyBookmarked,
+          ),
         ),
       );
     } catch (error) {
@@ -874,6 +884,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   }
 
   Future<void> _openSettingsSheet() async {
+    final localizations = AppLocalizations.of(context);
     final result = await Navigator.of(context).push<Map<String, dynamic>>(
       MaterialPageRoute(
         builder: (_) => _SettingsProfilePage(
@@ -905,7 +916,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Signed out.')));
+      ).showSnackBar(SnackBar(content: Text(localizations.signedOut)));
       return;
     }
 
@@ -954,6 +965,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   }
 
   Future<void> _openBookmarksSheet() async {
+    final localizations = AppLocalizations.of(context);
     if (!_newsApiService.hasAccessToken) {
       await _openLoginSheet();
       if (!mounted || !_authService.isLoggedIn) return;
@@ -979,8 +991,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
             child: Column(
               children: [
                 const SizedBox(height: 10),
-                const Text(
-                  'Bookmarks',
+                Text(
+                  localizations.bookmarks,
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -991,9 +1003,9 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                 const Divider(color: Colors.white24, height: 1),
                 Expanded(
                   child: _bookmarks.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
-                            'No bookmarks yet.',
+                            localizations.noBookmarks,
                             style: TextStyle(color: Colors.white70),
                           ),
                         )
@@ -1032,8 +1044,10 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                                   });
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Bookmark removed.'),
+                                    SnackBar(
+                                      content: Text(
+                                        localizations.bookmarkRemoved,
+                                      ),
                                     ),
                                   );
                                 },
@@ -1075,6 +1089,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return Scaffold(
       body: Builder(
         builder: (context) {
@@ -1091,8 +1107,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Could not load news feed',
+                    Text(
+                      localizations.feedLoadFailed,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -1109,7 +1125,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                     const SizedBox(height: 20),
                     FilledButton(
                       onPressed: _loadInitialFeed,
-                      child: const Text('Retry'),
+                      child: Text(localizations.retry),
                     ),
                   ],
                 ),
@@ -1118,9 +1134,9 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
           }
 
           if (_feed.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                'No stories available right now.',
+                localizations.noStoriesNow,
                 style: TextStyle(color: Colors.white70),
               ),
             );
@@ -1176,7 +1192,11 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                       final category = _categories[index];
                       final selected = category == _selectedCategory;
                       return ChoiceChip(
-                        label: Text(category ?? 'All'),
+                        label: Text(
+                          category == null
+                              ? localizations.all
+                              : localizations.categoryLabel(category),
+                        ),
                         selected: selected,
                         onSelected: (_) => _onCategorySelected(category),
                         selectedColor: Colors.white,
@@ -1214,8 +1234,10 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                         ),
                         child: Text(
                           _cachedFeedAt == null
-                              ? 'Cached feed'
-                              : 'Cached feed (${_cachedFeedAt!.hour.toString().padLeft(2, '0')}:${_cachedFeedAt!.minute.toString().padLeft(2, '0')})',
+                              ? localizations.cachedFeed
+                              : localizations.cachedFeedWithTime(
+                                  '${_cachedFeedAt!.hour.toString().padLeft(2, '0')}:${_cachedFeedAt!.minute.toString().padLeft(2, '0')}',
+                                ),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 11,
@@ -1237,13 +1259,13 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                         IconButton.filledTonal(
                           onPressed: _openSearchSheet,
                           icon: const Icon(Icons.manage_search),
-                          tooltip: 'Search & Sort',
+                          tooltip: localizations.searchSort,
                         ),
                         const SizedBox(width: 8),
                         IconButton.filledTonal(
                           onPressed: _openSettingsSheet,
                           icon: const Icon(Icons.settings_outlined),
-                          tooltip: 'Settings',
+                          tooltip: localizations.settings,
                         ),
                         const SizedBox(width: 8),
                         IconButton.filledTonal(
@@ -1259,7 +1281,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                                   ),
                                 )
                               : const Icon(Icons.bookmarks_outlined),
-                          tooltip: 'Bookmarks',
+                          tooltip: localizations.bookmarks,
                         ),
                       ],
                     ),
@@ -1319,14 +1341,14 @@ class _SettingsProfilePage extends StatefulWidget {
 }
 
 class _SettingsProfilePageState extends State<_SettingsProfilePage> {
-  static const Map<String, String> _languageLabels = {
-    'en': 'English',
-    'hi': 'Hindi',
-    'bn': 'Bengali',
-    'mr': 'Marathi',
-    'te': 'Telugu',
-    'ta': 'Tamil',
-  };
+  static const List<String> _languageCodes = [
+    'en',
+    'hi',
+    'bn',
+    'mr',
+    'te',
+    'ta',
+  ];
 
   late String _pendingLanguage;
   late Set<String> _pendingCategories;
@@ -1477,9 +1499,10 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
             .where((d) => '${d['id']}' != id)
             .toList(growable: false);
       });
+      final localizations = AppLocalizations.of(context);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Device removed.')));
+      ).showSnackBar(SnackBar(content: Text(localizations.deviceRemoved)));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -1549,10 +1572,10 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.fromLTRB(16, 12, 16, 6),
                   child: Text(
-                    'Account',
+                    localizations.account,
                     style: TextStyle(
                       color: Colors.white70,
                       fontWeight: FontWeight.w600,
@@ -1567,18 +1590,19 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                       color: Colors.white70,
                     ),
                     title: Text(
-                      widget.authService.userEmail ?? 'Signed in',
+                      widget.authService.userEmail ??
+                          localizations.signedInState,
                       style: const TextStyle(color: Colors.white),
                     ),
-                    subtitle: const Text(
-                      'Profile and notification preferences are synced.',
+                    subtitle: Text(
+                      localizations.profileSyncHint,
                       style: TextStyle(color: Colors.white54),
                     ),
                   ),
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.white70),
-                    title: const Text(
-                      'Sign Out',
+                    title: Text(
+                      localizations.signOut,
                       style: TextStyle(color: Colors.white),
                     ),
                     onTap: _logout,
@@ -1586,12 +1610,12 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                 ] else ...[
                   ListTile(
                     leading: const Icon(Icons.login, color: Colors.white70),
-                    title: const Text(
-                      'Sign In',
+                    title: Text(
+                      localizations.signIn,
                       style: TextStyle(color: Colors.white),
                     ),
-                    subtitle: const Text(
-                      'Sign in to manage profile and notifications.',
+                    subtitle: Text(
+                      localizations.signInManage,
                       style: TextStyle(color: Colors.white54),
                     ),
                     onTap: () =>
@@ -1599,10 +1623,10 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                   ),
                 ],
                 const Divider(color: Colors.white24),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
                   child: Text(
-                    'Language',
+                    localizations.language,
                     style: TextStyle(
                       color: Colors.white70,
                       fontWeight: FontWeight.w600,
@@ -1610,8 +1634,9 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                     ),
                   ),
                 ),
-                ..._languageLabels.entries.map(
-                  (entry) => _languageTile(entry.key, entry.value),
+                ..._languageCodes.map(
+                  (code) =>
+                      _languageTile(code, localizations.languageLabel(code)),
                 ),
                 const Divider(color: Colors.white24),
                 Padding(
@@ -1662,10 +1687,10 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                   ),
                 ),
                 const Divider(color: Colors.white24),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
                   child: Text(
-                    'Category Preferences',
+                    localizations.categoryPreferences,
                     style: TextStyle(
                       color: Colors.white70,
                       fontWeight: FontWeight.w600,
@@ -1684,7 +1709,7 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                             category,
                           );
                           return FilterChip(
-                            label: Text(category),
+                            label: Text(localizations.categoryLabel(category)),
                             selected: selected,
                             onSelected: (value) {
                               setState(() {
@@ -1702,10 +1727,10 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                 ),
                 if (_isLoggedIn) ...[
                   const Divider(color: Colors.white24),
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
                     child: Text(
-                      'Notifications',
+                      localizations.notifications,
                       style: TextStyle(
                         color: Colors.white70,
                         fontWeight: FontWeight.w600,
@@ -1714,19 +1739,19 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                     ),
                   ),
                   if (!_hasServerNotificationPrefs)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 4,
                       ),
                       child: Text(
-                        'Using defaults because server preferences could not be loaded.',
+                        localizations.notificationDefaultsHint,
                         style: TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                     ),
                   SwitchListTile.adaptive(
-                    title: const Text(
-                      'Enable Notifications',
+                    title: Text(
+                      localizations.enableNotifications,
                       style: TextStyle(color: Colors.white),
                     ),
                     value: _pendingNotifications['enabled'] as bool,
@@ -1737,8 +1762,8 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                     },
                   ),
                   SwitchListTile.adaptive(
-                    title: const Text(
-                      'Breaking News Alerts',
+                    title: Text(
+                      localizations.breakingNewsAlerts,
                       style: TextStyle(color: Colors.white),
                     ),
                     value: _pendingNotifications['breakingNews'] as bool,
@@ -1749,8 +1774,8 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                     },
                   ),
                   SwitchListTile.adaptive(
-                    title: const Text(
-                      'Bookmark Alerts',
+                    title: Text(
+                      localizations.bookmarkAlerts,
                       style: TextStyle(color: Colors.white),
                     ),
                     value: _pendingNotifications['bookmarkAlerts'] as bool,
@@ -1761,8 +1786,8 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                     },
                   ),
                   SwitchListTile.adaptive(
-                    title: const Text(
-                      'Daily Digest',
+                    title: Text(
+                      localizations.dailyDigest,
                       style: TextStyle(color: Colors.white),
                     ),
                     value: _pendingNotifications['dailyDigest'] as bool,
@@ -1773,10 +1798,10 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                     },
                   ),
                   const Divider(color: Colors.white24),
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
                     child: Text(
-                      'Registered Devices',
+                      localizations.registeredDevices,
                       style: TextStyle(
                         color: Colors.white70,
                         fontWeight: FontWeight.w600,
@@ -1785,21 +1810,23 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                     ),
                   ),
                   if (_devices.isEmpty)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 8,
                       ),
                       child: Text(
-                        'No notification devices registered yet.',
+                        localizations.noNotificationDevices,
                         style: TextStyle(color: Colors.white70),
                       ),
                     )
                   else
                     ..._devices.map((device) {
                       final id = '${device['id'] ?? ''}';
-                      final platform = '${device['platform'] ?? 'unknown'}';
-                      final name = '${device['deviceName'] ?? 'Device'}';
+                      final platform =
+                          '${device['platform'] ?? localizations.unknownPlatform}';
+                      final name =
+                          '${device['deviceName'] ?? localizations.deviceFallbackName}';
                       return ListTile(
                         leading: const Icon(
                           Icons.phone_android,
@@ -1859,6 +1886,8 @@ class _StoryPagerState extends State<_StoryPager> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return PageView(
       key: const ValueKey('story-pager-pageview'),
       scrollDirection: Axis.horizontal,
@@ -1874,6 +1903,13 @@ class _StoryPagerState extends State<_StoryPager> {
           isTranslating: _isTranslating,
           onTranslatePressed: _toggleTranslation,
           translationErrorLabel: _translationError,
+          translateTooltip: localizations.translate,
+          showOriginalTooltip: localizations.showOriginal,
+          addBookmarkTooltip: localizations.addBookmark,
+          removeBookmarkTooltip: localizations.removeBookmark,
+          statusOriginalLabel: localizations.original,
+          statusTranslatedLabel: localizations.translated,
+          statusTranslatingLabel: localizations.translating,
         ),
         _buildReaderPage(),
       ],
@@ -1920,12 +1956,12 @@ class _StoryPagerState extends State<_StoryPager> {
         _displaySummary = widget.news.summary;
         _isTranslated = false;
         _isTranslating = false;
-        _translationError = 'Translation unavailable';
+        _translationError = AppLocalizations.of(context).translationUnavailable;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Translation unavailable for this story. Showing original.',
+            AppLocalizations.of(context).translationUnavailableSnack,
           ),
         ),
       );
@@ -1936,17 +1972,18 @@ class _StoryPagerState extends State<_StoryPager> {
         _displaySummary = widget.news.summary;
         _isTranslated = false;
         _isTranslating = false;
-        _translationError = 'Translation failed';
+        _translationError = AppLocalizations.of(context).translationFailed;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not translate this story right now.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).translationFailedSnack),
         ),
       );
     }
   }
 
   Widget _buildReaderPage() {
+    final localizations = AppLocalizations.of(context);
     final articleUrl = widget.news.originalUrl;
     final controller = _controller;
 
@@ -1957,8 +1994,8 @@ class _StoryPagerState extends State<_StoryPager> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Read More',
+                Text(
+                  localizations.readMore,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 26,
@@ -1966,14 +2003,14 @@ class _StoryPagerState extends State<_StoryPager> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Swipe left from the news card to open the full article in supported mobile platforms.',
+                Text(
+                  localizations.readerHint,
                   style: TextStyle(color: Colors.white70, height: 1.4),
                 ),
                 const SizedBox(height: 16),
                 if (articleUrl.isEmpty)
-                  const Text(
-                    'No original article URL available.',
+                  Text(
+                    localizations.noOriginalUrl,
                     style: TextStyle(color: Colors.white70),
                   )
                 else
@@ -2006,10 +2043,10 @@ class _StoryPagerState extends State<_StoryPager> {
                   ),
                   child: Text(
                     _isTranslating
-                        ? 'Translating...'
+                        ? localizations.translating
                         : _isTranslated
-                        ? 'Translated'
-                        : 'Original',
+                        ? localizations.translated
+                        : localizations.original,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -2031,7 +2068,9 @@ class _StoryPagerState extends State<_StoryPager> {
                               ? Icons.translate_outlined
                               : Icons.g_translate,
                         ),
-                  tooltip: _isTranslated ? 'Show original' : 'Translate',
+                  tooltip: _isTranslated
+                      ? localizations.showOriginal
+                      : localizations.translate,
                 ),
               ],
             ),
