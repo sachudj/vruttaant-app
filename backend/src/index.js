@@ -158,8 +158,12 @@ async function bootstrap() {
     console.log('[observability] External error tracking disabled (missing SENTRY_DSN).');
   }
 
-  await connectDatabase();
-  await runMigrations();
+  const databaseConnected = await connectDatabase();
+  if (databaseConnected) {
+    await runMigrations();
+  } else {
+    console.log('[migrations] Skipped - database not connected.');
+  }
   const server = await startServer(PORT);
 
   startNewsSyncJob();

@@ -32,32 +32,7 @@ jobs:
         run: npm ci
 
       - name: Static syntax checks
-        run: |
-          node --check src/index.js
-          node --check src/config/database.js
-          node --check src/controllers/adminController.js
-          node --check src/controllers/authController.js
-          node --check src/controllers/bookmarkController.js
-          node --check src/controllers/notificationController.js
-          node --check src/controllers/newsController.js
-          node --check src/models/Bookmark.js
-          node --check src/models/NotificationDevice.js
-          node --check src/models/RefreshToken.js
-          node --check src/models/NewsCard.js
-          node --check src/models/User.js
-          node --check src/routes/adminRoutes.js
-          node --check src/routes/bookmarkRoutes.js
-          node --check src/routes/newsRoutes.js
-          node --check src/routes/authRoutes.js
-          node --check src/services/newsIngestionService.js
-           node --check src/routes/apiRouter.js
-           node --check src/middleware/authMiddleware.js
-           node --check src/middleware/roleGuard.js
-           node --check src/middleware/errorHandler.js
-           node --check src/middleware/requestValidation.js
-          node --check src/validation/authValidators.js
-          node --check src/validation/bookmarkValidators.js
-          node --check src/validation/notificationValidators.js
+        run: npm run ci:syntax
 
       - name: Lint
         run: npm run lint
@@ -65,33 +40,11 @@ jobs:
       - name: Tests
         run: npm test
 
-      - name: Start backend
+      - name: Backend health smoke
         env:
           PORT: 5000
           MONGODB_URI: ""
-        run: |
-          npm start > /tmp/backend.log 2>&1 &
-          echo $! > /tmp/backend.pid
-
-      - name: Wait for health endpoint
-        run: |
-          for i in $(seq 1 20); do
-            if curl -fsS http://localhost:5000/health > /tmp/health.json; then
-              cat /tmp/health.json
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "Backend failed to become healthy"
-          cat /tmp/backend.log || true
-          exit 1
-
-      - name: Stop backend
-        if: always()
-        run: |
-          if [ -f /tmp/backend.pid ]; then
-            kill "$(cat /tmp/backend.pid)" || true
-          fi
+        run: bash scripts/check-backend-health.sh
 
   backend-tests:
     name: Backend Tests

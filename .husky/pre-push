@@ -21,30 +21,40 @@ echo "┌───────────────────────�
 echo "│  Running CI checks before push…                      │"
 echo "└──────────────────────────────────────────────────────┘"
 
-# ── 1. Backend lint ─────────────────────────────────────────
+# ── 1. Backend syntax parity ────────────────────────────────
 echo ""
-echo "▶ [1/5] Backend lint"
+echo "▶ [1/7] Backend syntax checks"
+(cd "$ROOT/backend" && npm run ci:syntax --silent) || fail "Backend syntax checks"
+
+# ── 2. Backend lint ─────────────────────────────────────────
+echo ""
+echo "▶ [2/7] Backend lint"
 (cd "$ROOT/backend" && npm run lint --silent) || fail "Backend lint"
 
-# ── 2. Backend tests + coverage gates ───────────────────────
+# ── 3. Backend tests + coverage gates ───────────────────────
 echo ""
-echo "▶ [2/5] Backend tests (coverage gates)"
+echo "▶ [3/7] Backend tests (coverage gates)"
 (cd "$ROOT/backend" && npm run test:coverage -- --runInBand) || fail "Backend coverage"
 
-# ── 3. Backend security audit ───────────────────────────────
+# ── 4. Backend security audit ───────────────────────────────
 echo ""
-echo "▶ [3/5] Backend security audit"
+echo "▶ [4/7] Backend security audit"
 (cd "$ROOT/backend" && npm run security:audit) || fail "Backend security audit"
 
-# ── 4. Mobile analyze ───────────────────────────────────────
+# ── 5. Backend boot health smoke ────────────────────────────
 echo ""
-echo "▶ [4/5] Mobile analyze"
+echo "▶ [5/7] Backend boot health smoke"
+(cd "$ROOT" && bash scripts/check-backend-health.sh) || fail "Backend health smoke"
+
+# ── 6. Mobile analyze ───────────────────────────────────────
+echo ""
+echo "▶ [6/7] Mobile analyze"
 (cd "$ROOT/mobile_app" && flutter analyze --fatal-infos) || fail "Flutter analyze"
 
-# ── 5. Mobile tests ─────────────────────────────────────────
+# ── 7. Mobile tests ─────────────────────────────────────────
 echo ""
-echo "▶ [5/5] Mobile tests"
-(cd "$ROOT/mobile_app" && flutter test -r compact) || fail "Flutter tests"
+echo "▶ [7/7] Mobile tests"
+(cd "$ROOT/mobile_app" && flutter test --coverage -r compact) || fail "Flutter tests"
 
 echo ""
 echo "╔══════════════════════════════════════════════════════╗"
