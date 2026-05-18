@@ -44,7 +44,7 @@ jobs:
         env:
           PORT: 5000
           MONGODB_URI: ""
-        run: bash scripts/check-backend-health.sh
+        run: npm run ci:health
 
   backend-tests:
     name: Backend Tests

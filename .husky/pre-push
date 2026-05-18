@@ -44,7 +44,7 @@ echo "▶ [4/7] Backend security audit"
 # ── 5. Backend boot health smoke ────────────────────────────
 echo ""
 echo "▶ [5/7] Backend boot health smoke"
-(cd "$ROOT" && bash scripts/check-backend-health.sh) || fail "Backend health smoke"
+(cd "$ROOT/backend" && npm run ci:health --silent) || fail "Backend health smoke"
 
 # ── 6. Mobile analyze ───────────────────────────────────────
 echo ""
