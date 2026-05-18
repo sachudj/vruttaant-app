@@ -103,6 +103,18 @@ void main() {
     expect(find.text('सेटिंग्स'), findsOneWidget);
     expect(find.text('सेव करें'), findsOneWidget);
     expect(find.text('भाषा'), findsOneWidget);
+
+    // Save and verify top-level Hindi localized actions.
+    await tester.tap(find.text('सेव करें'));
+    await tester.pumpAndSettle();
+
+    final searchButton = find.byIcon(Icons.manage_search);
+    expect(searchButton, findsOneWidget);
+    await tester.tap(searchButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('खोज और क्रम'), findsOneWidget);
+    expect(find.text('लागू करें'), findsOneWidget);
   });
 
   testWidgets('opens search sheet and applies query', (

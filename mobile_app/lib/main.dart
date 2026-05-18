@@ -1081,6 +1081,19 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     );
   }
 
+  String _formatCachedFeedTimestamp(BuildContext context, DateTime savedAt) {
+    final materialLocalizations = MaterialLocalizations.of(context);
+    final localTime = savedAt.toLocal();
+    final timeOfDay = TimeOfDay.fromDateTime(localTime);
+    final alwaysUse24HourFormat =
+        MediaQuery.maybeOf(context)?.alwaysUse24HourFormat ?? false;
+
+    return materialLocalizations.formatTimeOfDay(
+      timeOfDay,
+      alwaysUse24HourFormat: alwaysUse24HourFormat,
+    );
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -1236,7 +1249,10 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                           _cachedFeedAt == null
                               ? localizations.cachedFeed
                               : localizations.cachedFeedWithTime(
-                                  '${_cachedFeedAt!.hour.toString().padLeft(2, '0')}:${_cachedFeedAt!.minute.toString().padLeft(2, '0')}',
+                                  _formatCachedFeedTimestamp(
+                                    context,
+                                    _cachedFeedAt!,
+                                  ),
                                 ),
                           style: const TextStyle(
                             color: Colors.white,

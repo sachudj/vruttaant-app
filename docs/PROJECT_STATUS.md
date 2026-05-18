@@ -172,7 +172,7 @@ db.newscards.countDocuments()
 ## Known Limitations
 
 1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` still accepts one source URL per request.
-2. **Partial Localization Depth**: Core feed/settings/auth/bookmarks/reader strings are localized (`en`/`hi`), but locale-aware formatting and secondary copy polish are still pending.
+2. **Partial Localization Depth**: Core feed/settings/auth/bookmarks/reader strings and locale-aware cached-time formatting are localized (`en`/`hi`), but secondary copy polish is still pending.
 3. **No Trending/Recommendation Layer**: Feed ranking is recency/relevance-based, without personalization.
 4. **No Load-Test Baseline**: Performance limits under sustained traffic are not formally benchmarked.
 
@@ -181,8 +181,8 @@ db.newscards.countDocuments()
 ## Next Steps for Continuation
 
 ### Immediate (1-2 days)
-1. Add locale-aware formatting and language-switch smoke tests
-2. Extend localization polish for secondary copy and backend-originated messages
+1. Extend localization polish for secondary copy and backend-originated messages
+2. Add more locale-aware formatting beyond cached-feed timestamp (dates/numbers where applicable)
 3. Add load-test baseline and capture SLO targets
 4. Add production deployment config for mobile/backend environments
 
