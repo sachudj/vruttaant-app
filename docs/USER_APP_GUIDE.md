@@ -2,7 +2,7 @@
 
 **Audience**: Product, design, QA, and engineering
 **Purpose**: Describe how a user uses the app today, what pages they should expect, and what scenarios should work end-to-end.
-**Last updated**: May 17, 2026
+**Last updated**: May 18, 2026
 
 ---
 
