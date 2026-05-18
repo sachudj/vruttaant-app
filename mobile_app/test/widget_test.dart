@@ -1,9 +1,4 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/models/news_item.dart';
+import 'package:mobile_app/services/feed_cache_service.dart';
 import 'package:mobile_app/services/news_api_service.dart';
 import 'package:mobile_app/widgets/news_card.dart';
 
@@ -223,5 +219,40 @@ void main() {
     expect(find.text('Original'), findsOneWidget);
     expect(find.text('Original Story Title'), findsOneWidget);
     expect(find.text('Original story summary.'), findsOneWidget);
+  });
+
+  testWidgets('loads cached feed when network fetch fails', (
+    WidgetTester tester,
+  ) async {
+    final cacheService = FeedCacheService();
+    final cacheKey = cacheService.buildCacheKey(language: 'en', sort: 'latest');
+    final cachedStory = const NewsItem(
+      title: 'Cached Offline Story',
+      summary: 'Offline summary',
+      imageUrl: 'https://example.com/cache.jpg',
+      source: 'Offline Source',
+      category: 'General',
+      language: 'en',
+    );
+
+    SharedPreferences.setMockInitialValues({
+      cacheService.storageKeyFor(cacheKey): jsonEncode({
+        'savedAt': DateTime.now().toUtc().toIso8601String(),
+        'items': [cachedStory.toJson()],
+      }),
+    });
+
+    await tester.pumpWidget(
+      MyApp(
+        newsLoader: (page) async {
+          throw Exception('Network unavailable');
+        },
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cached Offline Story'), findsOneWidget);
+    expect(find.textContaining('Cached feed'), findsOneWidget);
   });
 }

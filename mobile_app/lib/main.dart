@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_app/models/bookmark_item.dart';
 import 'package:mobile_app/models/news_item.dart';
 import 'package:mobile_app/services/auth_service.dart';
+import 'package:mobile_app/services/feed_cache_service.dart';
 import 'package:mobile_app/services/news_api_service.dart';
 import 'package:mobile_app/services/push_notification_service.dart';
 import 'package:mobile_app/widgets/news_card.dart';
@@ -55,6 +56,8 @@ class NewsFeedPage extends StatefulWidget {
 }
 
 class _NewsFeedPageState extends State<NewsFeedPage> {
+  static const Duration _feedCacheTtl = Duration(minutes: 45);
+
   final AuthService _authService = AuthService(
     baseUrl: const String.fromEnvironment(
       'API_BASE_URL',
@@ -62,6 +65,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     ),
   );
   late final NewsApiService _newsApiService;
+  late final FeedCacheService _feedCacheService;
   final PageController _pageController = PageController();
   final List<NewsItem> _feed = [];
   final List<BookmarkItem> _bookmarks = [];
@@ -97,6 +101,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   bool _isInitialLoading = true;
   bool _isLoadingMore = false;
   bool _isBookmarkSheetLoading = false;
+  bool _showingCachedFeed = false;
+  DateTime? _cachedFeedAt;
   String? _errorMessage;
   int _currentPage = 1;
   String _language = 'en';
@@ -110,8 +116,18 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   void initState() {
     super.initState();
     _newsApiService = NewsApiService(authService: _authService);
+    _feedCacheService = FeedCacheService();
     _pushService = PushNotificationService(_newsApiService);
     _initApp();
+  }
+
+  String _currentFeedCacheKey() {
+    return _feedCacheService.buildCacheKey(
+      language: _language,
+      category: _selectedCategory,
+      query: _searchQuery,
+      sort: _sort,
+    );
   }
 
   Future<void> _initApp() async {
@@ -213,6 +229,25 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       _errorMessage = null;
     });
 
+    final cacheKey = _currentFeedCacheKey();
+    final cachedSnapshot = await _feedCacheService.loadFeed(
+      cacheKey: cacheKey,
+      maxAge: _feedCacheTtl,
+    );
+
+    if (cachedSnapshot != null && mounted) {
+      setState(() {
+        _feed
+          ..clear()
+          ..addAll(cachedSnapshot.items);
+        _currentPage = 1;
+        _isInitialLoading = false;
+        _showingCachedFeed = true;
+        _cachedFeedAt = cachedSnapshot.savedAt;
+        _errorMessage = null;
+      });
+    }
+
     try {
       var firstPage = await _fetchNewsPage(1);
 
@@ -228,10 +263,24 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
           ..addAll(firstPage);
         _currentPage = 1;
         _isInitialLoading = false;
+        _showingCachedFeed = false;
+        _cachedFeedAt = null;
       });
+      await _feedCacheService.saveFeed(cacheKey: cacheKey, items: firstPage);
       await _refreshBookmarks();
     } catch (error) {
       if (!mounted) return;
+
+      if (cachedSnapshot != null) {
+        setState(() {
+          _isInitialLoading = false;
+          _showingCachedFeed = true;
+          _cachedFeedAt = cachedSnapshot.savedAt;
+          _errorMessage = null;
+        });
+        return;
+      }
+
       setState(() {
         _errorMessage = '$error';
         _isInitialLoading = false;
@@ -260,13 +309,22 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
         return;
       }
 
+      final mergedFeed = _mergeUnique(_feed, incoming);
+
       setState(() {
         _feed
           ..clear()
-          ..addAll(_mergeUnique(_feed, incoming));
+          ..addAll(mergedFeed);
         _currentPage = nextPage;
         _isLoadingMore = false;
+        _showingCachedFeed = false;
+        _cachedFeedAt = null;
       });
+
+      await _feedCacheService.saveFeed(
+        cacheKey: _currentFeedCacheKey(),
+        items: mergedFeed,
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -1015,6 +1073,38 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                   ),
                 ),
               ),
+              if (_showingCachedFeed)
+                SafeArea(
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12, top: 64),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.amber.withValues(alpha: 0.55),
+                          ),
+                        ),
+                        child: Text(
+                          _cachedFeedAt == null
+                              ? 'Cached feed'
+                              : 'Cached feed (${_cachedFeedAt!.hour.toString().padLeft(2, '0')}:${_cachedFeedAt!.minute.toString().padLeft(2, '0')})',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               SafeArea(
                 child: Align(
                   alignment: Alignment.topRight,
