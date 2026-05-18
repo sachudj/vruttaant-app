@@ -234,6 +234,43 @@ class NewsApiService {
     );
   }
 
+  Future<bool> submitAnalyticsEvent({
+    required String eventType,
+    required String newsCardId,
+    int? duration,
+    Map<String, dynamic>? translation,
+    Map<String, dynamic>? deviceMetadata,
+  }) async {
+    final cardId = newsCardId.trim();
+    if (cardId.isEmpty) {
+      return false;
+    }
+
+    final uri = Uri.parse('$baseUrl/api/v1/analytics/events');
+    final payload = <String, dynamic>{
+      'eventType': eventType,
+      'newsCardId': cardId,
+    };
+
+    if (duration != null) payload['duration'] = duration;
+    if (translation != null) payload['translation'] = translation;
+    if (deviceMetadata != null) payload['deviceMetadata'] = deviceMetadata;
+
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    final token = (_authService?.rawAccessToken ?? _staticToken ?? '').trim();
+    if (token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final response = await _client.post(
+      uri,
+      headers: headers,
+      body: jsonEncode(payload),
+    );
+
+    return response.statusCode == 201;
+  }
+
   // ---------------------------------------------------------------------------
   // Bookmarks
   // ---------------------------------------------------------------------------

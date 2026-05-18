@@ -78,6 +78,7 @@ class AppLocalizations {
       'original': 'Original',
       'show_original': 'Show original',
       'translate': 'Translate',
+      'share': 'Share',
       'translation_unavailable': 'Translation unavailable',
       'translation_unavailable_snack':
           'Translation unavailable for this story. Showing original.',
@@ -169,6 +170,7 @@ class AppLocalizations {
       'original': 'मूल',
       'show_original': 'मूल दिखाएँ',
       'translate': 'अनुवाद करें',
+      'share': 'साझा करें',
       'translation_unavailable': 'अनुवाद उपलब्ध नहीं है',
       'translation_unavailable_snack':
           'इस स्टोरी का अनुवाद उपलब्ध नहीं है। मूल दिखाया जा रहा है।',
@@ -264,6 +266,7 @@ class AppLocalizations {
   String get original => _t('original');
   String get showOriginal => _t('show_original');
   String get translate => _t('translate');
+  String get share => _t('share');
   String get translationUnavailable => _t('translation_unavailable');
   String get translationUnavailableSnack => _t('translation_unavailable_snack');
   String get translationFailed => _t('translation_failed');

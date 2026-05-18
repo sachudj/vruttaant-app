@@ -1,5 +1,3 @@
-- _May 18, 2026_: Completed production deployment readiness baseline. Added backend staging/production environment templates (`backend/.env.staging.example`, `backend/.env.production.example`), mobile environment define templates (`mobile_app/env/staging.json`, `mobile_app/env/production.json`), deployment runbook (`docs/DEPLOYMENT.md`), and CI deployment gate workflow (`.github/workflows/deploy-gate.yml`) with smoke checks plus strict SLO baseline verification. Commit: pending.
-- _May 18, 2026_: Completed Track J Analytics foundation (J1-J6). Created `UserActivityEvent` model with TTL auto-purge (90 days), event capture middleware (non-blocking async), analytics service with trending/categories/engagement aggregations, and controller endpoints: POST `/api/v1/analytics/events` (soft-auth for client event submission), GET `/api/v1/analytics/trending` (admin, sorted by views), GET `/api/v1/analytics/categories` (admin, engagement-ranked), GET `/api/v1/analytics/card/:id/metrics` (admin), GET `/api/v1/analytics/user/engagement` (auth user profile). Added 60+ tests across 3 test files (validators, service unit, integration). Coverage 74.19% statements, 67.32% branches. Commit: `4a35547`.
 # Product Roadmap
 
 **Date**: May 5, 2026  
@@ -136,12 +134,12 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 
 ## Track J: Analytics & User Behavior Tracking
 
-- [ ] J1. Add user activity event model (view, bookmark, translate, share events)
-- [ ] J2. Add backend event capture middleware (track page views, article interactions)
-- [ ] J3. Add event aggregation service for content performance metrics
-- [ ] J4. Add `/api/v1/analytics/events` endpoint for event submission (client + server tracking)
-- [ ] J5. Add analytics API for editorial dashboard (trending content, user segments, engagement)
-- [ ] J6. Add mobile event tracking service and integration
+- [x] J1. Add user activity event model (view, bookmark, translate, share events)
+- [x] J2. Add backend event capture middleware (track page views, article interactions)
+- [x] J3. Add event aggregation service for content performance metrics
+- [x] J4. Add `/api/v1/analytics/events` endpoint for event submission (client + server tracking)
+- [x] J5. Add analytics API for editorial dashboard (trending content, user segments, engagement)
+- [x] J6. Add mobile event tracking service and integration
 
 ## Track K: User Engagement Features
 
@@ -209,3 +207,5 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 18, 2026_: Completed feed extraction from oversized `mobile_app/lib/main.dart` by moving `NewsFeedPage` orchestration/UI into `mobile_app/lib/features/feed/presentation/news_feed_page.dart` and shared typedefs into `mobile_app/lib/features/feed/domain/feed_types.dart`. Updated app shell imports/wiring and re-verified mobile and backend CI-equivalent checks (including audit gate behavior with explicit exit code validation). Commit: `89424c3`.
 - _May 18, 2026_: Added backend load-test baseline runner (`backend/src/loadtest/runBaseline.js`) with repeatable scenarios for cards read, translate, and optional authenticated bookmark reads, plus initial SLO targets (p95 latency, throughput, error rate) documented in `docs/LOAD_TESTING.md`. Added npm scripts (`loadtest:baseline`, `loadtest:baseline:strict`). Commit: pending.
 - _May 18, 2026_: Completed production deployment readiness baseline. Added backend staging/production environment templates (`backend/.env.staging.example`, `backend/.env.production.example`), mobile environment define templates (`mobile_app/env/staging.json`, `mobile_app/env/production.json`), deployment runbook (`docs/DEPLOYMENT.md`), and CI deployment gate workflow (`.github/workflows/deploy-gate.yml`) with smoke checks plus strict SLO baseline verification. Commit: pending.
+- _May 18, 2026_: Completed Track J backend analytics foundation (J1-J5). Created `UserActivityEvent` model with TTL auto-purge (90 days), event capture middleware (non-blocking async), analytics service with trending/categories/engagement aggregations, and controller endpoints: POST `/api/v1/analytics/events` (soft-auth for client event submission), GET `/api/v1/analytics/trending` (admin, sorted by views), GET `/api/v1/analytics/categories` (admin, engagement-ranked), GET `/api/v1/analytics/card/:id/metrics` (admin), GET `/api/v1/analytics/user/engagement` (auth user profile). Added 60+ tests across 3 test files (validators, service unit, integration). Coverage 74.19% statements, 67.32% branches. Commit: `4a35547`.
+- _May 18, 2026_: Completed J6 mobile analytics event tracking integration. Added `mobile_app/lib/services/event_tracking_service.dart` and wired feed-side tracking for story views (with duration), bookmark, translate, and share actions via `POST /api/v1/analytics/events` using optional auth. Updated mobile models/API client to include backend card IDs for analytics payloads and added in-app share action wiring. Verified with `flutter analyze` and `flutter test -r compact` (18/18 passing). Commit: pending.

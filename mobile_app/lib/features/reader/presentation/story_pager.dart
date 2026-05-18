@@ -4,6 +4,7 @@ import 'package:mobile_app/l10n/app_localizations.dart';
 import 'package:mobile_app/models/news_item.dart';
 import 'package:mobile_app/services/news_api_service.dart';
 import 'package:mobile_app/widgets/news_card.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class StoryPager extends StatefulWidget {
@@ -13,6 +14,7 @@ class StoryPager extends StatefulWidget {
     required this.isBookmarked,
     required this.onBookmarkPressed,
     required this.onTranslateRequested,
+    required this.onShareRequested,
   });
 
   final NewsItem news;
@@ -20,6 +22,7 @@ class StoryPager extends StatefulWidget {
   final VoidCallback onBookmarkPressed;
   final Future<StoryTranslationResult> Function(NewsItem news)
   onTranslateRequested;
+  final Future<void> Function(NewsItem news) onShareRequested;
 
   @override
   State<StoryPager> createState() => _StoryPagerState();
@@ -66,6 +69,7 @@ class _StoryPagerState extends State<StoryPager> {
           source: widget.news.source,
           isBookmarked: widget.isBookmarked,
           onBookmarkPressed: widget.onBookmarkPressed,
+          onSharePressed: _shareStory,
           isTranslated: _isTranslated,
           isTranslating: _isTranslating,
           onTranslatePressed: _toggleTranslation,
@@ -74,6 +78,7 @@ class _StoryPagerState extends State<StoryPager> {
           showOriginalTooltip: localizations.showOriginal,
           addBookmarkTooltip: localizations.addBookmark,
           removeBookmarkTooltip: localizations.removeBookmark,
+          shareTooltip: localizations.share,
           statusOriginalLabel: localizations.original,
           statusTranslatedLabel: localizations.translated,
           statusTranslatingLabel: localizations.translating,
@@ -147,6 +152,16 @@ class _StoryPagerState extends State<StoryPager> {
         ),
       );
     }
+  }
+
+  Future<void> _shareStory() async {
+    final url = widget.news.originalUrl;
+    final text = url.isNotEmpty
+        ? '${widget.news.title}\n\n$url'
+        : '${widget.news.title}\n\n${widget.news.summary}';
+
+    await Share.share(text);
+    await widget.onShareRequested(widget.news);
   }
 
   Widget _buildReaderPage() {

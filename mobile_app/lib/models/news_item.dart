@@ -1,5 +1,6 @@
 class NewsItem {
   const NewsItem({
+    this.id,
     required this.title,
     required this.summary,
     required this.imageUrl,
@@ -9,6 +10,7 @@ class NewsItem {
     this.language,
   });
 
+  final String? id;
   final String title;
   final String summary;
   final String imageUrl;
@@ -18,9 +20,11 @@ class NewsItem {
   final String? language;
 
   String get originalUrl => (url ?? '').trim();
+  String get analyticsCardId => (id ?? '').trim();
 
   factory NewsItem.fromJson(Map<String, dynamic> json) {
     return NewsItem(
+      id: ((json['_id'] as String?) ?? (json['id'] as String?)),
       title: (json['title'] as String?)?.trim().isNotEmpty == true
           ? (json['title'] as String).trim()
           : 'Untitled',
@@ -45,6 +49,7 @@ class NewsItem {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'title': title,
       'summary': summary,
       'imageUrl': imageUrl,

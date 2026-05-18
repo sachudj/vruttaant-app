@@ -9,6 +9,7 @@ class NewsCard extends StatelessWidget {
     this.source,
     this.isBookmarked = false,
     this.onBookmarkPressed,
+    this.onSharePressed,
     this.isTranslated = false,
     this.isTranslating = false,
     this.onTranslatePressed,
@@ -17,6 +18,7 @@ class NewsCard extends StatelessWidget {
     this.showOriginalTooltip,
     this.addBookmarkTooltip,
     this.removeBookmarkTooltip,
+    this.shareTooltip,
     this.statusOriginalLabel,
     this.statusTranslatedLabel,
     this.statusTranslatingLabel,
@@ -28,6 +30,7 @@ class NewsCard extends StatelessWidget {
   final String? source;
   final bool isBookmarked;
   final VoidCallback? onBookmarkPressed;
+  final VoidCallback? onSharePressed;
   final bool isTranslated;
   final bool isTranslating;
   final VoidCallback? onTranslatePressed;
@@ -36,6 +39,7 @@ class NewsCard extends StatelessWidget {
   final String? showOriginalTooltip;
   final String? addBookmarkTooltip;
   final String? removeBookmarkTooltip;
+  final String? shareTooltip;
   final String? statusOriginalLabel;
   final String? statusTranslatedLabel;
   final String? statusTranslatingLabel;
@@ -127,6 +131,14 @@ class NewsCard extends StatelessWidget {
                         tooltip: isTranslated
                             ? (showOriginalTooltip ?? 'Show original')
                             : (translateTooltip ?? 'Translate'),
+                      ),
+                      IconButton.filledTonal(
+                        onPressed: onSharePressed,
+                        icon: const Icon(
+                          Icons.share_outlined,
+                          color: Colors.white,
+                        ),
+                        tooltip: shareTooltip ?? 'Share',
                       ),
                       IconButton.filledTonal(
                         onPressed: onBookmarkPressed,

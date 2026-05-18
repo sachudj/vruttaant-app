@@ -10,6 +10,7 @@ import 'package:mobile_app/l10n/app_localizations.dart';
 import 'package:mobile_app/models/bookmark_item.dart';
 import 'package:mobile_app/models/news_item.dart';
 import 'package:mobile_app/services/auth_service.dart';
+import 'package:mobile_app/services/event_tracking_service.dart';
 import 'package:mobile_app/services/feed_cache_service.dart';
 import 'package:mobile_app/services/news_api_service.dart';
 import 'package:mobile_app/services/push_notification_service.dart';
@@ -82,6 +83,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   bool _isBookmarkSheetLoading = false;
   bool _showingCachedFeed = false;
   DateTime? _cachedFeedAt;
+  int _activeFeedIndex = 0;
+  DateTime? _activeFeedStartedAt;
   String? _errorMessage;
   int _currentPage = 1;
   String _language = 'en';
@@ -90,11 +93,13 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   String _searchQuery = '';
   String _sort = 'latest';
   late final PushNotificationService _pushService;
+  late final EventTrackingService _eventTrackingService;
 
   @override
   void initState() {
     super.initState();
     _newsApiService = NewsApiService(authService: _authService);
+    _eventTrackingService = EventTrackingService(_newsApiService);
     _feedCacheService = FeedCacheService();
     _pushService = PushNotificationService(_newsApiService);
     _initApp();
@@ -182,10 +187,42 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       return translator(news, _language);
     }
 
-    return _newsApiService.translateStory(
-      item: news,
-      targetLanguage: _language,
-    );
+    return _newsApiService
+        .translateStory(item: news, targetLanguage: _language)
+        .then((result) {
+          if (result.translated) {
+            _eventTrackingService.trackTranslate(
+              news,
+              fromLanguage: (news.language ?? 'en').trim(),
+              toLanguage: _language,
+            );
+          }
+          return result;
+        });
+  }
+
+  Future<void> _shareNewsItem(NewsItem news) async {
+    await _eventTrackingService.trackShare(news);
+  }
+
+  void _trackViewStartedForIndex(int index) {
+    if (index < 0 || index >= _feed.length) return;
+    _activeFeedIndex = index;
+    _activeFeedStartedAt = DateTime.now();
+    _eventTrackingService.trackView(_feed[index]);
+  }
+
+  void _trackViewCompletedForIndex(int index) {
+    if (index < 0 || index >= _feed.length) return;
+    final startedAt = _activeFeedStartedAt;
+    final int? durationMs = startedAt == null
+        ? null
+        : DateTime.now()
+              .difference(startedAt)
+              .inMilliseconds
+              .clamp(0, 3600000)
+              .toInt();
+    _eventTrackingService.trackView(_feed[index], durationMs: durationMs);
   }
 
   List<NewsItem> _mergeUnique(List<NewsItem> current, List<NewsItem> incoming) {
@@ -222,11 +259,14 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
           ..clear()
           ..addAll(cachedSnapshot.items);
         _currentPage = 1;
+        _activeFeedIndex = 0;
+        _activeFeedStartedAt = DateTime.now();
         _isInitialLoading = false;
         _showingCachedFeed = true;
         _cachedFeedAt = cachedSnapshot.savedAt;
         _errorMessage = null;
       });
+      _trackViewStartedForIndex(0);
     }
 
     try {
@@ -243,10 +283,13 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
           ..clear()
           ..addAll(firstPage);
         _currentPage = 1;
+        _activeFeedIndex = 0;
+        _activeFeedStartedAt = DateTime.now();
         _isInitialLoading = false;
         _showingCachedFeed = false;
         _cachedFeedAt = null;
       });
+      _trackViewStartedForIndex(0);
       await _feedCacheService.saveFeed(cacheKey: cacheKey, items: firstPage);
       await _refreshBookmarks();
     } catch (error) {
@@ -474,6 +517,9 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
 
       final created = await _newsApiService.addBookmark(news);
       await _refreshBookmarks();
+      if (created) {
+        _eventTrackingService.trackBookmark(news);
+      }
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
@@ -675,6 +721,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
           isBookmarked: true,
           onBookmarkPressed: () async {},
           onTranslateRequested: _translateNewsItem,
+          onShareRequested: _shareNewsItem,
         ),
       ),
     );
@@ -695,6 +742,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
 
   @override
   void dispose() {
+    _trackViewCompletedForIndex(_activeFeedIndex);
     _pageController.dispose();
     super.dispose();
   }
@@ -770,6 +818,10 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                   scrollDirection: Axis.vertical,
                   itemCount: _feed.length + (_isLoadingMore ? 1 : 0),
                   onPageChanged: (index) {
+                    if (index != _activeFeedIndex) {
+                      _trackViewCompletedForIndex(_activeFeedIndex);
+                      _trackViewStartedForIndex(index);
+                    }
                     _prefetchImageIfPossible(_feed, index + 1);
                     _prefetchImageIfPossible(_feed, index + 2);
                     _loadMoreIfNeeded(index);
@@ -787,6 +839,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                       isBookmarked: _isBookmarked(news),
                       onBookmarkPressed: () => _toggleBookmark(news),
                       onTranslateRequested: _translateNewsItem,
+                      onShareRequested: _shareNewsItem,
                     );
                   },
                 ),

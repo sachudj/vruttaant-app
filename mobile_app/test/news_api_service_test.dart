@@ -144,4 +144,58 @@ void main() {
     expect(result.language, 'hi');
     expect(result.fallbackReason, isNull);
   });
+
+  test('submitAnalyticsEvent posts payload with auth token', () async {
+    final client = MockClient((request) async {
+      expect(request.method, 'POST');
+      expect(
+        request.url.toString(),
+        'https://api.example.com/api/v1/analytics/events',
+      );
+      expect(request.headers['Authorization'], 'Bearer test-token');
+
+      final payload = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(payload['eventType'], 'view');
+      expect(payload['newsCardId'], '507f1f77bcf86cd799439011');
+      expect(payload['duration'], 1500);
+
+      return http.Response(
+        jsonEncode({
+          'success': true,
+          'message': 'Event recorded successfully.',
+        }),
+        201,
+      );
+    });
+
+    final service = NewsApiService(
+      baseUrl: 'https://api.example.com',
+      accessToken: 'test-token',
+      client: client,
+    );
+
+    final ok = await service.submitAnalyticsEvent(
+      eventType: 'view',
+      newsCardId: '507f1f77bcf86cd799439011',
+      duration: 1500,
+      deviceMetadata: {'deviceType': 'mobile', 'platform': 'ios'},
+    );
+
+    expect(ok, isTrue);
+  });
+
+  test('NewsItem parses backend _id for analytics tracking', () {
+    final item = NewsItem.fromJson({
+      '_id': '507f1f77bcf86cd799439011',
+      'title': 'Story',
+      'summary': 'Summary',
+      'imageUrl': 'https://example.com/image.jpg',
+      'source': 'Source',
+      'category': 'General',
+      'url': 'https://example.com/story',
+      'language': 'en',
+    });
+
+    expect(item.analyticsCardId, '507f1f77bcf86cd799439011');
+  });
 }
