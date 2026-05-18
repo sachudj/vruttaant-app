@@ -1,6 +1,6 @@
 const NewsCard = require('../models/NewsCard');
 const { isDatabaseConnected } = require('../config/database');
-const { fetchNewsCards } = require('../services/newsIngestionService');
+const { fetchNewsCards, translateStoryContent } = require('../services/newsIngestionService');
 const { AppError } = require('../middleware/errorHandler');
 
 function escapeRegex(value) {
@@ -169,7 +169,46 @@ async function getNewsCards(req, res, next) {
   }
 }
 
+async function translateNewsStory(req, res, next) {
+  try {
+    const {
+      title,
+      summary,
+      source = '',
+      url,
+      sourceLanguage = 'en',
+      targetLanguage = 'en'
+    } = req.validated?.body || req.body || {};
+
+    const translation = await translateStoryContent(
+      { title, summary, source, url: url || '' },
+      sourceLanguage,
+      targetLanguage
+    );
+
+    return res.status(200).json({
+      message: translation.translated
+        ? 'Story translated successfully.'
+        : 'Translation unavailable. Returning original content.',
+      translated: translation.translated,
+      state: translation.translated ? 'translated' : 'original',
+      data: {
+        title: translation.title,
+        summary: translation.summary,
+        source,
+        language: translation.language,
+        sourceLanguage: translation.sourceLanguage,
+        targetLanguage: translation.targetLanguage,
+        fallbackReason: translation.fallbackReason || null
+      }
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   ingestNewsFromUrl,
-  getNewsCards
+  getNewsCards,
+  translateNewsStory
 };

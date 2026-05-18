@@ -51,8 +51,8 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 ### ✅ Web Scraping Service
 
 ### ✅ AI Summarization Service
-- [x] LLM integration for neutral 60-word summaries
-- [x] Prompt: `Summarize this news in exactly 60 words in [Language], keeping a neutral tone.`
+- [x] LLM integration for neutral short-form summaries
+- [x] Prompt enforces bounded summary length (`LLM_SUMMARY_MIN_WORDS` to `LLM_SUMMARY_MAX_WORDS`, default 45-75, target ~60)
 - [x] Stored in `aiSummary` field on `NewsCard`
 - [x] Graceful fallback when LLM credentials are not configured
 - [x] Supported languages: English, Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, Malayalam
@@ -82,6 +82,9 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] Pull-to-refresh support
 - [x] Pull-up pagination with batch append
 - [x] Next-card image prefetching
+- [x] Dedicated Settings/Profile screen with account, language, categories, and notification preferences
+- [x] Bookmarks management flow (add/list/delete/open)
+- [x] Push notification device registration and preferences management
 - [x] Widget tests for swipe + pagination
 
 ### ✅ Documentation (11 Files)
@@ -100,7 +103,7 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 
 ### ⏳ Mobile Frontend
 - [x] Detail screen for full article view
-- [ ] Settings/profile screens
+- [x] Settings/profile screens
 - [ ] Local storage
 - [ ] Theme/dark mode
 - [ ] Localization (i18n)
@@ -169,7 +172,7 @@ db.newscards.countDocuments()
 ## Known Limitations
 
 1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` still accepts one source URL per request.
-2. **No Push Notifications Yet**: Mobile does not yet deliver proactive alerts.
+2. **Translation UX Not Fully Shipped**: Preferred language is supported, but per-story translate/show-original controls are still planned.
 3. **No Trending/Recommendation Layer**: Feed ranking is recency/relevance-based, without personalization.
 4. **No Local Offline Cache**: Stories are fetched from API on demand.
 5. **No Load-Test Baseline**: Performance limits under sustained traffic are not formally benchmarked.
@@ -179,9 +182,9 @@ db.newscards.countDocuments()
 ## Next Steps for Continuation
 
 ### Immediate (1-2 days)
-1. Add push notifications for breaking stories and saved-topic alerts
+1. Add per-story translation controls (Translate / Show Original) in feed and reader UI
 2. Add local cache for offline reading and faster startup
-3. Add richer settings/profile screens in mobile
+3. Add translation fallback states and user-facing status indicators
 4. Add load-test baseline and capture SLO targets
 
 ### Short Term (1 week)

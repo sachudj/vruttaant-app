@@ -103,6 +103,18 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] Track E items 1-6 completed
 - [x] Track D items 5-7 completed
 
+## Track G: Mobile UX Completion (User-Centric)
+
+- [x] Add dedicated Settings/Profile screen in mobile app
+- [x] Add profile preferences editing (language + categories) on mobile
+- [x] Add notification preferences and registered-device management UI
+- [x] Update story card readability constraints (title cap + larger summary viewport)
+- [x] Document user journeys and visual references in `docs/USER_APP_GUIDE.md`
+- [ ] Add per-story translation control (`Translate` / `Show Original`) on story card
+- [ ] Add translation state badges (`Original` / `Translated`) and loading/error states
+- [ ] Add translated-content fallback logic when translation is unavailable
+- [ ] Add widget and integration tests for translation flow
+
 ## Session Notes
 
 - _Add short notes here after each implementation session._
@@ -142,3 +154,5 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 9, 2026_: Completed push-notification backend foundation. Added user notification preferences schema defaults, notification-device model, and authenticated user endpoints for preferences and device registration/list/delete under `/api/v1/user/notifications/*`, including input validators and integration tests. Verified backend tests (282 passing) and smoke checks (`PASS=33 FAIL=0 SKIP=1`). Commit: `0d0612e`.
 - _May 9, 2026_: Completed mobile notification preferences integration. Extended Flutter settings sheet with authenticated notification toggles (enable, breaking news, bookmark alerts, daily digest) and server-backed load/save flows via `/api/v1/user/notifications/preferences`. Added `NewsApiService` methods + dedicated service tests and updated widget settings test flow. Verified backend tests, `flutter analyze`, `flutter test`, and smoke checks. Commit: pending.
 - _May 13, 2026_: Completed Push Notification Delivery System. Implemented backend FCM wrapper `PushNotificationService` with graceful fallback to mock mode if credentials are missing. Created `POST /api/v1/admin/notifications/send` for manual push broadcasts. Created `dailyDigestWorker` cron job to automatically send customized top stories to users with `dailyDigest` preference enabled. Integrated `firebase_core` and `firebase_messaging` in the Flutter mobile app, configured `PushNotificationService` to extract the device token and register it with the backend upon initialization. Complete end-to-end foundation established.
+- _May 17, 2026_: Completed mobile UX progression for settings/profile. Replaced settings bottom sheet with dedicated Settings/Profile page, added category preference editing, notification-device list/delete management, and sign-in/sign-out account controls. Verified with `flutter analyze` and `flutter test`. Commit: `7c0d824`.
+- _May 17, 2026_: Updated content-readability behavior and user-facing documentation. Enforced backend summary range defaults (45-75 words, target ~60), expanded mobile story summary rendering viewport (~48% height cap), and created a presentable user guide with visual screen references (`docs/USER_APP_GUIDE.md` + screenshots). Commit: `d043861`.

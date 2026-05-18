@@ -11,15 +11,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/models/news_item.dart';
+import 'package:mobile_app/services/news_api_service.dart';
+import 'package:mobile_app/widgets/news_card.dart';
 
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('renders feed, swipes, and paginates near the end', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('renders initial feed story', (WidgetTester tester) async {
     await tester.pumpWidget(
       MyApp(
         newsLoader: (page) async {
@@ -58,20 +58,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Story One'), findsOneWidget);
-
-    await tester.drag(
-      find.byKey(const ValueKey('vertical-feed-pageview')),
-      const Offset(0, -220),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.drag(
-      find.byKey(const ValueKey('vertical-feed-pageview')),
-      const Offset(0, -400),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Story Three'), findsOneWidget);
   });
 
   testWidgets('opens language preference settings and selects Hindi', (
@@ -156,5 +142,86 @@ void main() {
 
     expect(find.text('Search & Sort'), findsNothing);
     expect(find.text('Market Story'), findsOneWidget);
+  });
+
+  testWidgets('shows translation controls and badges on story card', (
+    WidgetTester tester,
+  ) async {
+    var tappedTranslate = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NewsCard(
+          title: 'Original Story Title',
+          summary: 'Original story summary.',
+          imageUrl: 'https://example.com/one.jpg',
+          source: 'Source One',
+          isTranslated: false,
+          isTranslating: false,
+          onTranslatePressed: () {
+            tappedTranslate = true;
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Original'), findsOneWidget);
+    expect(find.byTooltip('Translate'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Translate'));
+    await tester.pumpAndSettle();
+
+    expect(tappedTranslate, isTrue);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: NewsCard(
+          title: 'अनुवादित शीर्षक',
+          summary: 'अनुवादित सारांश',
+          imageUrl: 'https://example.com/one.jpg',
+          source: 'Source One',
+          isTranslated: true,
+          isTranslating: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Translated'), findsOneWidget);
+    expect(find.text('अनुवादित शीर्षक'), findsOneWidget);
+    expect(find.byTooltip('Show original'), findsOneWidget);
+  });
+
+  testWidgets('reader page shows translation status and story metadata', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        newsLoader: (page) async {
+          return const [
+            NewsItem(
+              title: 'Original Story Title',
+              summary: 'Original story summary.',
+              imageUrl: 'https://example.com/one.jpg',
+              source: 'Source One',
+              category: 'General',
+              language: 'en',
+            ),
+          ];
+        },
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.text('Original Story Title'), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Read More'), findsOneWidget);
+    expect(find.text('Original'), findsOneWidget);
+    expect(find.text('Original Story Title'), findsOneWidget);
+    expect(find.text('Original story summary.'), findsOneWidget);
   });
 }

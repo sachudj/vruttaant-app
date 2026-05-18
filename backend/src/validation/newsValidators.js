@@ -161,7 +161,60 @@ function validateCardsQuery(payload) {
   };
 }
 
+function validateTranslatePayload(payload) {
+  const body = payload && typeof payload === 'object' ? payload : {};
+  const errors = [];
+
+  const title = String(body.title || '').trim().slice(0, 240);
+  const summary = String(body.summary || '').trim().slice(0, 4000);
+
+  if (!title && !summary) {
+    errors.push('title or summary is required.');
+  }
+
+  const rawTargetLanguage = String(body.targetLanguage || '').trim();
+  if (!rawTargetLanguage) {
+    errors.push('targetLanguage is required.');
+  }
+
+  const targetLanguage = normalizeLanguage(rawTargetLanguage || 'en');
+  const sourceLanguage = normalizeLanguage(body.sourceLanguage || body.language || 'en');
+  const source = String(body.source || '').trim().slice(0, 120);
+  const url = String(body.url || '').trim();
+
+  if (url) {
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        errors.push('url must use http or https protocol.');
+      }
+    } catch {
+      errors.push('url must be a valid absolute URL.');
+    }
+  }
+
+  if (errors.length) {
+    return {
+      valid: false,
+      errors
+    };
+  }
+
+  return {
+    valid: true,
+    value: {
+      title,
+      summary,
+      source,
+      url: url || undefined,
+      sourceLanguage,
+      targetLanguage
+    }
+  };
+}
+
 module.exports = {
   validateIngestPayload,
-  validateCardsQuery
+  validateCardsQuery,
+  validateTranslatePayload
 };

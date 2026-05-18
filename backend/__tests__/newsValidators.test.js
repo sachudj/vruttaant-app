@@ -1,6 +1,9 @@
 'use strict';
 
-const { validateCardsQuery } = require('../src/validation/newsValidators');
+const {
+  validateCardsQuery,
+  validateTranslatePayload
+} = require('../src/validation/newsValidators');
 
 describe('validateCardsQuery', () => {
   it('accepts default query values', () => {
@@ -50,5 +53,56 @@ describe('validateCardsQuery', () => {
 
     expect(result.valid).toBe(true);
     expect(result.value.q).toHaveLength(120);
+  });
+});
+
+describe('validateTranslatePayload', () => {
+  it('accepts title and summary with normalized language fields', () => {
+    const result = validateTranslatePayload({
+      title: 'Major policy update announced',
+      summary: 'The government announced a new policy today.',
+      sourceLanguage: 'ENGLISH',
+      targetLanguage: 'Hindi',
+      url: 'https://example.com/story'
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.value).toEqual({
+      title: 'Major policy update announced',
+      summary: 'The government announced a new policy today.',
+      source: '',
+      url: 'https://example.com/story',
+      sourceLanguage: 'en',
+      targetLanguage: 'hi'
+    });
+  });
+
+  it('rejects payload when targetLanguage is missing', () => {
+    const result = validateTranslatePayload({
+      title: 'Story title'
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('targetLanguage is required.');
+  });
+
+  it('rejects payload when both title and summary are empty', () => {
+    const result = validateTranslatePayload({
+      targetLanguage: 'hi'
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('title or summary is required.');
+  });
+
+  it('rejects invalid url when provided', () => {
+    const result = validateTranslatePayload({
+      title: 'Story title',
+      targetLanguage: 'hi',
+      url: 'not-a-url'
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('url must be a valid absolute URL.');
   });
 });

@@ -14,11 +14,17 @@ void main() {
 }
 
 typedef NewsLoader = Future<List<NewsItem>> Function(int page);
+typedef StoryTranslator =
+    Future<StoryTranslationResult> Function(
+      NewsItem news,
+      String targetLanguage,
+    );
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key, this.newsLoader});
+  const MyApp({super.key, this.newsLoader, this.storyTranslator});
 
   final NewsLoader? newsLoader;
+  final StoryTranslator? storyTranslator;
 
   @override
   Widget build(BuildContext context) {
@@ -30,15 +36,19 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      home: NewsFeedPage(newsLoader: newsLoader),
+      home: NewsFeedPage(
+        newsLoader: newsLoader,
+        storyTranslator: storyTranslator,
+      ),
     );
   }
 }
 
 class NewsFeedPage extends StatefulWidget {
-  const NewsFeedPage({super.key, this.newsLoader});
+  const NewsFeedPage({super.key, this.newsLoader, this.storyTranslator});
 
   final NewsLoader? newsLoader;
+  final StoryTranslator? storyTranslator;
 
   @override
   State<NewsFeedPage> createState() => _NewsFeedPageState();
@@ -168,6 +178,18 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       sort: _sort,
       page: page,
       limit: 20,
+    );
+  }
+
+  Future<StoryTranslationResult> _translateNewsItem(NewsItem news) {
+    final translator = widget.storyTranslator;
+    if (translator != null) {
+      return translator(news, _language);
+    }
+
+    return _newsApiService.translateStory(
+      item: news,
+      targetLanguage: _language,
     );
   }
 
@@ -860,6 +882,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
           news: news,
           isBookmarked: true,
           onBookmarkPressed: () async {},
+          onTranslateRequested: _translateNewsItem,
         ),
       ),
     );
@@ -956,6 +979,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                       news: news,
                       isBookmarked: _isBookmarked(news),
                       onBookmarkPressed: () => _toggleBookmark(news),
+                      onTranslateRequested: _translateNewsItem,
                     );
                   },
                 ),
@@ -1044,11 +1068,14 @@ class _StoryPager extends StatefulWidget {
     required this.news,
     required this.isBookmarked,
     required this.onBookmarkPressed,
+    required this.onTranslateRequested,
   });
 
   final NewsItem news;
   final bool isBookmarked;
   final VoidCallback onBookmarkPressed;
+  final Future<StoryTranslationResult> Function(NewsItem news)
+  onTranslateRequested;
 
   @override
   State<_StoryPager> createState() => _StoryPagerState();
@@ -1534,6 +1561,11 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
 class _StoryPagerState extends State<_StoryPager> {
   late final bool _isTestBinding;
   late final bool _isWebViewSupported;
+  late String _displayTitle;
+  late String _displaySummary;
+  bool _isTranslated = false;
+  bool _isTranslating = false;
+  String? _translationError;
   WebViewController? _controller;
 
   @override
@@ -1543,6 +1575,8 @@ class _StoryPagerState extends State<_StoryPager> {
       'TestWidgetsFlutterBinding',
     );
     _isWebViewSupported = !kIsWeb && !_isTestBinding;
+    _displayTitle = widget.news.title;
+    _displaySummary = widget.news.summary;
 
     final articleUrl = widget.news.originalUrl;
     if (_isWebViewSupported && articleUrl.isNotEmpty) {
@@ -1553,64 +1587,209 @@ class _StoryPagerState extends State<_StoryPager> {
   @override
   Widget build(BuildContext context) {
     return PageView(
+      key: const ValueKey('story-pager-pageview'),
       scrollDirection: Axis.horizontal,
       children: [
         NewsCard(
-          title: widget.news.title,
-          summary: widget.news.summary,
+          title: _displayTitle,
+          summary: _displaySummary,
           imageUrl: widget.news.imageUrl,
           source: widget.news.source,
           isBookmarked: widget.isBookmarked,
           onBookmarkPressed: widget.onBookmarkPressed,
+          isTranslated: _isTranslated,
+          isTranslating: _isTranslating,
+          onTranslatePressed: _toggleTranslation,
+          translationErrorLabel: _translationError,
         ),
         _buildReaderPage(),
       ],
     );
   }
 
+  Future<void> _toggleTranslation() async {
+    if (_isTranslating) {
+      return;
+    }
+
+    if (_isTranslated) {
+      setState(() {
+        _displayTitle = widget.news.title;
+        _displaySummary = widget.news.summary;
+        _isTranslated = false;
+        _translationError = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _isTranslating = true;
+      _translationError = null;
+    });
+
+    try {
+      final result = await widget.onTranslateRequested(widget.news);
+      if (!mounted) return;
+
+      if (result.translated) {
+        setState(() {
+          _displayTitle = result.title;
+          _displaySummary = result.summary;
+          _isTranslated = true;
+          _isTranslating = false;
+          _translationError = null;
+        });
+        return;
+      }
+
+      setState(() {
+        _displayTitle = widget.news.title;
+        _displaySummary = widget.news.summary;
+        _isTranslated = false;
+        _isTranslating = false;
+        _translationError = 'Translation unavailable';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Translation unavailable for this story. Showing original.',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _displayTitle = widget.news.title;
+        _displaySummary = widget.news.summary;
+        _isTranslated = false;
+        _isTranslating = false;
+        _translationError = 'Translation failed';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not translate this story right now.'),
+        ),
+      );
+    }
+  }
+
   Widget _buildReaderPage() {
     final articleUrl = widget.news.originalUrl;
     final controller = _controller;
 
-    if (_isWebViewSupported && controller != null) {
-      return SafeArea(child: WebViewWidget(controller: controller));
-    }
-
-    if (articleUrl.isEmpty) {
-      return const Center(
-        child: Text(
-          'No original article URL available.',
-          style: TextStyle(color: Colors.white70),
-        ),
-      );
-    }
+    final readerBody = _isWebViewSupported && controller != null
+        ? WebViewWidget(controller: controller)
+        : Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Read More',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Swipe left from the news card to open the full article in supported mobile platforms.',
+                  style: TextStyle(color: Colors.white70, height: 1.4),
+                ),
+                const SizedBox(height: 16),
+                if (articleUrl.isEmpty)
+                  const Text(
+                    'No original article URL available.',
+                    style: TextStyle(color: Colors.white70),
+                  )
+                else
+                  SelectableText(
+                    articleUrl,
+                    style: const TextStyle(color: Colors.lightBlueAccent),
+                  ),
+              ],
+            ),
+          );
 
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Read More',
-              style: TextStyle(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _isTranslated
+                        ? Colors.teal.withValues(alpha: 0.28)
+                        : Colors.white.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    _isTranslating
+                        ? 'Translating...'
+                        : _isTranslated
+                        ? 'Translated'
+                        : 'Original',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                IconButton.filledTonal(
+                  onPressed: _isTranslating ? null : _toggleTranslation,
+                  icon: _isTranslating
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          _isTranslated
+                              ? Icons.translate_outlined
+                              : Icons.g_translate,
+                        ),
+                  tooltip: _isTranslated ? 'Show original' : 'Translate',
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              _displayTitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
                 color: Colors.white,
-                fontSize: 26,
                 fontWeight: FontWeight.w700,
+                fontSize: 20,
               ),
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Swipe left from the news card to open the full article in supported mobile platforms.',
-              style: TextStyle(color: Colors.white70, height: 1.4),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              _displaySummary,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white70, height: 1.35),
             ),
-            const SizedBox(height: 16),
-            SelectableText(
-              articleUrl,
-              style: const TextStyle(color: Colors.lightBlueAccent),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: Colors.white24, height: 1),
+          Expanded(child: readerBody),
+        ],
       ),
     );
   }

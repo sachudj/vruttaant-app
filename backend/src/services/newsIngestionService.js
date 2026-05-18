@@ -245,6 +245,124 @@ async function summarizeWithLlm(card, language) {
   };
 }
 
+async function translateStoryContent(card, sourceLanguage = 'en', targetLanguage = 'en') {
+  const normalizedSourceLanguage = normalizeLanguage(sourceLanguage);
+  const normalizedTargetLanguage = normalizeLanguage(targetLanguage);
+
+  const title = cleanText(card?.title || '');
+  const summary = cleanText(card?.summary || '');
+
+  if (!title && !summary) {
+    throw new Error('title or summary is required for translation.');
+  }
+
+  if (normalizedSourceLanguage === normalizedTargetLanguage) {
+    return {
+      translated: false,
+      title,
+      summary,
+      language: normalizedSourceLanguage,
+      sourceLanguage: normalizedSourceLanguage,
+      targetLanguage: normalizedTargetLanguage,
+      fallbackReason: 'already_in_target_language'
+    };
+  }
+
+  const apiKey = process.env.LLM_API_KEY;
+  if (!apiKey) {
+    return {
+      translated: false,
+      title,
+      summary,
+      language: normalizedSourceLanguage,
+      sourceLanguage: normalizedSourceLanguage,
+      targetLanguage: normalizedTargetLanguage,
+      fallbackReason: 'translation_unavailable'
+    };
+  }
+
+  const apiUrl = process.env.LLM_API_URL || DEFAULT_LLM_API_URL;
+  const model = process.env.LLM_MODEL || DEFAULT_LLM_MODEL;
+  const sourceLabel = toLanguageLabel(normalizedSourceLanguage);
+  const targetLabel = toLanguageLabel(normalizedTargetLanguage);
+
+  const prompt = [
+    `Translate the following news content from ${sourceLabel} to ${targetLabel}.`,
+    'Preserve factual meaning and neutral tone.',
+    'Return ONLY valid JSON with keys "title" and "summary".'
+  ].join(' ');
+
+  const articlePayload = [
+    `Title: ${title}`,
+    `Summary: ${summary}`,
+    `Source: ${cleanText(card?.source || '')}`,
+    `URL: ${cleanText(card?.url || '')}`
+  ].join('\n');
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.1,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a precise news translation assistant.'
+        },
+        {
+          role: 'user',
+          content: `${prompt}\n\n${articlePayload}`
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    return {
+      translated: false,
+      title,
+      summary,
+      language: normalizedSourceLanguage,
+      sourceLanguage: normalizedSourceLanguage,
+      targetLanguage: normalizedTargetLanguage,
+      fallbackReason: 'provider_unavailable'
+    };
+  }
+
+  const payload = await response.json();
+  const rawContent = cleanText(payload?.choices?.[0]?.message?.content || '');
+
+  try {
+    const parsed = JSON.parse(rawContent);
+    const translatedTitle = cleanText(parsed?.title || '') || title;
+    const translatedSummary = cleanText(parsed?.summary || '') || summary;
+
+    return {
+      translated: true,
+      title: translatedTitle,
+      summary: translatedSummary,
+      language: normalizedTargetLanguage,
+      sourceLanguage: normalizedSourceLanguage,
+      targetLanguage: normalizedTargetLanguage,
+      fallbackReason: null
+    };
+  } catch {
+    return {
+      translated: false,
+      title,
+      summary,
+      language: normalizedSourceLanguage,
+      sourceLanguage: normalizedSourceLanguage,
+      targetLanguage: normalizedTargetLanguage,
+      fallbackReason: 'invalid_provider_payload'
+    };
+  }
+}
+
 async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
   const normalizedLanguage = normalizeLanguage(language);
 
@@ -437,5 +555,6 @@ module.exports = {
   validateCardQuality,
   toLanguageLabel,
   summarizeWithLlm,
-  enforceSummaryWordRange
+  enforceSummaryWordRange,
+  translateStoryContent
 };

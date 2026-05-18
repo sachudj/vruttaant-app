@@ -1,7 +1,11 @@
 const express = require('express');
-const { ingestNewsFromUrl, getNewsCards } = require('../controllers/newsController');
+const { ingestNewsFromUrl, getNewsCards, translateNewsStory } = require('../controllers/newsController');
 const { validateRequest } = require('../middleware/requestValidation');
-const { validateIngestPayload, validateCardsQuery } = require('../validation/newsValidators');
+const {
+  validateIngestPayload,
+  validateCardsQuery,
+  validateTranslatePayload
+} = require('../validation/newsValidators');
 
 const router = express.Router();
 
@@ -14,5 +18,6 @@ router.get('/ingest/health', (req, res) => {
 
 router.post('/ingest', validateRequest('body', validateIngestPayload), ingestNewsFromUrl);
 router.get('/cards', validateRequest('query', validateCardsQuery), getNewsCards);
+router.post('/translate', validateRequest('body', validateTranslatePayload), translateNewsStory);
 
 module.exports = router;

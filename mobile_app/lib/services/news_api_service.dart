@@ -5,6 +5,22 @@ import 'package:mobile_app/models/bookmark_item.dart';
 import 'package:mobile_app/models/news_item.dart';
 import 'package:mobile_app/services/auth_service.dart';
 
+class StoryTranslationResult {
+  const StoryTranslationResult({
+    required this.title,
+    required this.summary,
+    required this.language,
+    required this.translated,
+    this.fallbackReason,
+  });
+
+  final String title;
+  final String summary;
+  final String language;
+  final bool translated;
+  final String? fallbackReason;
+}
+
 class NewsApiService {
   NewsApiService({
     String? baseUrl,
@@ -161,6 +177,61 @@ class NewsApiService {
         .whereType<Map<String, dynamic>>()
         .map(NewsItem.fromJson)
         .toList(growable: false);
+  }
+
+  Future<StoryTranslationResult> translateStory({
+    required NewsItem item,
+    required String targetLanguage,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/news/translate');
+    final sourceLanguage = (item.language ?? 'en').trim();
+
+    final response = await _client.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'title': item.title,
+        'summary': item.summary,
+        'source': item.source,
+        'url': item.originalUrl,
+        'sourceLanguage': sourceLanguage.isEmpty ? 'en' : sourceLanguage,
+        'targetLanguage': targetLanguage,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to translate story (${response.statusCode}).');
+    }
+
+    final dynamic payload = jsonDecode(response.body);
+    if (payload is! Map<String, dynamic>) {
+      throw Exception('Unexpected translate response format.');
+    }
+
+    final dynamic data = payload['data'];
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Missing translate payload data.');
+    }
+
+    final translated = payload['translated'] == true;
+
+    final title = (data['title'] as String?)?.trim().isNotEmpty == true
+        ? (data['title'] as String).trim()
+        : item.title;
+    final summary = (data['summary'] as String?)?.trim().isNotEmpty == true
+        ? (data['summary'] as String).trim()
+        : item.summary;
+    final language = (data['language'] as String?)?.trim().isNotEmpty == true
+        ? (data['language'] as String).trim()
+        : sourceLanguage;
+
+    return StoryTranslationResult(
+      title: title,
+      summary: summary,
+      language: language,
+      translated: translated,
+      fallbackReason: data['fallbackReason'] as String?,
+    );
   }
 
   // ---------------------------------------------------------------------------

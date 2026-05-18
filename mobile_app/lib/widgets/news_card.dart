@@ -9,6 +9,10 @@ class NewsCard extends StatelessWidget {
     this.source,
     this.isBookmarked = false,
     this.onBookmarkPressed,
+    this.isTranslated = false,
+    this.isTranslating = false,
+    this.onTranslatePressed,
+    this.translationErrorLabel,
   });
 
   final String title;
@@ -17,6 +21,10 @@ class NewsCard extends StatelessWidget {
   final String? source;
   final bool isBookmarked;
   final VoidCallback? onBookmarkPressed;
+  final bool isTranslated;
+  final bool isTranslating;
+  final VoidCallback? onTranslatePressed;
+  final String? translationErrorLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +95,24 @@ class NewsCard extends StatelessWidget {
                         ),
                       const Spacer(),
                       IconButton.filledTonal(
+                        onPressed: isTranslating ? null : onTranslatePressed,
+                        icon: isTranslating
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(
+                                isTranslated
+                                    ? Icons.translate_outlined
+                                    : Icons.g_translate,
+                                color: Colors.white,
+                              ),
+                        tooltip: isTranslated ? 'Show original' : 'Translate',
+                      ),
+                      IconButton.filledTonal(
                         onPressed: onBookmarkPressed,
                         icon: Icon(
                           isBookmarked ? Icons.bookmark : Icons.bookmark_border,
@@ -96,6 +122,56 @@ class NewsCard extends StatelessWidget {
                             ? 'Remove bookmark'
                             : 'Add bookmark',
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isTranslated
+                              ? Colors.teal.withValues(alpha: 0.28)
+                              : Colors.white.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          isTranslating
+                              ? 'Translating...'
+                              : isTranslated
+                              ? 'Translated'
+                              : 'Original',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if ((translationErrorLabel ?? '').trim().isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withValues(alpha: 0.24),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            translationErrorLabel!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                   const Spacer(),

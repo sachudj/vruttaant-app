@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mobile_app/models/news_item.dart';
 import 'package:mobile_app/services/news_api_service.dart';
 
 void main() {
@@ -93,5 +94,54 @@ void main() {
     );
 
     expect(service.hasAccessToken, isTrue);
+  });
+
+  test('translateStory returns translated content payload', () async {
+    final client = MockClient((request) async {
+      expect(request.method, 'POST');
+      expect(
+        request.url.toString(),
+        'https://api.example.com/api/v1/news/translate',
+      );
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(body['targetLanguage'], 'hi');
+
+      return http.Response(
+        jsonEncode({
+          'translated': true,
+          'data': {
+            'title': 'अनुवादित शीर्षक',
+            'summary': 'अनुवादित सारांश',
+            'language': 'hi',
+            'fallbackReason': null,
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
+      );
+    });
+
+    final service = NewsApiService(
+      baseUrl: 'https://api.example.com',
+      client: client,
+    );
+
+    final result = await service.translateStory(
+      item: const NewsItem(
+        title: 'Original title',
+        summary: 'Original summary',
+        imageUrl: 'https://example.com/image.jpg',
+        source: 'Example Source',
+        category: 'General',
+        language: 'en',
+      ),
+      targetLanguage: 'hi',
+    );
+
+    expect(result.translated, isTrue);
+    expect(result.title, 'अनुवादित शीर्षक');
+    expect(result.summary, 'अनुवादित सारांश');
+    expect(result.language, 'hi');
+    expect(result.fallbackReason, isNull);
   });
 }
