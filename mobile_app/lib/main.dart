@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:mobile_app/app/app_bootstrap_controller.dart';
+import 'package:mobile_app/app/app_root.dart';
 import 'package:mobile_app/features/feed/domain/feed_types.dart';
 import 'package:mobile_app/features/feed/presentation/news_feed_page.dart';
-import 'package:mobile_app/l10n/app_localizations.dart';
-import 'package:mobile_app/services/app_preferences_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,90 +32,43 @@ class _AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<_AppShell> {
-  final AppPreferencesService _appPreferencesService = AppPreferencesService();
-  ThemeMode _themeMode = ThemeMode.system;
-  Locale _locale = const Locale('en');
+  late final AppBootstrapController _bootstrapController;
 
   @override
   void initState() {
     super.initState();
-    _restoreAppPreferences();
-  }
-
-  Future<void> _restoreAppPreferences() async {
-    final loadedThemeMode = await _appPreferencesService.loadThemeMode();
-    final loadedLocaleCode = await _appPreferencesService.loadLocaleCode();
-
-    if (!mounted) return;
-    setState(() {
-      _themeMode = loadedThemeMode;
-      _locale = _normalizeLocale(loadedLocaleCode);
-    });
-  }
-
-  Locale _normalizeLocale(String languageCode) {
-    final normalized = languageCode.trim().toLowerCase();
-    final isSupported = AppLocalizations.supportedLocales.any(
-      (element) => element.languageCode == normalized,
-    );
-    return Locale(isSupported ? normalized : 'en');
+    _bootstrapController = AppBootstrapController();
+    _bootstrapController.initialize();
   }
 
   Future<void> _handleThemeModeChanged(ThemeMode mode) async {
-    if (_themeMode == mode) {
-      return;
-    }
-
-    setState(() {
-      _themeMode = mode;
-    });
-    await _appPreferencesService.saveThemeMode(mode);
+    await _bootstrapController.setThemeMode(mode);
   }
 
   Future<void> _handleLanguageChanged(String languageCode) async {
-    final nextLocale = _normalizeLocale(languageCode);
-    if (_locale.languageCode == nextLocale.languageCode) {
-      return;
-    }
+    await _bootstrapController.setLanguageCode(languageCode);
+  }
 
-    setState(() {
-      _locale = nextLocale;
-    });
-    await _appPreferencesService.saveLocaleCode(nextLocale.languageCode);
+  @override
+  void dispose() {
+    _bootstrapController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-          brightness: Brightness.dark,
+    return AnimatedBuilder(
+      animation: _bootstrapController,
+      builder: (context, child) => AppRoot(
+        themeMode: _bootstrapController.themeMode,
+        locale: _bootstrapController.locale,
+        home: NewsFeedPage(
+          newsLoader: widget.newsLoader,
+          storyTranslator: widget.storyTranslator,
+          currentThemeMode: _bootstrapController.themeMode,
+          onThemeModeChanged: _handleThemeModeChanged,
+          onLanguageChanged: _handleLanguageChanged,
         ),
-        scaffoldBackgroundColor: Colors.black,
-        useMaterial3: true,
-      ),
-      themeMode: _themeMode,
-      locale: _locale,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      debugShowCheckedModeBanner: false,
-      home: NewsFeedPage(
-        newsLoader: widget.newsLoader,
-        storyTranslator: widget.storyTranslator,
-        currentThemeMode: _themeMode,
-        onThemeModeChanged: _handleThemeModeChanged,
-        onLanguageChanged: _handleLanguageChanged,
       ),
     );
   }
