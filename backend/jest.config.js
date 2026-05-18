@@ -6,7 +6,8 @@ module.exports = {
     'src/**/*.js',
     '!src/index.js',
     '!src/config/**',
-    '!src/models/**'
+    '!src/models/**',
+    '!src/loadtest/**'
   ],
   coverageThreshold: {
     global: {
