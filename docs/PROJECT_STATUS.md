@@ -183,7 +183,7 @@ db.newscards.countDocuments()
 ### Immediate (1-2 days)
 1. Extend localization polish for secondary copy and backend-originated messages
 2. Add more locale-aware formatting beyond cached-feed timestamp (dates/numbers where applicable)
-3. Continue modularizing `mobile_app/lib/main.dart` by extracting feed orchestration and auth/bookmark flows into feature modules
+3. Continue modularizing `mobile_app/lib/main.dart` by extracting app-shell bootstrap/state wiring into dedicated modules
 4. Add load-test baseline and capture SLO targets
 5. Add production deployment config for mobile/backend environments
 
@@ -222,13 +222,15 @@ Foundation and latest mobile feed updates:
 - `backend/.env.example` - MongoDB credentials added
 - `backend/src/index.js` - dotenv loading, DB bootstrap, graceful shutdown
 - `docker-compose.yml` - Full MongoDB + Mongo Express stack
-- `mobile_app/lib/main.dart` - Vertical feed + refresh + pagination + prefetch
+- `mobile_app/lib/main.dart` - App bootstrap/shell wiring; feed moved to feature module
 - `mobile_app/test/widget_test.dart` - Swipe + pagination test
 - `mobile_app/pubspec.yaml` - Added `http` dependency
 - `docs/MOBILE_APP.md` - Updated to implemented state
 - `docs/DEVELOPMENT.md` - Updated mobile commands and file structure
 - `docs/DEPENDENCIES.md` - Added mobile runtime dependency + emulator URL guidance
 - `docs/ARCHITECTURE.md` - Added mobile modules and runtime flow
+- `mobile_app/lib/features/feed/domain/feed_types.dart` - Shared feed typedefs
+- `mobile_app/lib/features/feed/presentation/news_feed_page.dart` - Extracted feed orchestration/page UI
 
 **Added**:
 - `backend/src/config/database.js`
