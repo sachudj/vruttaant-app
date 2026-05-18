@@ -183,8 +183,9 @@ db.newscards.countDocuments()
 ### Immediate (1-2 days)
 1. Extend localization polish for secondary copy and backend-originated messages
 2. Add more locale-aware formatting beyond cached-feed timestamp (dates/numbers where applicable)
-3. Add load-test baseline and capture SLO targets
-4. Add production deployment config for mobile/backend environments
+3. Continue modularizing `mobile_app/lib/main.dart` by extracting feed orchestration and auth/bookmark flows into feature modules
+4. Add load-test baseline and capture SLO targets
+5. Add production deployment config for mobile/backend environments
 
 ### Short Term (1 week)
 1. Add trending stories endpoint and ranking pipeline
