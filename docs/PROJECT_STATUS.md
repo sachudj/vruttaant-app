@@ -104,8 +104,8 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 ### ⏳ Mobile Frontend
 - [x] Detail screen for full article view
 - [x] Settings/profile screens
-- [ ] Local storage
-- [ ] Theme/dark mode
+- [x] Local storage (feed cache with TTL + offline fallback)
+- [x] Theme/dark mode
 - [ ] Localization (i18n)
 
 ### ⏳ Advanced Backend Features
@@ -172,20 +172,19 @@ db.newscards.countDocuments()
 ## Known Limitations
 
 1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` still accepts one source URL per request.
-2. **Translation UX Not Fully Shipped**: Preferred language is supported, but per-story translate/show-original controls are still planned.
+2. **Localization Is Foundation-Only**: App-level localization delegates and Hindi labels are wired, but most user-facing strings are still English-only.
 3. **No Trending/Recommendation Layer**: Feed ranking is recency/relevance-based, without personalization.
-4. **No Local Offline Cache**: Stories are fetched from API on demand.
-5. **No Load-Test Baseline**: Performance limits under sustained traffic are not formally benchmarked.
+4. **No Load-Test Baseline**: Performance limits under sustained traffic are not formally benchmarked.
 
 ---
 
 ## Next Steps for Continuation
 
 ### Immediate (1-2 days)
-1. Add per-story translation controls (Translate / Show Original) in feed and reader UI
-2. Add local cache for offline reading and faster startup
-3. Add translation fallback states and user-facing status indicators
-4. Add load-test baseline and capture SLO targets
+1. Complete full-string localization coverage across feed/settings/auth surfaces
+2. Add locale-aware formatting and language-switch smoke tests
+3. Add load-test baseline and capture SLO targets
+4. Add production deployment config for mobile/backend environments
 
 ### Short Term (1 week)
 1. Add trending stories endpoint and ranking pipeline

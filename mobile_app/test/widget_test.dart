@@ -7,7 +7,6 @@ import 'package:mobile_app/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/models/news_item.dart';
 import 'package:mobile_app/services/feed_cache_service.dart';
-import 'package:mobile_app/services/news_api_service.dart';
 import 'package:mobile_app/widgets/news_card.dart';
 
 void main() {

@@ -110,10 +110,10 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - [x] Add notification preferences and registered-device management UI
 - [x] Update story card readability constraints (title cap + larger summary viewport)
 - [x] Document user journeys and visual references in `docs/USER_APP_GUIDE.md`
-- [ ] Add per-story translation control (`Translate` / `Show Original`) on story card
-- [ ] Add translation state badges (`Original` / `Translated`) and loading/error states
-- [ ] Add translated-content fallback logic when translation is unavailable
-- [ ] Add widget and integration tests for translation flow
+- [x] Add per-story translation control (`Translate` / `Show Original`) on story card
+- [x] Add translation state badges (`Original` / `Translated`) and loading/error states
+- [x] Add translated-content fallback logic when translation is unavailable
+- [x] Add widget and integration tests for translation flow
 
 ## Session Notes
 
@@ -156,3 +156,4 @@ Goal: complete Milestone 1 by finishing Track A items 1-8 and Track D item 1.
 - _May 13, 2026_: Completed Push Notification Delivery System. Implemented backend FCM wrapper `PushNotificationService` with graceful fallback to mock mode if credentials are missing. Created `POST /api/v1/admin/notifications/send` for manual push broadcasts. Created `dailyDigestWorker` cron job to automatically send customized top stories to users with `dailyDigest` preference enabled. Integrated `firebase_core` and `firebase_messaging` in the Flutter mobile app, configured `PushNotificationService` to extract the device token and register it with the backend upon initialization. Complete end-to-end foundation established.
 - _May 17, 2026_: Completed mobile UX progression for settings/profile. Replaced settings bottom sheet with dedicated Settings/Profile page, added category preference editing, notification-device list/delete management, and sign-in/sign-out account controls. Verified with `flutter analyze` and `flutter test`. Commit: `7c0d824`.
 - _May 17, 2026_: Updated content-readability behavior and user-facing documentation. Enforced backend summary range defaults (45-75 words, target ~60), expanded mobile story summary rendering viewport (~48% height cap), and created a presentable user guide with visual screen references (`docs/USER_APP_GUIDE.md` + screenshots). Commit: `d043861`.
+- _May 18, 2026_: Completed translation UX + mobile resilience foundation. Added `/api/v1/news/translate` backend contract, mobile Translate/Show Original controls with badge/error/fallback states, reader parity rendering, and test coverage. Added feed cache service with TTL, cached-first startup, and offline fallback badge. Added app-level theme mode persistence and localization scaffolding (`en`/`hi`) with analyzer-safe CI checks. Commits: `0b0cddc`, `6001639`, `258c016`.

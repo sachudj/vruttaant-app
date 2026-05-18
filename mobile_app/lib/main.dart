@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:mobile_app/l10n/app_localizations.dart';
 import 'package:mobile_app/models/bookmark_item.dart';
 import 'package:mobile_app/models/news_item.dart';
+import 'package:mobile_app/services/app_preferences_service.dart';
 import 'package:mobile_app/services/auth_service.dart';
 import 'package:mobile_app/services/feed_cache_service.dart';
 import 'package:mobile_app/services/news_api_service.dart';
@@ -29,27 +32,125 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _AppShell(newsLoader: newsLoader, storyTranslator: storyTranslator);
+  }
+}
+
+class _AppShell extends StatefulWidget {
+  const _AppShell({this.newsLoader, this.storyTranslator});
+
+  final NewsLoader? newsLoader;
+  final StoryTranslator? storyTranslator;
+
+  @override
+  State<_AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<_AppShell> {
+  final AppPreferencesService _appPreferencesService = AppPreferencesService();
+  ThemeMode _themeMode = ThemeMode.system;
+  Locale _locale = const Locale('en');
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreAppPreferences();
+  }
+
+  Future<void> _restoreAppPreferences() async {
+    final loadedThemeMode = await _appPreferencesService.loadThemeMode();
+    final loadedLocaleCode = await _appPreferencesService.loadLocaleCode();
+
+    if (!mounted) return;
+    setState(() {
+      _themeMode = loadedThemeMode;
+      _locale = _normalizeLocale(loadedLocaleCode);
+    });
+  }
+
+  Locale _normalizeLocale(String languageCode) {
+    final normalized = languageCode.trim().toLowerCase();
+    final isSupported = AppLocalizations.supportedLocales.any(
+      (element) => element.languageCode == normalized,
+    );
+    return Locale(isSupported ? normalized : 'en');
+  }
+
+  Future<void> _handleThemeModeChanged(ThemeMode mode) async {
+    if (_themeMode == mode) {
+      return;
+    }
+
+    setState(() {
+      _themeMode = mode;
+    });
+    await _appPreferencesService.saveThemeMode(mode);
+  }
+
+  Future<void> _handleLanguageChanged(String languageCode) async {
+    final nextLocale = _normalizeLocale(languageCode);
+    if (_locale.languageCode == nextLocale.languageCode) {
+      return;
+    }
+
+    setState(() {
+      _locale = nextLocale;
+    });
+    await _appPreferencesService.saveLocaleCode(nextLocale.languageCode);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Vruttaant',
+      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.indigo,
+          brightness: Brightness.dark,
+        ),
         scaffoldBackgroundColor: Colors.black,
         useMaterial3: true,
       ),
+      themeMode: _themeMode,
+      locale: _locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       debugShowCheckedModeBanner: false,
       home: NewsFeedPage(
-        newsLoader: newsLoader,
-        storyTranslator: storyTranslator,
+        newsLoader: widget.newsLoader,
+        storyTranslator: widget.storyTranslator,
+        currentThemeMode: _themeMode,
+        onThemeModeChanged: _handleThemeModeChanged,
+        onLanguageChanged: _handleLanguageChanged,
       ),
     );
   }
 }
 
 class NewsFeedPage extends StatefulWidget {
-  const NewsFeedPage({super.key, this.newsLoader, this.storyTranslator});
+  const NewsFeedPage({
+    super.key,
+    this.newsLoader,
+    this.storyTranslator,
+    this.currentThemeMode = ThemeMode.system,
+    this.onThemeModeChanged,
+    this.onLanguageChanged,
+  });
 
   final NewsLoader? newsLoader;
   final StoryTranslator? storyTranslator;
+  final ThemeMode currentThemeMode;
+  final Future<void> Function(ThemeMode mode)? onThemeModeChanged;
+  final Future<void> Function(String languageCode)? onLanguageChanged;
 
   @override
   State<NewsFeedPage> createState() => _NewsFeedPageState();
@@ -783,6 +884,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
           defaultNotificationPreferences: _defaultNotificationPreferences(),
           normalizeNotificationPreferences: _normalizeNotificationPreferences,
           categoryOptions: _profileCategoryOptions,
+          currentThemeMode: widget.currentThemeMode,
         ),
       ),
     );
@@ -811,6 +913,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     final selectedCategories = (result['categories'] as List?)
         ?.whereType<String>()
         .toList(growable: false);
+    final selectedThemeModeCode = (result['themeMode'] as String?)?.trim();
 
     var shouldReloadFeed = false;
 
@@ -819,12 +922,30 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
         _language = selectedLanguage;
       });
       shouldReloadFeed = true;
+
+      final onLanguageChanged = widget.onLanguageChanged;
+      if (onLanguageChanged != null) {
+        await onLanguageChanged(selectedLanguage);
+      }
     }
 
     if (selectedCategories != null) {
       setState(() {
         _preferredCategories = selectedCategories;
       });
+    }
+
+    if (selectedThemeModeCode != null) {
+      final nextThemeMode = switch (selectedThemeModeCode.toLowerCase()) {
+        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
+        _ => ThemeMode.system,
+      };
+
+      final onThemeModeChanged = widget.onThemeModeChanged;
+      if (onThemeModeChanged != null) {
+        await onThemeModeChanged(nextThemeMode);
+      }
     }
 
     if (shouldReloadFeed) {
@@ -1180,6 +1301,7 @@ class _SettingsProfilePage extends StatefulWidget {
     required this.defaultNotificationPreferences,
     required this.normalizeNotificationPreferences,
     required this.categoryOptions,
+    required this.currentThemeMode,
   });
 
   final AuthService authService;
@@ -1190,6 +1312,7 @@ class _SettingsProfilePage extends StatefulWidget {
   final Map<String, dynamic> Function(Map<String, dynamic>?)
   normalizeNotificationPreferences;
   final List<String> categoryOptions;
+  final ThemeMode currentThemeMode;
 
   @override
   State<_SettingsProfilePage> createState() => _SettingsProfilePageState();
@@ -1208,6 +1331,7 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
   late String _pendingLanguage;
   late Set<String> _pendingCategories;
   late Map<String, dynamic> _pendingNotifications;
+  late ThemeMode _pendingThemeMode;
 
   bool _isLoading = false;
   bool _isSaving = false;
@@ -1221,6 +1345,7 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
     super.initState();
     _pendingLanguage = widget.currentLanguage;
     _pendingCategories = widget.currentCategories.toSet();
+    _pendingThemeMode = widget.currentThemeMode;
     _pendingNotifications = widget.normalizeNotificationPreferences(
       widget.defaultNotificationPreferences,
     );
@@ -1296,10 +1421,17 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
   }
 
   Future<void> _saveSettings() async {
+    final themeModeCode = switch (_pendingThemeMode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      ThemeMode.system => 'system',
+    };
+
     if (!_isLoggedIn) {
       Navigator.of(context).pop({
         'language': _pendingLanguage,
         'categories': _pendingCategories.toList(growable: false),
+        'themeMode': themeModeCode,
       });
       return;
     }
@@ -1325,6 +1457,7 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
       Navigator.of(context).pop({
         'language': _pendingLanguage,
         'categories': _pendingCategories.toList(growable: false),
+        'themeMode': themeModeCode,
       });
     } catch (error) {
       if (!mounted) return;
@@ -1377,9 +1510,11 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(localizations.settings),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _saveSettings,
@@ -1389,7 +1524,7 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Save'),
+                : Text(localizations.save),
           ),
         ],
       ),
@@ -1477,6 +1612,54 @@ class _SettingsProfilePageState extends State<_SettingsProfilePage> {
                 ),
                 ..._languageLabels.entries.map(
                   (entry) => _languageTile(entry.key, entry.value),
+                ),
+                const Divider(color: Colors.white24),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                  child: Text(
+                    localizations.theme,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: Text(localizations.themeSystem),
+                        selected: _pendingThemeMode == ThemeMode.system,
+                        onSelected: (_) {
+                          setState(() {
+                            _pendingThemeMode = ThemeMode.system;
+                          });
+                        },
+                      ),
+                      ChoiceChip(
+                        label: Text(localizations.themeLight),
+                        selected: _pendingThemeMode == ThemeMode.light,
+                        onSelected: (_) {
+                          setState(() {
+                            _pendingThemeMode = ThemeMode.light;
+                          });
+                        },
+                      ),
+                      ChoiceChip(
+                        label: Text(localizations.themeDark),
+                        selected: _pendingThemeMode == ThemeMode.dark,
+                        onSelected: (_) {
+                          setState(() {
+                            _pendingThemeMode = ThemeMode.dark;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
                 ),
                 const Divider(color: Colors.white24),
                 const Padding(
