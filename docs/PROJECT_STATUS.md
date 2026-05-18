@@ -1,8 +1,8 @@
 # Project Status & Implementation Summary
 
-**Date**: May 5, 2026  
+**Date**: May 18, 2026  
 **Version**: v0.3 (Active Development)  
-**Status**: ✅ Core Platform Implemented (API hardening, auth, observability, data governance, search)
+**Status**: ✅ Core Platform Complete (API hardening, auth, observability, data governance, feed intelligence, recommendations, analytics)
 
 Detailed implementation sequencing and security hardening tasks are tracked in [ROADMAP.md](./ROADMAP.md).
 
@@ -87,50 +87,77 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] Push notification device registration and preferences management
 - [x] Widget tests for swipe + pagination
 
-### ✅ Documentation (11 Files)
+### ✅ Documentation (18 Files)
+- [x] INDEX.md - Navigation hub for all docs
+- [x] DEPENDENCIES.md - OS-specific setup guide
 - [x] SETUP.md - Installation & quick start
-- [x] ARCHITECTURE.md - System design & structure
-- [x] BACKEND.md - Server setup & config
-- [x] API_ENDPOINTS.md - Complete endpoint reference
-- [x] DOCKER.md - Container & MongoDB guide
-- [x] DATABASE.md - Schema & query examples
-- [x] MOBILE_APP.md - Flutter setup & build
-- [x] DEVELOPMENT.md - Workflow & common tasks
+- [x] ARCHITECTURE.md - System design & tech stack
+- [x] BACKEND.md - Server setup & configuration
+- [x] API_ENDPOINTS.md - Complete API reference
+- [x] DOCKER.md - MongoDB container management
+- [x] DATABASE.md - MongoDB schema & queries
+- [x] MOBILE_APP.md - Flutter setup & building
+- [x] DEVELOPMENT.md - Daily workflow & debugging
+- [x] PROJECT_STATUS.md - Implementation checklist (this file)
+- [x] ROADMAP.md - Small-step implementation plan
+- [x] API_VERSIONING.md - Versioning strategy & migration
+- [x] USER_APP_GUIDE.md - User journeys & visual references
+- [x] LOAD_TESTING.md - Baseline performance testing & SLOs
+- [x] DEPLOYMENT.md - Environment profiles, rollout/rollback
+- [x] SECRETS_POLICY.md - Secrets management & incident response
+- [x] ALERTING.md - Alert rules & runbook guidance
+
+---
+
+## What's Been Completed (Continued)
+
+### ✅ Track H: Feed Intelligence
+- [x] Trending score calculation using gravity formula (ingestCount, time decay)
+- [x] Hourly background job for trending score recalculation
+- [x] Soft-auth endpoint support (optionalAuth middleware)
+- [x] Database-driven news source registry with enable/disable controls
+
+### ✅ Track I: Recommendation Engine
+- [x] Recommendation scoring service (multi-factor: trending × category boost × diversity penalty + bookmarks)
+- [x] `GET /api/v1/news/recommended` endpoint with personalization
+- [x] Query validation for pagination and diversity tracking
+- [x] Comprehensive unit and integration tests
+
+### ✅ Track J: Analytics & User Behavior Tracking
+- [x] J1. User activity event model (view, bookmark, translate, share events)
+- [x] J2. Backend event capture middleware (async, non-blocking)
+- [x] J3. Event aggregation service (content performance metrics)
+- [x] J4. `POST /api/v1/analytics/events` endpoint for client/server event submission
+- [x] J5. Analytics API for editorial dashboard (trending, user segments, engagement)
+- [x] J6. Mobile event tracking service and integration
+- [x] TTL auto-purge (90 days) for event storage
+- [x] Coverage: 60+ tests, 74.19% statements, 67.32% branches
 
 ---
 
 ## What's NOT Yet Implemented
 
-### ⏳ Mobile Frontend
-- [x] Detail screen for full article view
-- [x] Settings/profile screens
-- [x] Local storage (feed cache with TTL + offline fallback)
-- [x] Theme/dark mode
-- [x] Localization (i18n) for feed/settings/auth/bookmarks/reader core surfaces
+### ⏳ Track K: User Engagement Features
+- [ ] Engagement-driven recommendation refinement
+- [ ] Reading-time estimation on article cards
+- [ ] User activity history/reading feed feature
+- [ ] Engagement badges and achievement system
+- [ ] Digest email template generation and scheduling
+- [ ] User cohort segmentation for A/B testing
 
-### ⏳ Advanced Backend Features
-- [x] Saved articles/bookmarks
-- [x] Search & filtering API
-- [x] Pagination
-- [x] Rate limiting
-- [x] Request logging/monitoring
-- [x] Error tracking
+### ⏳ Track L: Performance Optimization & Caching
+- [ ] Redis caching layer for trending cards and recommendations
+- [ ] Database query optimization (indexing strategy review)
+- [ ] Image CDN integration for card artwork
+- [ ] API response compression (gzip)
+- [ ] Mobile app bundle optimization (lazy loading)
+- [ ] Comprehensive load testing regression gates
 
-### ⏳ DevOps & Production
-- [x] CI/CD pipeline (GitHub Actions)
-- [x] Automated tests (Jest, Flutter)
-- [x] Load testing baseline + SLO targets
+### ⏳ Infrastructure
 - [ ] Database migrations strategy
-- [ ] Backup automation
-- [x] Monitoring & alerting
-- [ ] Production deployment config
-
-### ⏳ Data & Content
-- [ ] Multi-language article sources
-- [x] News categorization
-- [ ] Trending articles algorithm
-- [ ] Recommendation engine
-- [x] Duplicate article detection across sources
+- [ ] Backup automation and restore runbook
+- [ ] Release telemetry dashboard
+- [ ] Multi-environment load history and trend analysis
 
 ---
 
@@ -169,35 +196,41 @@ db.newscards.countDocuments()
 
 ---
 
-## Known Limitations
+## Current Limitations
 
-1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` still accepts one source URL per request.
-2. **Partial Localization Depth**: Core feed/settings/auth/bookmarks/reader strings and locale-aware cached-time formatting are localized (`en`/`hi`), but secondary copy polish is still pending.
-3. **No Trending/Recommendation Layer**: Feed ranking is recency/relevance-based, without personalization.
-4. **No Production Load-History Yet**: Baseline load testing and CI regression gate exist, but cross-environment trend history is still pending.
+1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` accepts one source URL per request (batch ingestion is not yet implemented).
+2. **Localization Scope**: Core feed/settings/auth/bookmarks/reader/analytics surfaces are localized (`en`/`hi`), but secondary UI polish and backend message translations are still pending.
+3. **Redis Caching**: Trending cards and recommendations currently use database queries directly; Redis caching layer is planned for Track L.
+4. **Load Testing Trend History**: Baseline load testing and CI regression gate exist, but cross-environment trend history and telemetry dashboard are still pending.
+5. **Database Migrations**: Schema versioning and migration strategy are not yet implemented (critical for production deployments).
 
 ---
 
 ## Next Steps for Continuation
 
-### Immediate (1-2 days)
-1. Extend localization polish for secondary copy and backend-originated messages
-2. Add more locale-aware formatting beyond cached-feed timestamp (dates/numbers where applicable)
-3. Continue modularizing `mobile_app/lib/main.dart` by extracting app-shell bootstrap/state wiring into dedicated modules
-4. Run baseline load test across environments and publish trend history + regression thresholds
-5. Run production release drill using the rollout/rollback checklist
+### Immediate (Track K - User Engagement, 1-2 weeks)
+1. Add engagement-driven recommendation refinement (boost articles from bookmarked categories)
+2. Add reading-time estimation on article cards and reader experience
+3. Add user activity history / reading feed feature
+4. Add engagement badges and achievement system (reader milestones)
+5. Add digest email template generation and scheduling (complementing push notifications)
+6. Add user cohort segmentation for A/B testing support
 
-### Short Term (1 week)
-1. Add trending stories endpoint and ranking pipeline
-2. Add recommendation engine hooks based on preferences/bookmarks
-3. Add secrets-management policy and environment hardening docs
-4. Add container/SAST security scanning to CI
+### Short Term (Track L - Performance, 2-3 weeks)
+1. Add Redis caching layer for trending cards and personalized recommendations
+2. Review and optimize database queries (indexing strategy, execution plans)
+3. Integrate CDN for card artwork delivery
+4. Add API response compression (gzip)
+5. Optimize mobile app bundle (lazy loading, tree shaking verification)
+6. Establish comprehensive load testing with regression gates (p95 latency, throughput SLOs)
 
-### Medium Term (2-4 weeks)
-1. Add database migration strategy
+### Medium Term (Infrastructure & Polish, 3-4 weeks)
+1. Implement database migration strategy with version tracking
 2. Add backup automation and restore runbook
-3. Add release telemetry dashboard for rollout health and regression trends
+3. Create release telemetry dashboard for rollout health
 4. Extend multi-language source coverage with ingestion quality scoring
+5. Complete localization polish for secondary UI copy
+6. Set up cross-environment load history and trend analysis
 
 ---
 

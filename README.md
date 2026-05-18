@@ -6,8 +6,8 @@
 
 A multilingual, card-based news app providing a concise "Vruttaant" (chronicle) of local events through a swipable interface.
 
-**Status**: Active Development (v0.2)  
-**Last Updated**: May 9, 2026
+**Status**: Active Development (v0.3)  
+**Last Updated**: May 18, 2026
 
 ## Quick Start (5 minutes)
 
@@ -72,32 +72,80 @@ vruttaant-app/
 
 ## Key Features Implemented
 
-✅ Backend API with Express  
-✅ MongoDB with Docker  
-✅ News web scraping (Cheerio)  
-✅ Multilingual support structure  
+**Backend API**
+✅ Express.js with comprehensive security (CORS, rate limiting, request validation, helmet)  
+✅ JWT authentication with refresh token rotation  
+✅ Role-based access control (admin endpoints)  
+✅ Request validation middleware with error handling  
+✅ Structured JSON logging with request IDs  
+✅ Graceful shutdown and readiness checks  
+✅ External error tracking (Sentry integration)  
+✅ Prometheus metrics export  
+
+**News & Feed Intelligence**
+✅ News web scraping (Cheerio) with quality validation  
+✅ Cross-source duplicate detection via title fingerprinting  
 ✅ AI summarisation (60-word neutral summary via LLM)  
-✅ Supported summary languages: English, Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, Malayalam  
-✅ Environment-based configuration  
-✅ Port auto-fallback (5000 → 5001 → ...)  
-✅ Health check endpoints  
-✅ Docker infrastructure scripts  
-✅ Flutter vertical full-screen NewsCard UI  
-✅ Backend-integrated mobile feed via `/api/news/ingest`  
-✅ Pull-to-refresh in mobile feed  
-✅ Pull-up pagination (append batches)  
-✅ Image prefetching for smoother swipes  
-✅ Complete documentation  
+✅ Trending score calculation with time decay  
+✅ Database-driven news source registry  
+✅ Recommendation engine (blended scoring with personalization & diversity)  
+✅ Full-text search & sorting (`/api/v1/news/cards`)  
+✅ Article translation (`/api/v1/news/translate`)  
+
+**Analytics & User Behavior**
+✅ User activity event tracking (view, bookmark, translate, share)  
+✅ Content performance metrics aggregation  
+✅ User engagement analytics endpoint  
+✅ Editorial dashboard support (trending, categories, engagement)  
+
+**Mobile App**
+✅ Flutter vertical swipe feed with PageView  
+✅ Pull-to-refresh and pull-up pagination  
+✅ Next-card image prefetching  
+✅ Settings/Profile screen with preferences  
+✅ Bookmarks management (add/list/delete)  
+✅ Push notifications (FCM + daily digest)  
+✅ Multilingual UI (`en`/`hi`) with locale-aware formatting  
+✅ Feed caching with TTL and offline fallback  
+✅ Translation controls with state badges  
+✅ Event tracking service for analytics  
+
+**Data Governance**
+✅ Strict category taxonomy with fallback mapping  
+✅ Duplicate detection strategy  
+✅ Source-level quality rules  
+✅ Audit logging for LLM failures  
+✅ Reprocessing job for missing metadata  
+
+**Infrastructure & DevOps**
+✅ MongoDB 7 with Docker Compose  
+✅ Environment-based configuration (dotenv)  
+✅ Load testing baseline with SLO targets  
+✅ CI/CD pipeline (GitHub Actions with test gates)  
+✅ Production deployment runbook  
+✅ Security scanning (SAST + vulnerability)  
+✅ Comprehensive documentation (18 guides)  
 
 ## Project Status
 
-**Test Coverage**: 253/253 tests passing ✅  
-**Overall Progress**: 39/39 items complete (100%)
+**Test Coverage**: 374/374 tests passing ✅  
+**Overall Progress**: 10 of 12 tracks complete (83%)
 
-**By Track:**
-- **Track A** (Secure API Baseline): 9/9 (100%) ✅
-  - Request validation, error handling, security headers, CORS, rate limiting, payload limits, API versioning
-- **Track B** (Authentication): 6/6 (100%) ✅
+**Completed Tracks:**
+- ✅ **Track A** (Security & API Hardening): 9/9 items
+- ✅ **Track B** (Authentication & Access Control): 6/6 items
+- ✅ **Track C** (Reliability & Observability): 7/7 items
+- ✅ **Track D** (Testing & Quality): 7/7 items
+- ✅ **Track E** (Data Governance & Feed Quality): 6/6 items
+- ✅ **Track F** (Product Milestones): 3/3 milestones
+- ✅ **Track G** (Mobile UX Completion): 10/10 items
+- ✅ **Track H** (Feed Intelligence): 4/4 items
+- ✅ **Track I** (Recommendation Engine): 4/4 items
+- ✅ **Track J** (Analytics & User Behavior): 6/6 items
+
+**In Progress:**
+- ⏳ **Track K** (User Engagement Features): 0/6 items
+- ⏳ **Track L** (Performance Optimization): 0/6 items
   - ✅ B1: User model with secure password storage
   - ✅ B2: JWT signup/login endpoints
   - ✅ B3: Refresh token rotation & revocation
