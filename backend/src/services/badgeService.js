@@ -183,49 +183,96 @@ const getUserEngagementMetrics = async (userId) => {
   }
 
   try {
-    const activities = await UserActivityEvent.find({ userId });
-
-    const totalViews = { count: 0 };
-    const totalBookmarks = { count: 0 };
-    const totalTranslations = { count: 0 };
-    const totalShares = { count: 0 };
-    const uniqueCategories = new Set();
-    const uniqueLanguages = new Set();
-
-    activities.forEach((activity) => {
-      switch (activity.eventType) {
-        case 'view':
-          totalViews.count += 1;
-          if (activity.cardMetadata?.category) {
-            uniqueCategories.add(activity.cardMetadata.category);
+    const [metrics] = await UserActivityEvent.aggregate([
+      { $match: { userId } },
+      {
+        $group: {
+          _id: null,
+          totalViews: {
+            $sum: { $cond: [{ $eq: ['$eventType', 'view'] }, 1, 0] }
+          },
+          totalBookmarks: {
+            $sum: { $cond: [{ $eq: ['$eventType', 'bookmark'] }, 1, 0] }
+          },
+          totalTranslations: {
+            $sum: { $cond: [{ $eq: ['$eventType', 'translate'] }, 1, 0] }
+          },
+          totalShares: {
+            $sum: { $cond: [{ $eq: ['$eventType', 'share'] }, 1, 0] }
+          },
+          viewCategories: {
+            $addToSet: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$eventType', 'view'] },
+                    { $ne: ['$cardMetadata.category', null] },
+                    { $ne: ['$cardMetadata.category', ''] }
+                  ]
+                },
+                '$cardMetadata.category',
+                '$$REMOVE'
+              ]
+            }
+          },
+          viewLanguages: {
+            $addToSet: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$eventType', 'view'] },
+                    { $ne: ['$cardMetadata.language', null] },
+                    { $ne: ['$cardMetadata.language', ''] }
+                  ]
+                },
+                '$cardMetadata.language',
+                '$$REMOVE'
+              ]
+            }
+          },
+          translatedLanguages: {
+            $addToSet: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$eventType', 'translate'] },
+                    { $ne: ['$translation.toLanguage', null] },
+                    { $ne: ['$translation.toLanguage', ''] }
+                  ]
+                },
+                '$translation.toLanguage',
+                '$$REMOVE'
+              ]
+            }
           }
-          if (activity.cardMetadata?.language) {
-            uniqueLanguages.add(activity.cardMetadata.language);
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          totalViews: 1,
+          totalBookmarks: 1,
+          totalTranslations: 1,
+          totalShares: 1,
+          totalCategories: { $size: '$viewCategories' },
+          totalLanguages: {
+            $size: { $setUnion: ['$viewLanguages', '$translatedLanguages'] }
+          },
+          totalActions: {
+            $add: ['$totalViews', '$totalBookmarks', '$totalTranslations', '$totalShares']
           }
-          break;
-        case 'bookmark':
-          totalBookmarks.count += 1;
-          break;
-        case 'translate':
-          totalTranslations.count += 1;
-          if (activity.translation?.toLanguage) {
-            uniqueLanguages.add(activity.translation.toLanguage);
-          }
-          break;
-        case 'share':
-          totalShares.count += 1;
-          break;
+        }
       }
-    });
+    ]);
 
-    return {
-      totalViews: totalViews.count,
-      totalBookmarks: totalBookmarks.count,
-      totalTranslations: totalTranslations.count,
-      totalShares: totalShares.count,
-      totalCategories: uniqueCategories.size,
-      totalLanguages: uniqueLanguages.size,
-      totalActions: totalViews.count + totalBookmarks.count + totalTranslations.count + totalShares.count
+    return metrics || {
+      totalViews: 0,
+      totalBookmarks: 0,
+      totalTranslations: 0,
+      totalShares: 0,
+      totalCategories: 0,
+      totalLanguages: 0,
+      totalActions: 0
     };
   } catch (error) {
     throw new AppError(500, `Failed to retrieve engagement metrics: ${error.message}`);
@@ -306,7 +353,9 @@ const evaluateAndAwardBadges = async (userId) => {
 
   try {
     // Get all active badge definitions
-    const allBadges = await Badge.find({ isActive: true });
+    const allBadges = await Badge.find({ isActive: true })
+      .select('badgeId name icon criteria')
+      .lean();
 
     if (allBadges.length === 0) {
       throw new AppError(500, 'No badge definitions found in system');
@@ -316,7 +365,7 @@ const evaluateAndAwardBadges = async (userId) => {
     const metrics = await getUserEngagementMetrics(userId);
 
     // Get badges user already has
-    const earnedUserBadges = await UserBadge.find({ userId }).select('badgeIdStr');
+    const earnedUserBadges = await UserBadge.find({ userId }).select('badgeIdStr').lean();
     const earnedBadgeIds = new Set(earnedUserBadges.map((ub) => ub.badgeIdStr));
 
     const newBadgesAwarded = [];
@@ -399,9 +448,12 @@ const getUserBadgeProgress = async (userId) => {
 
   try {
     const metrics = await getUserEngagementMetrics(userId);
-    const allBadges = await Badge.find({ isActive: true }).sort({ displayOrder: 1 });
+    const allBadges = await Badge.find({ isActive: true })
+      .sort({ displayOrder: 1 })
+      .select('badgeId name description icon tier category criteria')
+      .lean();
 
-    const earnedUserBadges = await UserBadge.find({ userId }).select('badgeIdStr');
+    const earnedUserBadges = await UserBadge.find({ userId }).select('badgeIdStr').lean();
     const earnedBadgeIds = new Set(earnedUserBadges.map((ub) => ub.badgeIdStr));
 
     const progress = [];
@@ -475,7 +527,8 @@ const getBadgeCatalog = async () => {
   try {
     const badges = await Badge.find({ isActive: true })
       .sort({ displayOrder: 1 })
-      .select('badgeId name description icon color tier category');
+      .select('badgeId name description icon color tier category')
+      .lean();
 
     return badges;
   } catch (error) {

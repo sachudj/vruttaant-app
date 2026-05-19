@@ -53,16 +53,15 @@ describe('Badge Service', () => {
 
     it('should count total views from activity events', async () => {
       const userId = new mongoose.Types.ObjectId();
-      UserActivityEvent.find.mockResolvedValue([
+      UserActivityEvent.aggregate.mockResolvedValue([
         {
-          userId,
-          eventType: 'view',
-          cardMetadata: { category: 'Tech', language: 'en' }
-        },
-        {
-          userId,
-          eventType: 'view',
-          cardMetadata: { category: 'Tech', language: 'en' }
+          totalViews: 2,
+          totalBookmarks: 0,
+          totalTranslations: 0,
+          totalShares: 0,
+          totalCategories: 1,
+          totalLanguages: 1,
+          totalActions: 2
         }
       ]);
 
@@ -73,12 +72,16 @@ describe('Badge Service', () => {
 
     it('should count bookmarks, translations, and shares separately', async () => {
       const userId = new mongoose.Types.ObjectId();
-      UserActivityEvent.find.mockResolvedValue([
-        { userId, eventType: 'view', cardMetadata: { category: 'Tech' } },
-        { userId, eventType: 'bookmark', cardMetadata: { category: 'Tech' } },
-        { userId, eventType: 'translate', cardMetadata: { category: 'Tech' } },
-        { userId, eventType: 'share', cardMetadata: { category: 'Tech' } },
-        { userId, eventType: 'bookmark', cardMetadata: { category: 'Tech' } }
+      UserActivityEvent.aggregate.mockResolvedValue([
+        {
+          totalViews: 1,
+          totalBookmarks: 2,
+          totalTranslations: 1,
+          totalShares: 1,
+          totalCategories: 1,
+          totalLanguages: 0,
+          totalActions: 5
+        }
       ]);
 
       const metrics = await badgeService.getUserEngagementMetrics(userId);
@@ -91,11 +94,16 @@ describe('Badge Service', () => {
 
     it('should count unique categories from view events', async () => {
       const userId = new mongoose.Types.ObjectId();
-      UserActivityEvent.find.mockResolvedValue([
-        { userId, eventType: 'view', cardMetadata: { category: 'Tech' } },
-        { userId, eventType: 'view', cardMetadata: { category: 'Politics' } },
-        { userId, eventType: 'view', cardMetadata: { category: 'Tech' } }, // Duplicate
-        { userId, eventType: 'bookmark', cardMetadata: { category: 'Sports' } }
+      UserActivityEvent.aggregate.mockResolvedValue([
+        {
+          totalViews: 3,
+          totalBookmarks: 1,
+          totalTranslations: 0,
+          totalShares: 0,
+          totalCategories: 2,
+          totalLanguages: 0,
+          totalActions: 4
+        }
       ]);
 
       const metrics = await badgeService.getUserEngagementMetrics(userId);
@@ -105,10 +113,16 @@ describe('Badge Service', () => {
 
     it('should count unique languages', async () => {
       const userId = new mongoose.Types.ObjectId();
-      UserActivityEvent.find.mockResolvedValue([
-        { userId, eventType: 'view', cardMetadata: { language: 'en' } },
-        { userId, eventType: 'view', cardMetadata: { language: 'es' } },
-        { userId, eventType: 'translate', translation: { toLanguage: 'fr' } }
+      UserActivityEvent.aggregate.mockResolvedValue([
+        {
+          totalViews: 2,
+          totalBookmarks: 0,
+          totalTranslations: 1,
+          totalShares: 0,
+          totalCategories: 0,
+          totalLanguages: 3,
+          totalActions: 3
+        }
       ]);
 
       const metrics = await badgeService.getUserEngagementMetrics(userId);
@@ -118,7 +132,7 @@ describe('Badge Service', () => {
 
     it('should return zero metrics for user with no activity', async () => {
       const userId = new mongoose.Types.ObjectId();
-      UserActivityEvent.find.mockResolvedValue([]);
+      UserActivityEvent.aggregate.mockResolvedValue([]);
 
       const metrics = await badgeService.getUserEngagementMetrics(userId);
 
@@ -229,23 +243,37 @@ describe('Badge Service', () => {
       const userId = new mongoose.Types.ObjectId();
       const badgeId = new mongoose.Types.ObjectId();
 
-      Badge.find.mockResolvedValue([
-        {
-          _id: badgeId,
-          badgeId: 'first_read',
-          name: 'First Read',
-          icon: '📖',
-          criteria: { type: 'total_views', threshold: 1, operator: 'gte' }
-        }
-      ]);
+      Badge.find.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([
+            {
+              _id: badgeId,
+              badgeId: 'first_read',
+              name: 'First Read',
+              icon: '📖',
+              criteria: { type: 'total_views', threshold: 1, operator: 'gte' }
+            }
+          ])
+        })
+      });
 
-      UserActivityEvent.find.mockResolvedValue([
-        { userId, eventType: 'view', cardMetadata: { category: 'Tech' } }
+      UserActivityEvent.aggregate.mockResolvedValue([
+        {
+          totalViews: 1,
+          totalBookmarks: 0,
+          totalTranslations: 0,
+          totalShares: 0,
+          totalCategories: 1,
+          totalLanguages: 0,
+          totalActions: 1
+        }
       ]);
 
       // UserBadge.find().select() chain
       UserBadge.find.mockReturnValue({
-        select: jest.fn().mockResolvedValue([])
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([])
+        })
       });
 
       UserBadge.prototype.save = jest.fn().mockResolvedValue({
@@ -264,21 +292,35 @@ describe('Badge Service', () => {
       const userId = new mongoose.Types.ObjectId();
       const badgeId = new mongoose.Types.ObjectId();
 
-      Badge.find.mockResolvedValue([
-        {
-          _id: badgeId,
-          badgeId: 'first_read',
-          criteria: { type: 'total_views', threshold: 1, operator: 'gte' }
-        }
-      ]);
+      Badge.find.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([
+            {
+              _id: badgeId,
+              badgeId: 'first_read',
+              criteria: { type: 'total_views', threshold: 1, operator: 'gte' }
+            }
+          ])
+        })
+      });
 
-      UserActivityEvent.find.mockResolvedValue([
-        { userId, eventType: 'view', cardMetadata: { category: 'Tech' } }
+      UserActivityEvent.aggregate.mockResolvedValue([
+        {
+          totalViews: 1,
+          totalBookmarks: 0,
+          totalTranslations: 0,
+          totalShares: 0,
+          totalCategories: 1,
+          totalLanguages: 0,
+          totalActions: 1
+        }
       ]);
 
       // User already has this badge
       UserBadge.find.mockReturnValue({
-        select: jest.fn().mockResolvedValue([{ userId, badgeIdStr: 'first_read' }])
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([{ userId, badgeIdStr: 'first_read' }])
+        })
       });
 
       const awarded = await badgeService.evaluateAndAwardBadges(userId);
@@ -289,30 +331,44 @@ describe('Badge Service', () => {
     it('should award multiple badges in one evaluation', async () => {
       const userId = new mongoose.Types.ObjectId();
 
-      Badge.find.mockResolvedValue([
+      Badge.find.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([
+            {
+              _id: '1',
+              badgeId: 'first_read',
+              name: 'First Read',
+              icon: '📖',
+              criteria: { type: 'total_views', threshold: 1, operator: 'gte' }
+            },
+            {
+              _id: '2',
+              badgeId: 'avid_reader',
+              name: 'Avid Reader',
+              icon: '📚',
+              criteria: { type: 'total_views', threshold: 10, operator: 'gte' }
+            }
+          ])
+        })
+      });
+
+      // User has 15 views
+      UserActivityEvent.aggregate.mockResolvedValue([
         {
-          _id: '1',
-          badgeId: 'first_read',
-          name: 'First Read',
-          icon: '📖',
-          criteria: { type: 'total_views', threshold: 1, operator: 'gte' }
-        },
-        {
-          _id: '2',
-          badgeId: 'avid_reader',
-          name: 'Avid Reader',
-          icon: '📚',
-          criteria: { type: 'total_views', threshold: 10, operator: 'gte' }
+          totalViews: 15,
+          totalBookmarks: 0,
+          totalTranslations: 0,
+          totalShares: 0,
+          totalCategories: 1,
+          totalLanguages: 0,
+          totalActions: 15
         }
       ]);
 
-      // User has 15 views
-      UserActivityEvent.find.mockResolvedValue(
-        Array(15).fill({ userId, eventType: 'view', cardMetadata: { category: 'Tech' } })
-      );
-
       UserBadge.find.mockReturnValue({
-        select: jest.fn().mockResolvedValue([])
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([])
+        })
       });
 
       UserBadge.prototype.save = jest.fn().mockResolvedValue({});
@@ -404,27 +460,40 @@ describe('Badge Service', () => {
     it('should show progress toward badges', async () => {
       const userId = new mongoose.Types.ObjectId();
 
-      UserActivityEvent.find.mockResolvedValue([
-        { userId, eventType: 'view', cardMetadata: { category: 'Tech' } },
-        { userId, eventType: 'view', cardMetadata: { category: 'Politics' } }
+      UserActivityEvent.aggregate.mockResolvedValue([
+        {
+          totalViews: 2,
+          totalBookmarks: 0,
+          totalTranslations: 0,
+          totalShares: 0,
+          totalCategories: 2,
+          totalLanguages: 0,
+          totalActions: 2
+        }
       ]);
 
       Badge.find.mockReturnValue({
-        sort: jest.fn().mockResolvedValue([
-          {
-            badgeId: 'avid_reader',
-            name: 'Avid Reader',
-            description: 'Read 10 articles',
-            icon: '📚',
-            tier: 'bronze',
-            category: 'views',
-            criteria: { type: 'total_views', threshold: 10, operator: 'gte' }
-          }
-        ])
+        sort: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([
+              {
+                badgeId: 'avid_reader',
+                name: 'Avid Reader',
+                description: 'Read 10 articles',
+                icon: '📚',
+                tier: 'bronze',
+                category: 'views',
+                criteria: { type: 'total_views', threshold: 10, operator: 'gte' }
+              }
+            ])
+          })
+        })
       });
 
       UserBadge.find.mockReturnValue({
-        select: jest.fn().mockResolvedValue([])
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([])
+        })
       });
 
       const progress = await badgeService.getUserBadgeProgress(userId);
@@ -439,22 +508,36 @@ describe('Badge Service', () => {
     it('should mark earned badges', async () => {
       const userId = new mongoose.Types.ObjectId();
 
-      UserActivityEvent.find.mockResolvedValue(
-        Array(15).fill({ userId, eventType: 'view', cardMetadata: { category: 'Tech' } })
-      );
+      UserActivityEvent.aggregate.mockResolvedValue([
+        {
+          totalViews: 15,
+          totalBookmarks: 0,
+          totalTranslations: 0,
+          totalShares: 0,
+          totalCategories: 1,
+          totalLanguages: 0,
+          totalActions: 15
+        }
+      ]);
 
       Badge.find.mockReturnValue({
-        sort: jest.fn().mockResolvedValue([
-          {
-            badgeId: 'avid_reader',
-            name: 'Avid Reader',
-            criteria: { type: 'total_views', threshold: 10, operator: 'gte' }
-          }
-        ])
+        sort: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([
+              {
+                badgeId: 'avid_reader',
+                name: 'Avid Reader',
+                criteria: { type: 'total_views', threshold: 10, operator: 'gte' }
+              }
+            ])
+          })
+        })
       });
 
       UserBadge.find.mockReturnValue({
-        select: jest.fn().mockResolvedValue([{ badgeIdStr: 'avid_reader' }])
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([{ badgeIdStr: 'avid_reader' }])
+        })
       });
 
       const progress = await badgeService.getUserBadgeProgress(userId);
@@ -465,22 +548,36 @@ describe('Badge Service', () => {
     it('should cap progress at 100%', async () => {
       const userId = new mongoose.Types.ObjectId();
 
-      UserActivityEvent.find.mockResolvedValue(
-        Array(50).fill({ userId, eventType: 'view', cardMetadata: { category: 'Tech' } })
-      );
+      UserActivityEvent.aggregate.mockResolvedValue([
+        {
+          totalViews: 50,
+          totalBookmarks: 0,
+          totalTranslations: 0,
+          totalShares: 0,
+          totalCategories: 1,
+          totalLanguages: 0,
+          totalActions: 50
+        }
+      ]);
 
       Badge.find.mockReturnValue({
-        sort: jest.fn().mockResolvedValue([
-          {
-            badgeId: 'avid_reader',
-            name: 'Avid Reader',
-            criteria: { type: 'total_views', threshold: 10, operator: 'gte' }
-          }
-        ])
+        sort: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([
+              {
+                badgeId: 'avid_reader',
+                name: 'Avid Reader',
+                criteria: { type: 'total_views', threshold: 10, operator: 'gte' }
+              }
+            ])
+          })
+        })
       });
 
       UserBadge.find.mockReturnValue({
-        select: jest.fn().mockResolvedValue([])
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([])
+        })
       });
 
       const progress = await badgeService.getUserBadgeProgress(userId);
@@ -493,10 +590,12 @@ describe('Badge Service', () => {
     it('should return all active badges', async () => {
       Badge.find.mockReturnValue({
         sort: jest.fn().mockReturnValue({
-          select: jest.fn().mockResolvedValue([
-            { badgeId: 'first_read', name: 'First Read', icon: '📖' },
-            { badgeId: 'avid_reader', name: 'Avid Reader', icon: '📚' }
-          ])
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([
+              { badgeId: 'first_read', name: 'First Read', icon: '📖' },
+              { badgeId: 'avid_reader', name: 'Avid Reader', icon: '📚' }
+            ])
+          })
         })
       });
 
@@ -509,10 +608,12 @@ describe('Badge Service', () => {
     it('should only return active badges', async () => {
       Badge.find.mockReturnValue({
         sort: jest.fn().mockReturnValue({
-          select: jest.fn().mockResolvedValue([
-            { badgeId: 'badge1', isActive: true },
-            { badgeId: 'badge2', isActive: true }
-          ])
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([
+              { badgeId: 'badge1', isActive: true },
+              { badgeId: 'badge2', isActive: true }
+            ])
+          })
         })
       });
 

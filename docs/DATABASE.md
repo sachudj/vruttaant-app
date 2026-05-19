@@ -28,6 +28,10 @@
 
 **Indexes**:
 - **Unique**: `(url, language)` - Prevent duplicate articles per language
+- **Feed Reads**: `(language, scrapedAt desc)`, `(language, category, scrapedAt desc)`
+- **Trending Reads**: `(language, trendScore desc, scrapedAt desc)`
+- **Search**: text index on `title`, `summary`, `aiSummary`, `source`
+- **Deduplication**: `(titleFingerprint, language)`
 - **Implicit**: `_id` (primary key)
 
 **Example Document**:
@@ -223,9 +227,46 @@ db.newscards.reIndex()
 ## Performance Notes
 
 - Index on `(url, language)` ensures upsert operations are fast
-- No index on `source` or `language` alone (consider adding if filtering heavily)
+- Feed pagination uses compound indexes for latest and category-filtered article reads
+- Recommendation candidate selection uses `(language, trendScore desc, scrapedAt desc)` to bound scoring work
+- Activity history and analytics paths use compound `userId` / `eventType` / `eventAt` indexes to avoid full event scans
+- Badge evaluation now uses one aggregation over indexed activity events instead of loading all user events into application memory
+- Cohort listing uses `(cohortId, assignedAt desc)` and `(userId, cohortType, cohortId)` indexes for admin/user cohort reads
+- Notification-device cohort assignment uses `(userId, enabled, platform)` to limit device lookups to active registrations
 - Consider archiving articles older than 90 days to keep collection lean
 - Monitor collection size with: `db.newscards.stats()`
+
+### Execution Plan Checks
+
+Use `explain('executionStats')` in `mongosh` after deploying index changes. For read-heavy paths, prefer `IXSCAN` over `COLLSCAN` and confirm examined documents stay close to returned documents.
+
+```javascript
+// Feed: latest cards by language/category
+db.newscards.find({ language: 'en', category: 'Business' })
+  .sort({ scrapedAt: -1 })
+  .limit(20)
+  .explain('executionStats')
+
+// Recommendations: candidate fetch before in-memory scoring
+db.newscards.find({ language: 'en', scrapedAt: { $gte: ISODate('2026-05-12T00:00:00Z') } })
+  .sort({ trendScore: -1, scrapedAt: -1 })
+  .limit(200)
+  .explain('executionStats')
+
+// User activity history / badge metrics
+db.user_activity_events.find({ userId: ObjectId('000000000000000000000001') })
+  .sort({ eventAt: -1 })
+  .limit(20)
+  .explain('executionStats')
+
+// Cohort admin list
+db.usercohorts.find({ cohortId: 'language_en' })
+  .sort({ assignedAt: -1 })
+  .limit(20)
+  .explain('executionStats')
+```
+
+If `winningPlan.stage` shows `COLLSCAN` for these shapes, re-check the deployed indexes and query predicate order before widening hardware or cache budgets.
 
 ---
 

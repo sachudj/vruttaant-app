@@ -124,26 +124,40 @@ describe('Badge Controller - Integration Tests', () => {
     });
 
     it('should return badge progress with percentages', async () => {
-      UserActivityEvent.find.mockResolvedValue([
-        { userId: req.user.id, eventType: 'view', cardMetadata: { category: 'Tech' } }
+      UserActivityEvent.aggregate.mockResolvedValue([
+        {
+          totalViews: 1,
+          totalBookmarks: 0,
+          totalTranslations: 0,
+          totalShares: 0,
+          totalCategories: 1,
+          totalLanguages: 0,
+          totalActions: 1
+        }
       ]);
 
       Badge.find.mockReturnValue({
-        sort: jest.fn().mockResolvedValue([
-          {
-            badgeId: 'avid_reader',
-            name: 'Avid Reader',
-            description: 'Read 10 articles',
-            icon: '📚',
-            tier: 'bronze',
-            category: 'views',
-            criteria: { type: 'total_views', threshold: 10, operator: 'gte' }
-          }
-        ])
+        sort: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([
+              {
+                badgeId: 'avid_reader',
+                name: 'Avid Reader',
+                description: 'Read 10 articles',
+                icon: '📚',
+                tier: 'bronze',
+                category: 'views',
+                criteria: { type: 'total_views', threshold: 10, operator: 'gte' }
+              }
+            ])
+          })
+        })
       });
 
       UserBadge.find.mockReturnValue({
-        select: jest.fn().mockResolvedValue([])
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([])
+        })
       });
 
       await badgeController.getBadgeProgress(req, res, next);
@@ -169,21 +183,35 @@ describe('Badge Controller - Integration Tests', () => {
     });
 
     it('should mark earned badges in progress', async () => {
-      UserActivityEvent.find.mockResolvedValue(
-        Array(15).fill({ userId: req.user.id, eventType: 'view', cardMetadata: { category: 'Tech' } })
-      );
+      UserActivityEvent.aggregate.mockResolvedValue([
+        {
+          totalViews: 15,
+          totalBookmarks: 0,
+          totalTranslations: 0,
+          totalShares: 0,
+          totalCategories: 1,
+          totalLanguages: 0,
+          totalActions: 15
+        }
+      ]);
 
       Badge.find.mockReturnValue({
-        sort: jest.fn().mockResolvedValue([
-          {
-            badgeId: 'avid_reader',
-            criteria: { type: 'total_views', threshold: 10, operator: 'gte' }
-          }
-        ])
+        sort: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([
+              {
+                badgeId: 'avid_reader',
+                criteria: { type: 'total_views', threshold: 10, operator: 'gte' }
+              }
+            ])
+          })
+        })
       });
 
       UserBadge.find.mockReturnValue({
-        select: jest.fn().mockResolvedValue([{ badgeIdStr: 'avid_reader' }])
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([{ badgeIdStr: 'avid_reader' }])
+        })
       });
 
       await badgeController.getBadgeProgress(req, res, next);
@@ -206,15 +234,17 @@ describe('Badge Controller - Integration Tests', () => {
 
       Badge.find.mockReturnValue({
         sort: jest.fn().mockReturnValue({
-          select: jest.fn().mockResolvedValue([
-            {
-              badgeId: 'first_read',
-              name: 'First Read',
-              icon: '📖',
-              category: 'views',
-              tier: 'bronze'
-            }
-          ])
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([
+              {
+                badgeId: 'first_read',
+                name: 'First Read',
+                icon: '📖',
+                category: 'views',
+                tier: 'bronze'
+              }
+            ])
+          })
         })
       });
 
@@ -237,11 +267,13 @@ describe('Badge Controller - Integration Tests', () => {
     it('should group badges by category', async () => {
       Badge.find.mockReturnValue({
         sort: jest.fn().mockReturnValue({
-          select: jest.fn().mockResolvedValue([
-            { badgeId: 'first_read', category: 'views' },
-            { badgeId: 'bookmarking_pro', category: 'bookmarks' },
-            { badgeId: 'translator', category: 'translations' }
-          ])
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([
+              { badgeId: 'first_read', category: 'views' },
+              { badgeId: 'bookmarking_pro', category: 'bookmarks' },
+              { badgeId: 'translator', category: 'translations' }
+            ])
+          })
         })
       });
 

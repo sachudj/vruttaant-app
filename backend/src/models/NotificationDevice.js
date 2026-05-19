@@ -38,5 +38,6 @@ const notificationDeviceSchema = new mongoose.Schema(
 );
 
 notificationDeviceSchema.index({ userId: 1, token: 1 }, { unique: true });
+notificationDeviceSchema.index({ userId: 1, enabled: 1, platform: 1 });
 
 module.exports = mongoose.model('NotificationDevice', notificationDeviceSchema);

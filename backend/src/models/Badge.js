@@ -113,4 +113,6 @@ const badgeSchema = new mongoose.Schema(
   }
 );
 
+badgeSchema.index({ isActive: 1, displayOrder: 1 });
+
 module.exports = mongoose.model('Badge', badgeSchema);

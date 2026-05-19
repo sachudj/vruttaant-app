@@ -145,10 +145,10 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] K5. Digest email template generation and scheduling — ✅ done May 19
 - [x] K6. User cohort segmentation for A/B testing — ✅ done May 19
 
-### ⏳ Track L: Performance Optimization & Caching (2/6 complete)
+### ⏳ Track L: Performance Optimization & Caching (3/6 complete)
 - [x] Redis caching layer for trending cards and recommendations
 - [x] Image CDN integration for card artwork
-- [ ] Database query optimization (indexing strategy review)
+- [x] Database query optimization (indexing strategy review)
 - [ ] API response compression (gzip)
 - [ ] Mobile app bundle optimization (lazy loading)
 - [ ] Comprehensive load testing regression gates
@@ -237,10 +237,9 @@ Use this checklist for every track item before marking it done.
 6. ✅ Add user cohort segmentation for A/B testing support — **DONE May 19**
 
 ### Short Term (Track L - Performance, 2-3 weeks)
-1. Review and optimize database queries (indexing strategy, execution plans)
-2. Add API response compression (gzip)
-3. Optimize mobile app bundle (lazy loading, tree shaking verification)
-4. Establish comprehensive load testing with regression gates (p95 latency, throughput SLOs)
+1. Add API response compression (gzip)
+2. Optimize mobile app bundle (lazy loading, tree shaking verification)
+3. Establish comprehensive load testing with regression gates (p95 latency, throughput SLOs)
 
 ### Medium Term (Infrastructure & Polish, 3-4 weeks)
 1. Implement database migration strategy with version tracking
