@@ -20,7 +20,7 @@ const { AppError } = require('../middleware/errorHandler');
  */
 async function getUserActivityHistory(userId, page = 1, limit = 20, filters = {}) {
   if (!userId) {
-    throw new AppError('User ID is required', 400);
+    throw new AppError(400, 'User ID is required');
   }
 
   // Validate and clamp pagination params
@@ -72,7 +72,7 @@ async function getUserActivityHistory(userId, page = 1, limit = 20, filters = {}
       limit: validLimit,
     };
   } catch (error) {
-    throw new AppError(`Failed to fetch user activity history: ${error.message}`, 500);
+    throw new AppError(500, `Failed to fetch user activity history: ${error.message}`);
   }
 }
 
@@ -86,7 +86,7 @@ async function getUserActivityHistory(userId, page = 1, limit = 20, filters = {}
  */
 async function getReadingFeed(userId, limit = 20) {
   if (!userId) {
-    throw new AppError('User ID is required', 400);
+    throw new AppError(400, 'User ID is required');
   }
 
   const validLimit = Math.min(100, Math.max(1, parseInt(limit) || 20));
@@ -102,7 +102,7 @@ async function getReadingFeed(userId, limit = 20) {
 
     return readingEvents;
   } catch (error) {
-    throw new AppError(`Failed to fetch reading feed: ${error.message}`, 500);
+    throw new AppError(500, `Failed to fetch reading feed: ${error.message}`);
   }
 }
 
@@ -115,7 +115,7 @@ async function getReadingFeed(userId, limit = 20) {
  */
 async function getUserActivityStats(userId) {
   if (!userId) {
-    throw new AppError('User ID is required', 400);
+    throw new AppError(400, 'User ID is required');
   }
 
   try {
@@ -176,7 +176,7 @@ async function getUserActivityStats(userId) {
       lastActivityAt: facetResult.lastActivity.length > 0 ? facetResult.lastActivity[0].eventAt : null,
     };
   } catch (error) {
-    throw new AppError(`Failed to compute activity stats: ${error.message}`, 500);
+    throw new AppError(500, `Failed to compute activity stats: ${error.message}`);
   }
 }
 
@@ -191,7 +191,7 @@ async function getUserActivityStats(userId) {
  */
 async function getCardActivityMetrics(newsCardId, limit = 50) {
   if (!newsCardId) {
-    throw new AppError('News card ID is required', 400);
+    throw new AppError(400, 'News card ID is required');
   }
 
   const validLimit = Math.min(500, Math.max(1, parseInt(limit) || 50));
@@ -204,7 +204,7 @@ async function getCardActivityMetrics(newsCardId, limit = 50) {
 
     return activities;
   } catch (error) {
-    throw new AppError(`Failed to fetch card activity metrics: ${error.message}`, 500);
+    throw new AppError(500, `Failed to fetch card activity metrics: ${error.message}`);
   }
 }
 

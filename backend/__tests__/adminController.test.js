@@ -1,13 +1,17 @@
-const { getDetailedHealth, getSystemStats } = require('../src/controllers/adminController');
+const { getDetailedHealth, getSystemStats, sendAdminNotification } = require('../src/controllers/adminController');
 const User = require('../src/models/User');
 const Bookmark = require('../src/models/Bookmark');
 const NewsCard = require('../src/models/NewsCard');
 const RefreshToken = require('../src/models/RefreshToken');
+const NotificationDevice = require('../src/models/NotificationDevice');
+const pushNotificationService = require('../src/services/pushNotificationService');
 
 jest.mock('../src/models/User');
 jest.mock('../src/models/Bookmark');
 jest.mock('../src/models/NewsCard');
 jest.mock('../src/models/RefreshToken');
+jest.mock('../src/models/NotificationDevice');
+jest.mock('../src/services/pushNotificationService');
 
 // Mock database module
 jest.mock('../src/config/database', () => ({
@@ -295,6 +299,79 @@ describe('adminController', () => {
       // Verify that User.countDocuments was called for time-based queries
       // The calls should include lastLoginAt comparisons
       expect(User.countDocuments).toHaveBeenCalled();
+    });
+  });
+
+  // ── sendAdminNotification ──────────────────────────────────────────────────
+  describe('sendAdminNotification', () => {
+    function makeAsyncIterator(items) {
+      let i = 0;
+      return {
+        [Symbol.asyncIterator]() { return this; },
+        async next() {
+          if (i < items.length) return { value: items[i++], done: false };
+          return { value: undefined, done: true };
+        }
+      };
+    }
+
+    it('returns 400 when title is missing', async () => {
+      req.body = { body: 'Some body' };
+      await sendAdminNotification(req, res, next);
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 400 }));
+    });
+
+    it('returns 400 when body is missing', async () => {
+      req.body = { title: 'Title' };
+      await sendAdminNotification(req, res, next);
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 400 }));
+    });
+
+    it('sends notifications to all users when audience is not breakingNews', async () => {
+      const users = [{ _id: 'u1' }, { _id: 'u2' }];
+      User.find.mockReturnValue({ select: jest.fn().mockReturnValue({ cursor: jest.fn().mockReturnValue(makeAsyncIterator(users)) }) });
+      NotificationDevice.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([{ token: 'tok1' }, { token: 'tok2' }]) });
+      pushNotificationService.sendMulticast.mockResolvedValue({ successCount: 2 });
+
+      req.body = { title: 'Alert', body: 'Message', audience: 'all' };
+      await sendAdminNotification(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(pushNotificationService.sendMulticast).toHaveBeenCalledTimes(2);
+    });
+
+    it('sends only to breakingNews users when audience=breakingNews', async () => {
+      const users = [{ _id: 'u1' }];
+      User.find.mockReturnValue({ select: jest.fn().mockReturnValue({ cursor: jest.fn().mockReturnValue(makeAsyncIterator(users)) }) });
+      NotificationDevice.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([{ token: 'tok1' }]) });
+      pushNotificationService.sendMulticast.mockResolvedValue({ successCount: 1 });
+
+      req.body = { title: 'Breaking', body: 'News', audience: 'breakingNews' };
+      await sendAdminNotification(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(User.find).toHaveBeenCalledWith(
+        expect.objectContaining({ 'preferences.notifications.breakingNews': true })
+      );
+    });
+
+    it('skips users with no registered devices', async () => {
+      const users = [{ _id: 'u1' }];
+      User.find.mockReturnValue({ select: jest.fn().mockReturnValue({ cursor: jest.fn().mockReturnValue(makeAsyncIterator(users)) }) });
+      NotificationDevice.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
+
+      req.body = { title: 'Alert', body: 'Body', audience: 'all' };
+      await sendAdminNotification(req, res, next);
+
+      expect(pushNotificationService.sendMulticast).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it('calls next on DB error', async () => {
+      User.find.mockReturnValue({ select: jest.fn().mockReturnValue({ cursor: jest.fn().mockImplementation(() => { throw new Error('cursor fail'); }) }) });
+      req.body = { title: 'Title', body: 'Body', audience: 'all' };
+      await sendAdminNotification(req, res, next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
     });
   });
 });
