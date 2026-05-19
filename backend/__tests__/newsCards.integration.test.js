@@ -272,6 +272,8 @@ describe('news recommendations', () => {
     };
 
     mockRecommendedChain = {
+      sort: jest.fn(),
+      limit: jest.fn(),
       select: jest.fn(),
       lean: jest.fn()
     };
@@ -281,6 +283,8 @@ describe('news recommendations', () => {
     mockFindChain.limit.mockReturnValue(mockFindChain);
     mockFindChain.lean.mockResolvedValue([]);
 
+    mockRecommendedChain.sort.mockReturnValue(mockRecommendedChain);
+    mockRecommendedChain.limit.mockReturnValue(mockRecommendedChain);
     mockRecommendedChain.select.mockReturnValue(mockRecommendedChain);
 
     NewsCard.find.mockReturnValue(mockFindChain);
