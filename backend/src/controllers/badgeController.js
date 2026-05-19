@@ -1,5 +1,4 @@
 const badgeService = require('../services/badgeService');
-const { AppError } = require('../middleware/errorHandler');
 
 /**
  * Get user's earned badges
