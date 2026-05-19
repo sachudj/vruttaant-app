@@ -6,10 +6,22 @@ const {
 const Bookmark = require('../src/models/Bookmark');
 const { AppError } = require('../src/middleware/errorHandler');
 
+function restoreEnvValue(name, value) {
+  if (value == null) {
+    delete process.env[name];
+    return;
+  }
+
+  process.env[name] = value;
+}
+
 jest.mock('../src/models/Bookmark');
 
 describe('bookmarkController', () => {
   let req, res, next;
+  const originalImageCdnBaseUrl = process.env.IMAGE_CDN_BASE_URL;
+  const originalImageCdnWidth = process.env.IMAGE_CDN_DEFAULT_WIDTH;
+  const originalImageCdnQuality = process.env.IMAGE_CDN_DEFAULT_QUALITY;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -24,8 +36,18 @@ describe('bookmarkController', () => {
     next = jest.fn();
   });
 
+  afterEach(() => {
+    restoreEnvValue('IMAGE_CDN_BASE_URL', originalImageCdnBaseUrl);
+    restoreEnvValue('IMAGE_CDN_DEFAULT_WIDTH', originalImageCdnWidth);
+    restoreEnvValue('IMAGE_CDN_DEFAULT_QUALITY', originalImageCdnQuality);
+  });
+
   describe('createBookmark', () => {
     it('should create bookmark successfully', async () => {
+      process.env.IMAGE_CDN_BASE_URL = 'https://cdn.example.com/fetch';
+      process.env.IMAGE_CDN_DEFAULT_WIDTH = '1200';
+      process.env.IMAGE_CDN_DEFAULT_QUALITY = '80';
+
       const payload = {
         title: 'Breaking News',
         url: 'https://example.com/article',
@@ -68,7 +90,8 @@ describe('bookmarkController', () => {
           bookmark: expect.objectContaining({
             id: 'bookmark-123',
             title: payload.title,
-            url: payload.url
+            url: payload.url,
+            imageUrl: 'https://cdn.example.com/fetch?url=https%3A%2F%2Fexample.com%2Fimage.jpg&w=1200&q=80'
           })
         }
       });
@@ -122,6 +145,10 @@ describe('bookmarkController', () => {
 
   describe('listBookmarks', () => {
     it('should list bookmarks with pagination', async () => {
+      process.env.IMAGE_CDN_BASE_URL = 'https://cdn.example.com/fetch';
+      process.env.IMAGE_CDN_DEFAULT_WIDTH = '1200';
+      process.env.IMAGE_CDN_DEFAULT_QUALITY = '80';
+
       req.validated.query = {
         page: 1,
         limit: 20,
@@ -136,6 +163,7 @@ describe('bookmarkController', () => {
           title: 'Article 1',
           url: 'https://example.com/1',
           category: 'Tech',
+          imageUrl: 'https://example.com/1.jpg',
           language: 'en',
           addedAt: new Date(),
           createdAt: new Date()
@@ -146,6 +174,7 @@ describe('bookmarkController', () => {
           title: 'Article 2',
           url: 'https://example.com/2',
           category: 'News',
+          imageUrl: '',
           language: 'en',
           addedAt: new Date(),
           createdAt: new Date()
@@ -169,7 +198,11 @@ describe('bookmarkController', () => {
         success: true,
         data: {
           bookmarks: expect.arrayContaining([
-            expect.objectContaining({ id: 'bookmark-1', title: 'Article 1' }),
+            expect.objectContaining({
+              id: 'bookmark-1',
+              title: 'Article 1',
+              imageUrl: 'https://cdn.example.com/fetch?url=https%3A%2F%2Fexample.com%2F1.jpg&w=1200&q=80'
+            }),
             expect.objectContaining({ id: 'bookmark-2', title: 'Article 2' })
           ]),
           pagination: {

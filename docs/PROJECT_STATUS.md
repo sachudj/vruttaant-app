@@ -145,10 +145,10 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] K5. Digest email template generation and scheduling — ✅ done May 19
 - [x] K6. User cohort segmentation for A/B testing — ✅ done May 19
 
-### ⏳ Track L: Performance Optimization & Caching
+### ⏳ Track L: Performance Optimization & Caching (2/6 complete)
 - [x] Redis caching layer for trending cards and recommendations
+- [x] Image CDN integration for card artwork
 - [ ] Database query optimization (indexing strategy review)
-- [ ] Image CDN integration for card artwork
 - [ ] API response compression (gzip)
 - [ ] Mobile app bundle optimization (lazy loading)
 - [ ] Comprehensive load testing regression gates
@@ -220,8 +220,9 @@ Use this checklist for every track item before marking it done.
 1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` accepts one source URL per request (batch ingestion is not yet implemented).
 2. **Localization Scope**: Core feed/settings/auth/bookmarks/reader/analytics surfaces are localized (`en`/`hi`), but secondary UI polish and backend message translations are still pending.
 3. **Redis Coverage**: Redis now caches `/api/v1/news/cards`, `/api/v1/news/recommended`, `/api/v1/analytics/trending`, and `/api/v1/analytics/categories`, but write-through invalidation is currently limited to ingest-driven content changes.
-4. **Load Testing Trend History**: Baseline load testing and CI regression gate exist, but cross-environment trend history and telemetry dashboard are still pending.
-5. **Database Migrations**: Schema versioning and migration strategy are not yet implemented (critical for production deployments).
+4. **CDN Integration Requires Env Setup**: Artwork delivery now supports CDN rewriting through backend env configuration, but staging/production still need real CDN endpoints or templates configured for optimization to take effect.
+5. **Load Testing Trend History**: Baseline load testing and CI regression gate exist, but cross-environment trend history and telemetry dashboard are still pending.
+6. **Database Migrations**: Schema versioning and migration strategy are not yet implemented (critical for production deployments).
 
 ---
 
@@ -237,10 +238,9 @@ Use this checklist for every track item before marking it done.
 
 ### Short Term (Track L - Performance, 2-3 weeks)
 1. Review and optimize database queries (indexing strategy, execution plans)
-2. Integrate CDN for card artwork delivery
-3. Add API response compression (gzip)
-4. Optimize mobile app bundle (lazy loading, tree shaking verification)
-5. Establish comprehensive load testing with regression gates (p95 latency, throughput SLOs)
+2. Add API response compression (gzip)
+3. Optimize mobile app bundle (lazy loading, tree shaking verification)
+4. Establish comprehensive load testing with regression gates (p95 latency, throughput SLOs)
 
 ### Medium Term (Infrastructure & Polish, 3-4 weeks)
 1. Implement database migration strategy with version tracking

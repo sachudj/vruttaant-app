@@ -4,6 +4,7 @@ const { isDatabaseConnected } = require('../config/database');
 const { fetchNewsCards, translateStoryContent } = require('../services/newsIngestionService');
 const { getRecommendedCards: computeRecommendedCards } = require('../services/recommendationEngine');
 const { enrichCardsWithReadingTime, estimateReadingTime } = require('../services/readingTimeService');
+const { rewriteImageUrls } = require('../services/imageCdnService');
 const { AppError } = require('../middleware/errorHandler');
 const {
   TTL,
@@ -106,7 +107,7 @@ async function ingestNewsFromUrl(req, res, next) {
       persistedCount,
       dedupSkippedCount,
       dbStatus,
-      cardsPreview: parsedCards.cards.slice(0, 5)
+      cardsPreview: rewriteImageUrls(parsedCards.cards.slice(0, 5))
     });
   } catch (error) {
     return next(error);
@@ -233,6 +234,7 @@ async function getNewsCards(req, res, next) {
 
     // K.2: Add reading time estimates to each card
     enrichCardsWithReadingTime(items, true);
+    const responseCards = rewriteImageUrls(items);
 
     const responsePayload = {
       message: 'News cards fetched successfully.',
@@ -247,7 +249,7 @@ async function getNewsCards(req, res, next) {
         q: normalizedQuery || null,
         sort: effectiveSortLabel
       },
-      cards: items
+      cards: responseCards
     };
 
     await cacheSet(resolvedCacheKey, responsePayload, TTL.NEWS_CARDS);
@@ -367,6 +369,7 @@ async function getRecommendedCards(req, res, next) {
 
     // K.2: Add reading time estimates to each recommended card
     enrichCardsWithReadingTime(result.cards, true);
+    const responseCards = rewriteImageUrls(result.cards);
 
     const recPayload = {
       message: 'Recommended cards fetched successfully.',
@@ -379,7 +382,7 @@ async function getRecommendedCards(req, res, next) {
         language: language,
         personalized: req.user?.id ? 'yes' : 'no'
       },
-      cards: result.cards
+      cards: responseCards
     };
 
     await cacheSet(recCacheKey, recPayload, TTL.RECOMMENDED);

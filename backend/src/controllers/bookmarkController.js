@@ -1,5 +1,6 @@
 const Bookmark = require('../models/Bookmark');
 const { AppError } = require('../middleware/errorHandler');
+const { rewriteImageUrl } = require('../services/imageCdnService');
 
 /**
  * Create a bookmark for authenticated user
@@ -43,7 +44,7 @@ async function createBookmark(req, res, next) {
           url: bookmark.url,
           summary: bookmark.summary,
           category: bookmark.category,
-          imageUrl: bookmark.imageUrl,
+          imageUrl: rewriteImageUrl(bookmark.imageUrl),
           source: bookmark.source,
           language: bookmark.language,
           notes: bookmark.notes,
@@ -103,7 +104,7 @@ async function listBookmarks(req, res, next) {
           url: b.url,
           summary: b.summary,
           category: b.category,
-          imageUrl: b.imageUrl,
+          imageUrl: rewriteImageUrl(b.imageUrl),
           source: b.source,
           language: b.language,
           notes: b.notes,

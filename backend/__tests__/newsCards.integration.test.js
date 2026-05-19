@@ -28,7 +28,20 @@ const User = require('../src/models/User');
 const { isDatabaseConnected } = require('../src/config/database');
 const { app } = require('../src/index');
 
+function restoreEnvValue(name, value) {
+  if (value == null) {
+    delete process.env[name];
+    return;
+  }
+
+  process.env[name] = value;
+}
+
 describe('news cards integration', () => {
+  const originalImageCdnBaseUrl = process.env.IMAGE_CDN_BASE_URL;
+  const originalImageCdnWidth = process.env.IMAGE_CDN_DEFAULT_WIDTH;
+  const originalImageCdnQuality = process.env.IMAGE_CDN_DEFAULT_QUALITY;
+
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -41,6 +54,12 @@ describe('news cards integration', () => {
     NewsCard.countDocuments.mockResolvedValue(0);
     NewsCard.aggregate.mockResolvedValue([]);
     User.findById.mockReturnValue({ lean: jest.fn().mockResolvedValue(null) });
+  });
+
+  afterEach(() => {
+    restoreEnvValue('IMAGE_CDN_BASE_URL', originalImageCdnBaseUrl);
+    restoreEnvValue('IMAGE_CDN_DEFAULT_WIDTH', originalImageCdnWidth);
+    restoreEnvValue('IMAGE_CDN_DEFAULT_QUALITY', originalImageCdnQuality);
   });
 
   it('returns 400 for invalid query payload', async () => {
@@ -86,17 +105,23 @@ describe('news cards integration', () => {
   });
 
   it('returns paginated cards with normalized filters', async () => {
+    process.env.IMAGE_CDN_BASE_URL = 'https://cdn.example.com/fetch';
+    process.env.IMAGE_CDN_DEFAULT_WIDTH = '1200';
+    process.env.IMAGE_CDN_DEFAULT_QUALITY = '80';
+
     const mockItems = [
       {
         _id: '507f1f77bcf86cd799439011',
         title: 'Card 1',
         category: 'Business',
+        imageUrl: 'https://images.example.com/card-1.jpg',
         language: 'en'
       },
       {
         _id: '507f1f77bcf86cd799439012',
         title: 'Card 2',
         category: 'Business',
+        imageUrl: '',
         language: 'en'
       }
     ];
@@ -129,6 +154,10 @@ describe('news cards integration', () => {
       }
     });
     expect(response.body.cards).toHaveLength(2);
+    expect(response.body.cards[0].imageUrl).toBe(
+      'https://cdn.example.com/fetch?url=https%3A%2F%2Fimages.example.com%2Fcard-1.jpg&w=1200&q=80'
+    );
+    expect(response.body.cards[1].imageUrl).toBe('');
 
     expect(NewsCard.find).toHaveBeenCalledWith(
       {
