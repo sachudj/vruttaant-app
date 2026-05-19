@@ -6,9 +6,14 @@ const Bookmark = require('../models/Bookmark');
  * Scoring factors:
  *   - trendScore: raw Hacker News-style gravity score
  *   - categoryBoost: 2x multiplier if category is in user's preferences
+ *   - engagementBoost: 1.3x multiplier for user's most-engaged-with categories (by bookmarks)
  *   - diversityPenalty: reduces score if we've recently shown this category in the same session
  *   - bookmarkSignal: +0.5 boost if user has bookmarked similar articles in same category
  */
+
+// Configuration for engagement-driven boosting
+const ENGAGEMENT_BOOST_MULTIPLIER = 1.3; // Multiplier for top engaged categories
+const TOP_ENGAGED_CATEGORIES_COUNT = 3; // Number of top categories to consider as "engaged"
 
 /**
  * Fetch user's recent bookmarks grouped by category.
@@ -40,25 +45,51 @@ async function getUserCategoryBookmarkCounts(userId, limit = 50) {
 }
 
 /**
+ * Identify user's most-engaged categories based on bookmark history.
+ * Returns array of top N categories sorted by bookmark count (descending).
+ * Engagement-driven refinement: boost articles from categories user actively bookmarks.
+ *
+ * @param {Object} userBookmarkCounts - map of { category: bookmarkCount }
+ * @param {number} topN - number of top categories to return (default 3)
+ * @returns {Array<string>} top engaged categories, empty if no bookmarks
+ */
+function getEngagedCategories(userBookmarkCounts = {}, topN = TOP_ENGAGED_CATEGORIES_COUNT) {
+  const entries = Object.entries(userBookmarkCounts);
+  if (entries.length === 0) return [];
+
+  return entries
+    .sort((a, b) => b[1] - a[1]) // Sort by count descending
+    .slice(0, topN)
+    .map(([category]) => category);
+}
+
+/**
  * Compute recommendation score for a single card.
  *
  * @param {Object} card - NewsCard document
  * @param {Array<string>} userCategories - user's preferred category list
  * @param {Object} recentlyShownCategories - map of { category: count } from this session
  * @param {Object} userBookmarkCounts - map of { category: bookmarkCount }
+ * @param {Array<string>} engagedCategories - top categories by engagement (from bookmarks)
  * @returns {number} recommendation score (higher = more relevant)
  */
 function computeRecommendationScore(
   card,
   userCategories = [],
   recentlyShownCategories = {},
-  userBookmarkCounts = {}
+  userBookmarkCounts = {},
+  engagedCategories = []
 ) {
   let score = card.trendScore || 0;
 
   // Category preference boost: 2x multiplier
   const categoryBoost = userCategories.includes(card.category) ? 2.0 : 1.0;
   score *= categoryBoost;
+
+  // Engagement-driven boost: 1.3x for most-engaged categories
+  // This is separate from preference boost; reinforces what user actively bookmarks
+  const engagementBoost = engagedCategories.includes(card.category) ? ENGAGEMENT_BOOST_MULTIPLIER : 1.0;
+  score *= engagementBoost;
 
   // Diversity penalty: if we've shown this category recently, reduce score
   // Penalty grows with how many we've already shown: 0.8 per previous card of same category
@@ -76,7 +107,7 @@ function computeRecommendationScore(
 
 /**
  * Get recommended cards for a user (or anonymous visitor).
- * Blends trending + personalization + diversity + bookmark signals.
+ * Blends trending + personalization + diversity + bookmark signals + engagement-driven refinement.
  *
  * @param {Object} options
  *   - userId: optional user ID for personalization
@@ -110,6 +141,9 @@ async function getRecommendedCards(options = {}) {
     ? await getUserCategoryBookmarkCounts(userId)
     : {};
 
+  // Identify engaged categories for engagement-driven boosting (K.2 refinement)
+  const engagedCategories = getEngagedCategories(userBookmarkCounts);
+
   // Fetch candidate cards
   const [cards, total] = await Promise.all([
     NewsCard.find(filter)
@@ -125,7 +159,8 @@ async function getRecommendedCards(options = {}) {
       card,
       userCategories,
       recentlyShownCategories,
-      userBookmarkCounts
+      userBookmarkCounts,
+      engagedCategories
     )
   }));
 
@@ -156,5 +191,6 @@ async function getRecommendedCards(options = {}) {
 module.exports = {
   computeRecommendationScore,
   getRecommendedCards,
-  getUserCategoryBookmarkCounts
+  getUserCategoryBookmarkCounts,
+  getEngagedCategories
 };

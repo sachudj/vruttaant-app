@@ -1,7 +1,8 @@
 const {
   computeRecommendationScore,
   getRecommendedCards,
-  getUserCategoryBookmarkCounts
+  getUserCategoryBookmarkCounts,
+  getEngagedCategories
 } = require('../src/services/recommendationEngine');
 const NewsCard = require('../src/models/NewsCard');
 const Bookmark = require('../src/models/Bookmark');
@@ -80,6 +81,144 @@ describe('recommendationEngine', () => {
         { Tech: 2 }        // user has 2 bookmarks in Tech
       );
       expect(score).toBeCloseTo(1.8); // (1.0 * 2.0 * 0.8) + 0.2
+    });
+
+    it('applies 1.3x engagement boost for most-engaged categories (K.2)', () => {
+      const card = { trendScore: 1.0, category: 'Tech' };
+      // engagement boost only, no preferences
+      const score = computeRecommendationScore(
+        card,
+        [],               // no user preferences
+        {},
+        {},
+        ['Tech']          // Tech is in engaged categories
+      );
+      expect(score).toBeCloseTo(1.3); // 1.0 * 1.3
+    });
+
+    it('combines preference boost and engagement boost', () => {
+      const card = { trendScore: 1.0, category: 'Tech' };
+      // Preference boost (2x) AND engagement boost (1.3x)
+      const score = computeRecommendationScore(
+        card,
+        ['Tech'],         // user prefers Tech
+        {},
+        {},
+        ['Tech']          // user also actively bookmarks Tech
+      );
+      expect(score).toBeCloseTo(2.6); // 1.0 * 2.0 * 1.3
+    });
+
+    it('combines all factors including engagement boost', () => {
+      const card = { trendScore: 1.0, category: 'Tech' };
+      // Preference boost (2x) * engagement boost (1.3x) * diversity penalty (0.8) + bookmark signal (0.2)
+      const score = computeRecommendationScore(
+        card,
+        ['Tech'],         // user prefers Tech
+        { Tech: 1 },      // already shown 1 Tech card (penalty)
+        { Tech: 2 },      // user has 2 Tech bookmarks (signal)
+        ['Tech']          // user actively engages with Tech
+      );
+      expect(score).toBeCloseTo(2.28); // (1.0 * 2.0 * 1.3 * 0.8) + 0.2
+    });
+
+    it('does not apply engagement boost for non-engaged categories', () => {
+      const card = { trendScore: 1.0, category: 'Politics' };
+      // Tech is engaged, but card is Politics
+      const score = computeRecommendationScore(
+        card,
+        [],
+        {},
+        {},
+        ['Tech', 'Science']  // engaged categories exclude Politics
+      );
+      expect(score).toBe(1.0); // no boost applied
+    });
+
+    it('engagement boost stacks correctly with other factors', () => {
+      const card = { trendScore: 2.0, category: 'Tech' };
+      // Base 2.0 * preference 2x * engagement 1.3x * diversity 0.8 + bookmark 0.1
+      const score = computeRecommendationScore(
+        card,
+        ['Tech'],
+        { Tech: 1 },
+        { Tech: 1 },
+        ['Tech']
+      );
+      expect(score).toBeCloseTo(4.26); // (2.0 * 2.0 * 1.3 * 0.8) + 0.1
+    });
+  });
+
+  describe('getEngagedCategories', () => {
+    it('returns empty array when no bookmarks', () => {
+      const result = getEngagedCategories({});
+      expect(result).toEqual([]);
+    });
+
+    it('returns top 3 engaged categories sorted by count (default)', () => {
+      const bookmarkCounts = {
+        Tech: 15,
+        Science: 8,
+        Sports: 5,
+        Politics: 3,
+        Business: 1
+      };
+      const result = getEngagedCategories(bookmarkCounts);
+      expect(result).toEqual(['Tech', 'Science', 'Sports']);
+    });
+
+    it('returns all categories if fewer than topN', () => {
+      const bookmarkCounts = {
+        Tech: 10,
+        Science: 5
+      };
+      const result = getEngagedCategories(bookmarkCounts);
+      expect(result).toEqual(['Tech', 'Science']);
+    });
+
+    it('respects custom topN parameter', () => {
+      const bookmarkCounts = {
+        Tech: 15,
+        Science: 8,
+        Sports: 5,
+        Politics: 3
+      };
+      const result = getEngagedCategories(bookmarkCounts, 2);
+      expect(result).toEqual(['Tech', 'Science']);
+    });
+
+    it('handles topN=1 correctly', () => {
+      const bookmarkCounts = {
+        Tech: 15,
+        Science: 8,
+        Sports: 5
+      };
+      const result = getEngagedCategories(bookmarkCounts, 1);
+      expect(result).toEqual(['Tech']);
+    });
+
+    it('sorts by count descending', () => {
+      const bookmarkCounts = {
+        Sports: 2,
+        Tech: 10,
+        Science: 5
+      };
+      const result = getEngagedCategories(bookmarkCounts);
+      expect(result).toEqual(['Tech', 'Science', 'Sports']);
+    });
+
+    it('handles ties in bookmark counts', () => {
+      const bookmarkCounts = {
+        Tech: 10,
+        Science: 10,
+        Sports: 5
+      };
+      const result = getEngagedCategories(bookmarkCounts);
+      // Both Tech and Science have 10, order depends on object iteration
+      expect(result).toHaveLength(3);
+      expect(result).toContain('Tech');
+      expect(result).toContain('Science');
+      expect(result).toContain('Sports');
     });
   });
 
@@ -250,6 +389,59 @@ describe('recommendationEngine', () => {
       expect(result.cards[0]).not.toHaveProperty('recommendationScore');
       expect(result.cards[0]._id).toBe('1');
       expect(result.cards[0].title).toBe('Tech news');
+    });
+
+    it('applies engagement boost for user\'s most-bookmarked categories (K.2)', async () => {
+      const mockCards = [
+        { _id: '1', title: 'Tech news', category: 'Tech', trendScore: 1.0 },
+        { _id: '2', title: 'Science news', category: 'Science', trendScore: 1.0 }
+      ];
+      mockChain.lean.mockResolvedValue(mockCards);
+      NewsCard.countDocuments.mockResolvedValue(2);
+
+      // Mock user bookmarks: Tech has 5, Science has 2
+      Bookmark.find.mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue([
+          { newsCardId: { category: 'Tech' } },
+          { newsCardId: { category: 'Tech' } },
+          { newsCardId: { category: 'Tech' } },
+          { newsCardId: { category: 'Tech' } },
+          { newsCardId: { category: 'Tech' } },
+          { newsCardId: { category: 'Science' } },
+          { newsCardId: { category: 'Science' } }
+        ])
+      });
+
+      const result = await getRecommendedCards({
+        userId: 'user-1',
+        language: 'en'
+      });
+
+      // Tech should rank higher because it's the most-engaged category
+      // Tech: 1.0 * 1.3 (engagement boost) = 1.3
+      // Science: 1.0 (no engagement boost as it's not in top 3) = 1.0
+      expect(result.cards[0]._id).toBe('1'); // Tech ranks first
+      expect(result.cards[1]._id).toBe('2'); // Science ranks second
+    });
+
+    it('uses engagement-driven boosting only for authenticated users', async () => {
+      const mockCards = [
+        { _id: '1', title: 'Tech news', category: 'Tech', trendScore: 1.0 }
+      ];
+      mockChain.lean.mockResolvedValue(mockCards);
+      NewsCard.countDocuments.mockResolvedValue(1);
+
+      // No userId provided (anonymous user)
+      const result = await getRecommendedCards({
+        language: 'en'
+      });
+
+      expect(result.cards[0]._id).toBe('1');
+      // Bookmark.find should not be called for anonymous users
+      expect(Bookmark.find).not.toHaveBeenCalled();
     });
   });
 });

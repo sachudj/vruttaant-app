@@ -1,8 +1,8 @@
 # Project Status & Implementation Summary
 
-**Date**: May 18, 2026  
-**Version**: v0.3 (Active Development)  
-**Status**: ✅ Core Platform Complete (API hardening, auth, observability, data governance, feed intelligence, recommendations, analytics)
+**Date**: May 19, 2026  
+**Version**: v0.4 (Active Development)  
+**Status**: ✅ Core Platform Complete (API hardening, auth, observability, data governance, feed intelligence, recommendations, analytics, engagement-driven boosting)
 
 Detailed implementation sequencing and security hardening tasks are tracked in [ROADMAP.md](./ROADMAP.md).
 
@@ -137,13 +137,13 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 
 ## What's NOT Yet Implemented
 
-### ⏳ Track K: User Engagement Features
-- [ ] Engagement-driven recommendation refinement
-- [ ] Reading-time estimation on article cards
-- [ ] User activity history/reading feed feature
-- [ ] Engagement badges and achievement system
-- [ ] Digest email template generation and scheduling
-- [ ] User cohort segmentation for A/B testing
+### ✅ Track K: User Engagement Features (1/6 complete)
+- [x] K1. Engagement-driven recommendation refinement (boost articles from bookmarked categories)
+- [ ] K2. Reading-time estimation on article cards
+- [ ] K3. User activity history/reading feed feature
+- [ ] K4. Engagement badges and achievement system
+- [ ] K5. Digest email template generation and scheduling
+- [ ] K6. User cohort segmentation for A/B testing
 
 ### ⏳ Track L: Performance Optimization & Caching
 - [ ] Redis caching layer for trending cards and recommendations
@@ -209,7 +209,7 @@ db.newscards.countDocuments()
 ## Next Steps for Continuation
 
 ### Immediate (Track K - User Engagement, 1-2 weeks)
-1. Add engagement-driven recommendation refinement (boost articles from bookmarked categories)
+1. ✅ Add engagement-driven recommendation refinement (boost articles from bookmarked categories) — **DONE May 19**
 2. Add reading-time estimation on article cards and reader experience
 3. Add user activity history / reading feed feature
 4. Add engagement badges and achievement system (reader milestones)
