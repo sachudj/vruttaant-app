@@ -137,9 +137,9 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 
 ## What's NOT Yet Implemented
 
-### ✅ Track K: User Engagement Features (1/6 complete)
-- [x] K1. Engagement-driven recommendation refinement (boost articles from bookmarked categories)
-- [ ] K2. Reading-time estimation on article cards
+### ✅ Track K: User Engagement Features (2/6 complete)
+- [x] K1. Engagement-driven recommendation refinement (boost articles from bookmarked categories) — ✅ done May 19
+- [x] K2. Reading-time estimation on article cards — ✅ done May 19
 - [ ] K3. User activity history/reading feed feature
 - [ ] K4. Engagement badges and achievement system
 - [ ] K5. Digest email template generation and scheduling
