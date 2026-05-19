@@ -6,6 +6,7 @@ const {
   getSystemStats,
   sendAdminNotification
 } = require('../controllers/adminController');
+const { getCohortStats, getCohortUsers } = require('../controllers/cohortController');
 
 const router = express.Router();
 
@@ -20,5 +21,10 @@ router.get('/stats', getSystemStats);
 
 // POST /admin/notifications/send - Send manual notification
 router.post('/notifications/send', sendAdminNotification);
+
+// GET /admin/cohorts/stats - Cohort aggregate statistics
+router.get('/cohorts/stats', getCohortStats);
+// GET /admin/cohorts/:cohortId/users - Paginated users in a cohort
+router.get('/cohorts/:cohortId/users', getCohortUsers);
 
 module.exports = router;

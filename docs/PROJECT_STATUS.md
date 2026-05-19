@@ -137,13 +137,13 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 
 ## What's NOT Yet Implemented
 
-### ✅ Track K: User Engagement Features (5/6 complete)
+### ✅ Track K: User Engagement Features (6/6 complete — DONE)
 - [x] K1. Engagement-driven recommendation refinement (boost articles from bookmarked categories) — ✅ done May 19
 - [x] K2. Reading-time estimation on article cards — ✅ done May 19
 - [x] K3. User activity history/reading feed feature — ✅ done May 19
 - [x] K4. Engagement badges and achievement system — ✅ done May 19
 - [x] K5. Digest email template generation and scheduling — ✅ done May 19
-- [ ] K6. User cohort segmentation for A/B testing
+- [x] K6. User cohort segmentation for A/B testing — ✅ done May 19
 
 ### ⏳ Track L: Performance Optimization & Caching
 - [ ] Redis caching layer for trending cards and recommendations
@@ -227,13 +227,13 @@ Use this checklist for every track item before marking it done.
 
 ## Next Steps for Continuation
 
-### Immediate (Track K - User Engagement, 1-2 weeks)
+### ✅ Immediate (Track K - User Engagement, COMPLETE)
 1. ✅ Add engagement-driven recommendation refinement (boost articles from bookmarked categories) — **DONE May 19**
 2. ✅ Add reading-time estimation on article cards and reader experience — **DONE May 19**
-3. Add user activity history / reading feed feature
-4. Add engagement badges and achievement system (reader milestones)
-5. Add digest email template generation and scheduling (complementing push notifications)
-6. Add user cohort segmentation for A/B testing support
+3. ✅ Add user activity history / reading feed feature — **DONE May 19**
+4. ✅ Add engagement badges and achievement system (reader milestones) — **DONE May 19**
+5. ✅ Add digest email template generation and scheduling (complementing push notifications) — **DONE May 19**
+6. ✅ Add user cohort segmentation for A/B testing support — **DONE May 19**
 
 ### Short Term (Track L - Performance, 2-3 weeks)
 1. Add Redis caching layer for trending cards and personalized recommendations
