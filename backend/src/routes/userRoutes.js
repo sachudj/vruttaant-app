@@ -1,5 +1,5 @@
 const express = require('express');
-const { getProfile, updateProfile } = require('../controllers/userController');
+const { getProfile, updateProfile, getActivityHistory, getReadingFeed, getActivityStats } = require('../controllers/userController');
 const {
 	getNotificationPreferences,
 	updateNotificationPreferences,
@@ -40,5 +40,9 @@ router.delete(
 	validateNotificationDeviceId,
 	deleteNotificationDevice
 );
+
+router.get('/activity/history', getActivityHistory);
+router.get('/activity/reading-feed', getReadingFeed);
+router.get('/activity/stats', getActivityStats);
 
 module.exports = router;

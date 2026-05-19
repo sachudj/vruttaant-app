@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { AppError } = require('../middleware/errorHandler');
 const { normalizeToTaxonomy } = require('../constants/categories');
+const userActivityService = require('../services/userActivityService');
 
 async function getProfile(req, res, next) {
   try {
@@ -70,7 +71,99 @@ async function updateProfile(req, res, next) {
   }
 }
 
+async function getActivityHistory(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const { page, limit, eventType, language, category, startDate, endDate } = req.query;
+
+    const filters = {};
+    if (eventType) {
+      filters.eventType = eventType;
+    }
+    if (language) {
+      filters.language = language;
+    }
+    if (category) {
+      filters.category = category;
+    }
+    if (startDate) {
+      filters.startDate = startDate;
+    }
+    if (endDate) {
+      filters.endDate = endDate;
+    }
+
+    const result = await userActivityService.getUserActivityHistory(
+      userId,
+      page,
+      limit,
+      filters
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Activity history retrieved successfully.',
+      data: {
+        activities: result.activities,
+        pagination: {
+          page: result.page,
+          limit: result.limit,
+          totalCount: result.totalCount,
+          totalPages: result.totalPages,
+          hasMore: result.hasMore
+        }
+      },
+      statusCode: 200,
+      requestId: req.id
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function getReadingFeed(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const { limit } = req.query;
+
+    const readingEvents = await userActivityService.getReadingFeed(userId, limit);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Reading feed retrieved successfully.',
+      data: {
+        readingEvents
+      },
+      statusCode: 200,
+      requestId: req.id
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function getActivityStats(req, res, next) {
+  try {
+    const userId = req.user.id;
+
+    const stats = await userActivityService.getUserActivityStats(userId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Activity statistics retrieved successfully.',
+      data: stats,
+      statusCode: 200,
+      requestId: req.id
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   getProfile,
-  updateProfile
+  updateProfile,
+  getActivityHistory,
+  getReadingFeed,
+  getActivityStats
 };
