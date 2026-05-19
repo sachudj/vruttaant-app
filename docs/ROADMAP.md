@@ -251,7 +251,7 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 	- Changes: Extended the initial L2 slice by replacing badge metrics full-event loads with a single indexed aggregation, then added compound indexes for badge catalog ordering, user/admin cohort listings, and active device lookups used during cohort assignment. Documented repeatable `explain('executionStats')` checks for feed, recommendation, activity, and cohort query shapes.
 	- Validation: Focused badge/cohort tests passed (54/54), followed by full backend and mobile verification.
 	- Risk/Rollback: New indexes increase write amplification slightly on affected collections; rollback is limited to removing the added indexes and restoring the prior badge metrics query path.
-	- Commit: pending.
+	- Commit: `b481379`.
 - _May 19, 2026_: Completed L.3 image CDN integration for card artwork delivery.
 	- Changes: Added configurable CDN URL rewriting for `imageUrl` at the backend response boundary, covering news card listings, recommendations, ingest previews, and bookmark responses while keeping stored source URLs unchanged. Added `IMAGE_CDN_BASE_URL`/`IMAGE_CDN_URL_TEMPLATE` env hooks plus default width/quality controls.
 	- Validation: Focused backend Jest validation passed for `imageCdnService`, news cards integration, and bookmark controller coverage (37/37).
