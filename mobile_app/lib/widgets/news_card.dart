@@ -7,6 +7,7 @@ class NewsCard extends StatelessWidget {
     required this.summary,
     required this.imageUrl,
     this.source,
+    this.readingTime,
     this.isBookmarked = false,
     this.onBookmarkPressed,
     this.onSharePressed,
@@ -28,6 +29,7 @@ class NewsCard extends StatelessWidget {
   final String summary;
   final String imageUrl;
   final String? source;
+  final int? readingTime; // K.2: Reading time in minutes
   final bool isBookmarked;
   final VoidCallback? onBookmarkPressed;
   final VoidCallback? onSharePressed;
@@ -181,6 +183,36 @@ class NewsCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (readingTime != null && readingTime! > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.schedule,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$readingTime min read',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       if ((translationErrorLabel ?? '').trim().isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(

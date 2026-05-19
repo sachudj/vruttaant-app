@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { isDatabaseConnected } = require('../config/database');
 const { fetchNewsCards, translateStoryContent } = require('../services/newsIngestionService');
 const { getRecommendedCards: computeRecommendedCards } = require('../services/recommendationEngine');
+const { enrichCardsWithReadingTime, estimateReadingTime } = require('../services/readingTimeService');
 const { AppError } = require('../middleware/errorHandler');
 
 function escapeRegex(value) {
@@ -198,6 +199,9 @@ async function getNewsCards(req, res, next) {
     const effectiveSortLabel = useRelevanceSort ? 'relevance' : useTrendingSort ? 'trending' : 'latest';
     const totalPages = Math.max(Math.ceil(total / parsedLimit), 1);
 
+    // K.2: Add reading time estimates to each card
+    enrichCardsWithReadingTime(items, true);
+
     return res.status(200).json({
       message: 'News cards fetched successfully.',
       page: parsedPage,
@@ -235,6 +239,9 @@ async function translateNewsStory(req, res, next) {
       targetLanguage
     );
 
+    // K.2: Add reading time estimate to translated story
+    const readingTime = estimateReadingTime(translation.title, translation.summary, '');
+
     return res.status(200).json({
       message: translation.translated
         ? 'Story translated successfully.'
@@ -248,6 +255,7 @@ async function translateNewsStory(req, res, next) {
         language: translation.language,
         sourceLanguage: translation.sourceLanguage,
         targetLanguage: translation.targetLanguage,
+        readingTime,
         fallbackReason: translation.fallbackReason || null
       }
     });
@@ -307,6 +315,9 @@ async function getRecommendedCards(req, res, next) {
       limit: parsedLimit,
       recentlyShownCategories
     });
+
+    // K.2: Add reading time estimates to each recommended card
+    enrichCardsWithReadingTime(result.cards, true);
 
     return res.status(200).json({
       message: 'Recommended cards fetched successfully.',

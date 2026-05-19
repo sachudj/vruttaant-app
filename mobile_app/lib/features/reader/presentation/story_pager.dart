@@ -67,6 +67,7 @@ class _StoryPagerState extends State<StoryPager> {
           summary: _displaySummary,
           imageUrl: widget.news.imageUrl,
           source: widget.news.source,
+          readingTime: widget.news.readingTime,
           isBookmarked: widget.isBookmarked,
           onBookmarkPressed: widget.onBookmarkPressed,
           onSharePressed: _shareStory,

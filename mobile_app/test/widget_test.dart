@@ -171,6 +171,7 @@ void main() {
           summary: 'Original story summary.',
           imageUrl: 'https://example.com/one.jpg',
           source: 'Source One',
+          readingTime: 3,
           isTranslated: false,
           isTranslating: false,
           onTranslatePressed: () {
@@ -197,6 +198,7 @@ void main() {
           summary: 'अनुवादित सारांश',
           imageUrl: 'https://example.com/one.jpg',
           source: 'Source One',
+          readingTime: 3,
           isTranslated: true,
           isTranslating: false,
         ),

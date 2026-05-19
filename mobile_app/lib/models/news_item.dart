@@ -8,6 +8,7 @@ class NewsItem {
     required this.category,
     this.url,
     this.language,
+    this.readingTime,
   });
 
   final String? id;
@@ -18,9 +19,12 @@ class NewsItem {
   final String category;
   final String? url;
   final String? language;
+  final int? readingTime; // K.2: Reading time in minutes
 
   String get originalUrl => (url ?? '').trim();
   String get analyticsCardId => (id ?? '').trim();
+  String get readingTimeLabel =>
+      readingTime != null ? '$readingTime min read' : '';
 
   factory NewsItem.fromJson(Map<String, dynamic> json) {
     return NewsItem(
@@ -44,6 +48,7 @@ class NewsItem {
           : 'General',
       url: json['url'] as String?,
       language: json['language'] as String?,
+      readingTime: json['readingTime'] as int?,
     );
   }
 
@@ -57,6 +62,7 @@ class NewsItem {
       'category': category,
       'url': url,
       'language': language,
+      'readingTime': readingTime,
     };
   }
 }
