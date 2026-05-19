@@ -194,6 +194,25 @@ db.newscards.countDocuments()
 # Expected: Returns number of scraped articles
 ```
 
+## Step Completion Checklist (Operational)
+
+Use this checklist for every track item before marking it done.
+
+- [ ] Step scope frozen (ID, behavior, out-of-scope explicitly listed)
+- [ ] Code implemented and reviewed locally
+- [ ] Tests updated (unit/integration/widget as applicable)
+- [ ] Validation passed
+  - [ ] Backend: `npm run lint` and `npm test`
+  - [ ] Mobile: `flutter analyze` and `flutter test`
+- [ ] Documentation synced
+  - [ ] [docs/ROADMAP.md](docs/ROADMAP.md): checkbox + session note + commit hash
+  - [ ] [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md): progress counters and next steps
+  - [ ] Related docs updated if contracts changed (API/backend/mobile/deployment)
+- [ ] Commit and push completed with step ID in commit title
+- [ ] CI checks passed on pushed commit
+- [ ] Smoke checks passed for affected user flows
+- [ ] Follow-up tasks captured (if anything intentionally deferred)
+
 ---
 
 ## Current Limitations
@@ -210,7 +229,7 @@ db.newscards.countDocuments()
 
 ### Immediate (Track K - User Engagement, 1-2 weeks)
 1. ✅ Add engagement-driven recommendation refinement (boost articles from bookmarked categories) — **DONE May 19**
-2. Add reading-time estimation on article cards and reader experience
+2. ✅ Add reading-time estimation on article cards and reader experience — **DONE May 19**
 3. Add user activity history / reading feed feature
 4. Add engagement badges and achievement system (reader milestones)
 5. Add digest email template generation and scheduling (complementing push notifications)

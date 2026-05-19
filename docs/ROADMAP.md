@@ -28,6 +28,38 @@ Tracks A-J completed. Detailed session notes are below. Next phase: Tracks K (Us
 - [x] API docs updated for any request/response changes
 - [x] Session Notes updated with completed items and commit hash
 
+### Step Completion Checklist (Per Item)
+
+Use this checklist for every roadmap item (for example: K3, K4, L1).
+
+- [ ] Scope confirmed (single step ID and acceptance criteria documented)
+- [ ] Implementation complete (backend/mobile/docs code changes done)
+- [ ] Tests added or updated for new behavior
+- [ ] Local verification passed
+	- [ ] Backend: lint + tests + coverage gates
+	- [ ] Mobile: analyze + tests
+- [ ] API contract reviewed (request/response shape, validation, error envelope)
+- [ ] Documentation updated in same cycle
+	- [ ] `docs/ROADMAP.md` step checkbox and session note
+	- [ ] `docs/PROJECT_STATUS.md` progress and next-steps updates
+	- [ ] Any impacted domain docs (API, backend, mobile, deployment, alerting)
+- [ ] Commit and push complete
+	- [ ] Commit message references step ID (for example: `K.3:`)
+	- [ ] Commit hash copied into session note
+	- [ ] Pushed to `main` after checks pass
+- [ ] Rollback and risk note captured (what could fail and how to revert quickly)
+- [ ] Post-deploy sanity checks completed (health + core flow smoke test)
+
+### Session Note Template (Copy/Paste)
+
+```
+- _YYYY-MM-DD_: Completed <STEP_ID> <step title>. 
+	- Changes: <key implementation points>
+	- Validation: <tests/analyze/lint/coverage summary>
+	- Risk/Rollback: <brief note>
+	- Commit: `<short_hash>`
+```
+
 ## How We Will Use This File
 
 1. Pick 1-2 unchecked items per session.
