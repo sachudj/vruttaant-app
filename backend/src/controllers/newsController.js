@@ -5,6 +5,14 @@ const { fetchNewsCards, translateStoryContent } = require('../services/newsInges
 const { getRecommendedCards: computeRecommendedCards } = require('../services/recommendationEngine');
 const { enrichCardsWithReadingTime, estimateReadingTime } = require('../services/readingTimeService');
 const { AppError } = require('../middleware/errorHandler');
+const {
+  TTL,
+  cacheGet,
+  cacheSet,
+  cacheInvalidatePattern,
+  buildCardsKey,
+  buildRecommendedKey
+} = require('../services/cacheService');
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -76,6 +84,16 @@ async function ingestNewsFromUrl(req, res, next) {
       persistedCount = (writeResult.upsertedCount || 0) + (writeResult.modifiedCount || 0);
       dedupSkippedCount = parsedCards.cards.length - deduplicatedCards.length;
       dbStatus = 'saved';
+
+      // Invalidate cached card listings so next reads reflect new content
+      if (persistedCount > 0) {
+        await Promise.all([
+          cacheInvalidatePattern('news:cards:*'),
+          cacheInvalidatePattern('news:recommended:*'),
+          cacheInvalidatePattern('analytics:trending:*'),
+          cacheInvalidatePattern('analytics:categories:*')
+        ]);
+      }
     } else if (persist && !isDatabaseConnected()) {
       dbStatus = 'not-connected';
     }
@@ -136,6 +154,7 @@ async function getNewsCards(req, res, next) {
     const normalizedSort = String(sort || 'latest').trim().toLowerCase();
     const useRelevanceSort = normalizedSort === 'relevance' && Boolean(normalizedQuery);
     const useTrendingSort = normalizedSort === 'trending';
+    const effectiveSortLabel = useRelevanceSort ? 'relevance' : useTrendingSort ? 'trending' : 'latest';
 
     // Resolve optional user preferences for personalization
     let userCategories = [];
@@ -149,6 +168,21 @@ async function getNewsCards(req, res, next) {
     }
 
     const applyPersonalization = useTrendingSort && userCategories.length > 0;
+
+    const resolvedCacheKey = buildCardsKey({
+      language: filter.language,
+      category: category ? String(category).trim() : '',
+      q: normalizedQuery,
+      sort: effectiveSortLabel,
+      page: parsedPage,
+      limit: parsedLimit,
+      userId: applyPersonalization ? req.user.id : undefined
+    });
+
+    const cached = await cacheGet(resolvedCacheKey);
+    if (cached) {
+      return res.status(200).json(cached);
+    }
 
     let items;
     let total;
@@ -195,14 +229,12 @@ async function getNewsCards(req, res, next) {
         NewsCard.countDocuments(filter)
       ]);
     }
-
-    const effectiveSortLabel = useRelevanceSort ? 'relevance' : useTrendingSort ? 'trending' : 'latest';
     const totalPages = Math.max(Math.ceil(total / parsedLimit), 1);
 
     // K.2: Add reading time estimates to each card
     enrichCardsWithReadingTime(items, true);
 
-    return res.status(200).json({
+    const responsePayload = {
       message: 'News cards fetched successfully.',
       page: parsedPage,
       limit: parsedLimit,
@@ -216,7 +248,11 @@ async function getNewsCards(req, res, next) {
         sort: effectiveSortLabel
       },
       cards: items
-    });
+    };
+
+    await cacheSet(resolvedCacheKey, responsePayload, TTL.NEWS_CARDS);
+
+    return res.status(200).json(responsePayload);
   } catch (error) {
     return next(error);
   }
@@ -307,6 +343,19 @@ async function getRecommendedCards(req, res, next) {
       }
     }
 
+    // Cache lookup before hitting DB
+    const recCacheKey = buildRecommendedKey({
+      userId: req.user?.id,
+      language: String(language || 'en').trim().toLowerCase(),
+      page: parsedPage,
+      limit: parsedLimit,
+      diversityState: recentlyShownParam || 'none'
+    });
+    const cachedRec = await cacheGet(recCacheKey);
+    if (cachedRec) {
+      return res.status(200).json(cachedRec);
+    }
+
     const result = await computeRecommendedCards({
       userId: req.user?.id,
       userCategories,
@@ -319,7 +368,7 @@ async function getRecommendedCards(req, res, next) {
     // K.2: Add reading time estimates to each recommended card
     enrichCardsWithReadingTime(result.cards, true);
 
-    return res.status(200).json({
+    const recPayload = {
       message: 'Recommended cards fetched successfully.',
       page: result.page,
       limit: result.limit,
@@ -331,7 +380,11 @@ async function getRecommendedCards(req, res, next) {
         personalized: req.user?.id ? 'yes' : 'no'
       },
       cards: result.cards
-    });
+    };
+
+    await cacheSet(recCacheKey, recPayload, TTL.RECOMMENDED);
+
+    return res.status(200).json(recPayload);
   } catch (error) {
     return next(error);
   }

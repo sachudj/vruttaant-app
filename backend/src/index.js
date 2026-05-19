@@ -25,6 +25,7 @@ const { startTrendScoreJob, stopTrendScoreJob } = require('./jobs/trendScoreJob'
 const { runMigrations } = require('./migrations/runner');
 const { eventCaptureMiddleware } = require('./middleware/eventCapture');
 const { initializeBadgeDefinitions } = require('./services/badgeService');
+const { connectRedis, closeRedis, isRedisConnected } = require('./config/redis');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -109,6 +110,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     service: 'vruttaant-backend',
     databaseConnected: isDatabaseConnected(),
+    cacheConnected: isRedisConnected(),
     timestamp: new Date().toISOString()
   });
 });
@@ -159,6 +161,8 @@ async function bootstrap() {
     console.log('[observability] External error tracking disabled (missing SENTRY_DSN).');
   }
 
+  connectRedis();
+
   const databaseConnected = await connectDatabase();
   if (databaseConnected) {
     await runMigrations();
@@ -178,6 +182,7 @@ async function bootstrap() {
     closeDatabase: async () => {
       stopNewsSyncJob();
       stopTrendScoreJob();
+      await closeRedis();
       if (mongoose.connection.readyState === 1) {
         await mongoose.connection.close();
       }

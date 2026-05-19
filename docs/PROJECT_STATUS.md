@@ -146,7 +146,7 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] K6. User cohort segmentation for A/B testing — ✅ done May 19
 
 ### ⏳ Track L: Performance Optimization & Caching
-- [ ] Redis caching layer for trending cards and recommendations
+- [x] Redis caching layer for trending cards and recommendations
 - [ ] Database query optimization (indexing strategy review)
 - [ ] Image CDN integration for card artwork
 - [ ] API response compression (gzip)
@@ -168,7 +168,7 @@ Run these to confirm everything is working:
 ```bash
 # 1. Start infrastructure
 cd backend && npm run infra:up
-# Expected: MongoDB container starts
+# Expected: MongoDB and Redis containers start
 
 # 2. Start backend
 npm start
@@ -176,7 +176,7 @@ npm start
 
 # 3. Check health
 curl http://localhost:5001/health
-# Expected: {"status":"ok","service":"vruttaant-backend","databaseConnected":true,...}
+# Expected: {"status":"ok","service":"vruttaant-backend","databaseConnected":true,"cacheConnected":true,...}
 
 # 4. Test ingestion
 curl -X POST http://localhost:5001/api/news/ingest \
@@ -219,7 +219,7 @@ Use this checklist for every track item before marking it done.
 
 1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` accepts one source URL per request (batch ingestion is not yet implemented).
 2. **Localization Scope**: Core feed/settings/auth/bookmarks/reader/analytics surfaces are localized (`en`/`hi`), but secondary UI polish and backend message translations are still pending.
-3. **Redis Caching**: Trending cards and recommendations currently use database queries directly; Redis caching layer is planned for Track L.
+3. **Redis Coverage**: Redis now caches `/api/v1/news/cards`, `/api/v1/news/recommended`, `/api/v1/analytics/trending`, and `/api/v1/analytics/categories`, but write-through invalidation is currently limited to ingest-driven content changes.
 4. **Load Testing Trend History**: Baseline load testing and CI regression gate exist, but cross-environment trend history and telemetry dashboard are still pending.
 5. **Database Migrations**: Schema versioning and migration strategy are not yet implemented (critical for production deployments).
 
@@ -236,12 +236,11 @@ Use this checklist for every track item before marking it done.
 6. ✅ Add user cohort segmentation for A/B testing support — **DONE May 19**
 
 ### Short Term (Track L - Performance, 2-3 weeks)
-1. Add Redis caching layer for trending cards and personalized recommendations
-2. Review and optimize database queries (indexing strategy, execution plans)
-3. Integrate CDN for card artwork delivery
-4. Add API response compression (gzip)
-5. Optimize mobile app bundle (lazy loading, tree shaking verification)
-6. Establish comprehensive load testing with regression gates (p95 latency, throughput SLOs)
+1. Review and optimize database queries (indexing strategy, execution plans)
+2. Integrate CDN for card artwork delivery
+3. Add API response compression (gzip)
+4. Optimize mobile app bundle (lazy loading, tree shaking verification)
+5. Establish comprehensive load testing with regression gates (p95 latency, throughput SLOs)
 
 ### Medium Term (Infrastructure & Polish, 3-4 weeks)
 1. Implement database migration strategy with version tracking

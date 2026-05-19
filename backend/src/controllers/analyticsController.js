@@ -6,6 +6,13 @@ const {
   getTopCategories
 } = require('../services/analyticsService');
 const { isDatabaseConnected } = require('../health/readiness');
+const {
+  TTL,
+  cacheGet,
+  cacheSet,
+  buildTrendingKey,
+  buildCategoriesKey
+} = require('../services/cacheService');
 
 /**
  * POST /api/v1/analytics/events
@@ -87,14 +94,30 @@ const getTrendingCards = async (req, res, next) => {
       limit: limit ? Math.min(Number(limit), 50) : 20
     };
 
+    const trendingKey = buildTrendingKey({ limit: options.limit });
+    // Only cache when no date filters are applied (generic trending list)
+    const useTrendingCache = !startDate && !endDate && !category;
+    if (useTrendingCache) {
+      const cached = await cacheGet(trendingKey);
+      if (cached) {
+        return res.status(200).json(cached);
+      }
+    }
+
     const trending = await getTrendingContent(options);
 
-    res.status(200).json({
+    const trendingPayload = {
       success: true,
       message: 'Trending content retrieved successfully.',
       trending,
       count: trending.length
-    });
+    };
+
+    if (useTrendingCache) {
+      await cacheSet(trendingKey, trendingPayload, TTL.ANALYTICS_TRENDING);
+    }
+
+    res.status(200).json(trendingPayload);
   } catch (err) {
     next(err);
   }
@@ -122,14 +145,29 @@ const getTopCategoriesMetrics = async (req, res, next) => {
       limit: limit ? Math.min(Number(limit), 50) : 10
     };
 
+    const categoriesKey = buildCategoriesKey({ limit: options.limit });
+    const useCategoriesCache = !startDate && !endDate;
+    if (useCategoriesCache) {
+      const cached = await cacheGet(categoriesKey);
+      if (cached) {
+        return res.status(200).json(cached);
+      }
+    }
+
     const categories = await getTopCategories(options);
 
-    res.status(200).json({
+    const categoriesPayload = {
       success: true,
       message: 'Top categories retrieved successfully.',
       categories,
       count: categories.length
-    });
+    };
+
+    if (useCategoriesCache) {
+      await cacheSet(categoriesKey, categoriesPayload, TTL.ANALYTICS_CATEGORIES);
+    }
+
+    res.status(200).json(categoriesPayload);
   } catch (err) {
     next(err);
   }
