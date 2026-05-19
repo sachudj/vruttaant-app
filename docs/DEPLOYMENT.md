@@ -27,6 +27,15 @@ Required production/staging variables:
 5. `JWT_REFRESH_SECRET`
 6. `SENTRY_DSN` (recommended)
 7. `APP_VERSION`
+8. `IMAGE_CDN_BASE_URL` or `IMAGE_CDN_URL_TEMPLATE` (recommended for optimized artwork delivery)
+9. `IMAGE_CDN_DEFAULT_WIDTH` (recommended, for example `1200`)
+10. `IMAGE_CDN_DEFAULT_QUALITY` (recommended, for example `80`)
+
+Image delivery notes:
+
+1. Use `IMAGE_CDN_BASE_URL` when your CDN exposes a fetch endpoint that accepts a source `url` query parameter.
+2. Use `IMAGE_CDN_URL_TEMPLATE` when your provider needs a path or signed-template format, with `{url}`, `{width}`, and `{quality}` placeholders.
+3. If neither variable is set, the backend serves original source image URLs without CDN rewriting.
 
 ## Mobile Environment Profiles
 
