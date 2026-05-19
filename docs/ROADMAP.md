@@ -251,4 +251,4 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 	- Changes: Added configurable CDN URL rewriting for `imageUrl` at the backend response boundary, covering news card listings, recommendations, ingest previews, and bookmark responses while keeping stored source URLs unchanged. Added `IMAGE_CDN_BASE_URL`/`IMAGE_CDN_URL_TEMPLATE` env hooks plus default width/quality controls.
 	- Validation: Focused backend Jest validation passed for `imageCdnService`, news cards integration, and bookmark controller coverage (37/37).
 	- Risk/Rollback: Misconfigured CDN envs will fall back to original source URLs or malformed CDN URLs in responses only; rollback is isolated to response-layer rewrite logic.
-	- Commit: pending.
+	- Commit: `4e55af7`.
