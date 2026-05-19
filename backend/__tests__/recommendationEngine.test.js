@@ -225,7 +225,7 @@ describe('recommendationEngine', () => {
   describe('getUserCategoryBookmarkCounts', () => {
     it('returns empty map when user has no bookmarks', async () => {
       Bookmark.find.mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
         sort: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
         lean: jest.fn().mockResolvedValue([])
@@ -237,12 +237,12 @@ describe('recommendationEngine', () => {
 
     it('counts bookmarks by category', async () => {
       const mockBookmarks = [
-        { newsCardId: { category: 'Tech' } },
-        { newsCardId: { category: 'Tech' } },
-        { newsCardId: { category: 'Science' } }
+        { category: 'Tech' },
+        { category: 'Tech' },
+        { category: 'Science' }
       ];
       Bookmark.find.mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
         sort: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
         lean: jest.fn().mockResolvedValue(mockBookmarks)
@@ -252,14 +252,14 @@ describe('recommendationEngine', () => {
       expect(result).toEqual({ Tech: 2, Science: 1 });
     });
 
-    it('handles bookmarks with null newsCardId gracefully', async () => {
+    it('handles bookmarks with missing categories gracefully', async () => {
       const mockBookmarks = [
-        { newsCardId: { category: 'Tech' } },
-        { newsCardId: null },
-        { newsCardId: { category: 'Science' } }
+        { category: 'Tech' },
+        {},
+        { category: 'Science' }
       ];
       Bookmark.find.mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
         sort: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
         lean: jest.fn().mockResolvedValue(mockBookmarks)
@@ -271,7 +271,7 @@ describe('recommendationEngine', () => {
 
     it('returns empty map on database error (non-critical)', async () => {
       Bookmark.find.mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
         sort: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
         lean: jest.fn().mockRejectedValue(new Error('DB error'))
@@ -284,16 +284,20 @@ describe('recommendationEngine', () => {
 
   describe('getRecommendedCards', () => {
     const mockChain = {
+      sort: jest.fn(),
+      limit: jest.fn(),
       select: jest.fn(),
       lean: jest.fn()
     };
 
     beforeEach(() => {
+      mockChain.sort.mockReturnValue(mockChain);
+      mockChain.limit.mockReturnValue(mockChain);
       mockChain.select.mockReturnValue(mockChain);
       NewsCard.find.mockReturnValue(mockChain);
       NewsCard.countDocuments.mockResolvedValue(0);
       Bookmark.find.mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
         sort: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
         lean: jest.fn().mockResolvedValue([])
@@ -401,17 +405,17 @@ describe('recommendationEngine', () => {
 
       // Mock user bookmarks: Tech has 5, Science has 2
       Bookmark.find.mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
         sort: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
         lean: jest.fn().mockResolvedValue([
-          { newsCardId: { category: 'Tech' } },
-          { newsCardId: { category: 'Tech' } },
-          { newsCardId: { category: 'Tech' } },
-          { newsCardId: { category: 'Tech' } },
-          { newsCardId: { category: 'Tech' } },
-          { newsCardId: { category: 'Science' } },
-          { newsCardId: { category: 'Science' } }
+          { category: 'Tech' },
+          { category: 'Tech' },
+          { category: 'Tech' },
+          { category: 'Tech' },
+          { category: 'Tech' },
+          { category: 'Science' },
+          { category: 'Science' }
         ])
       });
 
@@ -442,6 +446,20 @@ describe('recommendationEngine', () => {
       expect(result.cards[0]._id).toBe('1');
       // Bookmark.find should not be called for anonymous users
       expect(Bookmark.find).not.toHaveBeenCalled();
+    });
+
+    it('limits the candidate query using trend score ordering', async () => {
+      mockChain.lean.mockResolvedValue([]);
+      NewsCard.countDocuments.mockResolvedValue(0);
+
+      await getRecommendedCards({
+        language: 'en',
+        page: 2,
+        limit: 20
+      });
+
+      expect(mockChain.sort).toHaveBeenCalledWith({ trendScore: -1, scrapedAt: -1 });
+      expect(mockChain.limit).toHaveBeenCalledWith(200);
     });
   });
 });

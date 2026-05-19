@@ -14,6 +14,9 @@ const Bookmark = require('../models/Bookmark');
 // Configuration for engagement-driven boosting
 const ENGAGEMENT_BOOST_MULTIPLIER = 1.3; // Multiplier for top engaged categories
 const TOP_ENGAGED_CATEGORIES_COUNT = 3; // Number of top categories to consider as "engaged"
+const RECOMMENDATION_CANDIDATE_MULTIPLIER = 5;
+const RECOMMENDATION_CANDIDATE_MIN = 100;
+const RECOMMENDATION_CANDIDATE_MAX = 2000;
 
 /**
  * Fetch user's recent bookmarks grouped by category.
@@ -24,21 +27,21 @@ async function getUserCategoryBookmarkCounts(userId, limit = 50) {
 
   try {
     const bookmarks = await Bookmark.find({ userId })
-      .populate('newsCardId', 'category')
-      .sort({ createdAt: -1 })
+      .select('category')
+      .sort({ addedAt: -1 })
       .limit(limit)
       .lean();
 
     const counts = {};
     bookmarks.forEach((bm) => {
-      if (bm.newsCardId?.category) {
-        const cat = bm.newsCardId.category;
+      if (bm.category) {
+        const cat = bm.category;
         counts[cat] = (counts[cat] || 0) + 1;
       }
     });
 
     return counts;
-  } catch (err) {
+  } catch {
     // Non-critical; continue without bookmark signal
     return {};
   }
@@ -136,6 +139,11 @@ async function getRecommendedCards(options = {}) {
     scrapedAt: { $gte: cutoff }
   };
 
+  const candidateLimit = Math.min(
+    Math.max(page * limit * RECOMMENDATION_CANDIDATE_MULTIPLIER, RECOMMENDATION_CANDIDATE_MIN),
+    RECOMMENDATION_CANDIDATE_MAX
+  );
+
   // Get recent bookmarks if user is authenticated
   const userBookmarkCounts = userId
     ? await getUserCategoryBookmarkCounts(userId)
@@ -147,6 +155,8 @@ async function getRecommendedCards(options = {}) {
   // Fetch candidate cards
   const [cards, total] = await Promise.all([
     NewsCard.find(filter)
+      .sort({ trendScore: -1, scrapedAt: -1 })
+      .limit(candidateLimit)
       .select('_id title summary category trendScore url imageUrl source publishedAt scrapedAt')
       .lean(),
     NewsCard.countDocuments(filter)
@@ -171,9 +181,10 @@ async function getRecommendedCards(options = {}) {
   const paginatedCards = scored.slice(skip, skip + limit);
 
   // Strip scoring metadata from response
-  const cleanedCards = paginatedCards.map((c) => {
-    const { recommendationScore, ...rest } = c;
-    return rest;
+  const cleanedCards = paginatedCards.map((card) => {
+    const cleanedCard = { ...card };
+    delete cleanedCard.recommendationScore;
+    return cleanedCard;
   });
 
   const totalPages = Math.max(Math.ceil(total / limit), 1);

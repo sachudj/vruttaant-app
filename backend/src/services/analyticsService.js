@@ -1,25 +1,30 @@
 const UserActivityEvent = require('../models/UserActivityEvent');
 const logger = require('../observability/logger');
 
+function buildEventDateRange(startDate, endDate) {
+  return {
+    $gte: startDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    $lte: endDate || new Date()
+  };
+}
+
 /**
  * Get trending content by view count over a time period
  */
 const getTrendingContent = async (options = {}) => {
   const { startDate, endDate, category, limit = 10 } = options;
 
+  const match = {
+    eventType: 'view',
+    eventAt: buildEventDateRange(startDate, endDate)
+  };
+
+  if (category) {
+    match['cardMetadata.category'] = category;
+  }
+
   const pipeline = [
-    // Filter by date range
-    {
-      $match: {
-        eventType: 'view',
-        eventAt: {
-          $gte: startDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Default: last 7 days
-          $lte: endDate || new Date()
-        }
-      }
-    },
-    // Filter by category if provided
-    ...(category ? [{ $match: { 'cardMetadata.category': category } }] : []),
+    { $match: match },
     // Group by card
     {
       $group: {
@@ -161,16 +166,13 @@ const getUserEngagementSummary = async (userId) => {
 const getTopCategories = async (options = {}) => {
   const { startDate, endDate, limit = 10 } = options;
 
+  const match = {
+    'cardMetadata.category': { $exists: true, $ne: null },
+    eventAt: buildEventDateRange(startDate, endDate)
+  };
+
   const pipeline = [
-    {
-      $match: {
-        'cardMetadata.category': { $exists: true, $ne: null },
-        eventAt: {
-          $gte: startDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          $lte: endDate || new Date()
-        }
-      }
-    },
+    { $match: match },
     {
       $group: {
         _id: '$cardMetadata.category',

@@ -66,5 +66,6 @@ const bookmarkSchema = new mongoose.Schema(
 
 // Compound index to ensure user can't bookmark same article twice
 bookmarkSchema.index({ userId: 1, url: 1 }, { unique: true });
+bookmarkSchema.index({ userId: 1, addedAt: -1 });
 
 module.exports = mongoose.model('Bookmark', bookmarkSchema);

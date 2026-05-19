@@ -75,9 +75,12 @@ const eventSchema = new mongoose.Schema(
 
 // Compound indexes for efficient queries
 eventSchema.index({ userId: 1, eventAt: -1 });
+eventSchema.index({ userId: 1, eventType: 1, eventAt: -1 });
 eventSchema.index({ newsCardId: 1, eventAt: -1 });
+eventSchema.index({ newsCardId: 1, eventType: 1, eventAt: -1 });
 eventSchema.index({ eventType: 1, eventAt: -1 });
 eventSchema.index({ 'cardMetadata.category': 1, eventAt: -1 });
+eventSchema.index({ eventType: 1, 'cardMetadata.category': 1, eventAt: -1 });
 eventSchema.index({ sessionId: 1, eventAt: -1 }, { sparse: true });
 
 // TTL index: auto-delete events older than 90 days
