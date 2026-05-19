@@ -5,6 +5,7 @@ const userRoutes = require('./userRoutes');
 const bookmarkRoutes = require('./bookmarkRoutes');
 const adminRoutes = require('./adminRoutes');
 const analyticsRoutes = require('./analyticsRoutes');
+const badgeRoutes = require('./badgeRoutes');
 
 const apiRouter = express.Router();
 
@@ -15,6 +16,7 @@ apiRouter.use('/v1/user', userRoutes);
 apiRouter.use('/v1/user/bookmarks', bookmarkRoutes);
 apiRouter.use('/v1/admin', adminRoutes);
 apiRouter.use('/v1/analytics', analyticsRoutes);
+apiRouter.use('/v1/badges', badgeRoutes);
 
 // Backwards compatibility: also mount at non-versioned path (deprecated)
 apiRouter.use('/news', (req, res, next) => {

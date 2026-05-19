@@ -7,6 +7,13 @@ const {
 	listNotificationDevices,
 	deleteNotificationDevice
 } = require('../controllers/notificationController');
+const {
+	getUserBadges,
+	getBadgeProgress,
+	markBadgeViewed,
+	evaluateUserBadges,
+	getEngagementMetrics
+} = require('../controllers/badgeController');
 const { validateProfileUpdate } = require('../validation/userValidators');
 const {
 	validateNotificationPreferencesUpdate,
@@ -44,5 +51,11 @@ router.delete(
 router.get('/activity/history', getActivityHistory);
 router.get('/activity/reading-feed', getReadingFeed);
 router.get('/activity/stats', getActivityStats);
+
+router.get('/badges', getUserBadges);
+router.get('/badges/progress', getBadgeProgress);
+router.post('/badges/evaluate', evaluateUserBadges);
+router.post('/badges/:badgeId/view', markBadgeViewed);
+router.get('/badges/metrics', getEngagementMetrics);
 
 module.exports = router;

@@ -24,6 +24,7 @@ const { startNewsSyncJob, stopNewsSyncJob } = require('./jobs/newsSyncJob');
 const { startTrendScoreJob, stopTrendScoreJob } = require('./jobs/trendScoreJob');
 const { runMigrations } = require('./migrations/runner');
 const { eventCaptureMiddleware } = require('./middleware/eventCapture');
+const { initializeBadgeDefinitions } = require('./services/badgeService');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -161,6 +162,7 @@ async function bootstrap() {
   const databaseConnected = await connectDatabase();
   if (databaseConnected) {
     await runMigrations();
+    await initializeBadgeDefinitions();
   } else {
     console.log('[migrations] Skipped - database not connected.');
   }
