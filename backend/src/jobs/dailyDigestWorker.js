@@ -3,6 +3,7 @@ const User = require('../models/User');
 const NewsCard = require('../models/NewsCard');
 const NotificationDevice = require('../models/NotificationDevice');
 const pushNotificationService = require('../services/pushNotificationService');
+const digestEmailService = require('../services/digestEmailService');
 
 /**
  * Job to send Daily Digest to users who have opted in.
@@ -38,17 +39,18 @@ async function sendDailyDigest() {
     const usersCursor = User.find({
       'preferences.notifications.dailyDigest': true
     })
-      .select('_id')
+      .select('_id email')
       .cursor();
 
     let usersProcessed = 0;
     let tokensPushed = 0;
+    let emailsSent = 0;
 
     // Process users in chunks/cursor to avoid memory bloat
     for await (const user of usersCursor) {
       usersProcessed++;
 
-      // Find active devices for this user
+      // --- Push notifications ---
       const devices = await NotificationDevice.find({
         userId: user._id,
         enabled: true
@@ -84,9 +86,27 @@ async function sendDailyDigest() {
            });
         }
       }
+
+      // --- Email digest ---
+      if (user.email) {
+        try {
+          const result = await digestEmailService.sendDigestEmail(user, latestCards);
+          if (result.sent) {
+            emailsSent++;
+          }
+        } catch (emailErr) {
+          console.error(
+            { userId: String(user._id), error: emailErr.message },
+            'Failed to send digest email to user'
+          );
+        }
+      }
     }
 
-    console.info({ jobId, usersProcessed, tokensPushed }, 'Daily digest job completed successfully');
+    console.info(
+      { jobId, usersProcessed, tokensPushed, emailsSent },
+      'Daily digest job completed successfully'
+    );
   } catch (error) {
     console.error({ jobId, error: error.message, stack: error.stack }, 'Daily digest job failed');
   }
