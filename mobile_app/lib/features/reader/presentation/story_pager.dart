@@ -31,6 +31,7 @@ class StoryPager extends StatefulWidget {
 class _StoryPagerState extends State<StoryPager> {
   late final bool _isTestBinding;
   late final bool _isWebViewSupported;
+  final PageController _pageController = PageController();
   late String _displayTitle;
   late String _displaySummary;
   bool _isTranslated = false;
@@ -47,46 +48,77 @@ class _StoryPagerState extends State<StoryPager> {
     _isWebViewSupported = !kIsWeb && !_isTestBinding;
     _displayTitle = widget.news.title;
     _displaySummary = widget.news.summary;
+  }
 
-    final articleUrl = widget.news.originalUrl;
-    if (_isWebViewSupported && articleUrl.isNotEmpty) {
-      _controller = WebViewController()..loadRequest(Uri.parse(articleUrl));
-    }
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
 
-    return PageView(
+    return PageView.builder(
+      controller: _pageController,
       key: const ValueKey('story-pager-pageview'),
       scrollDirection: Axis.horizontal,
-      children: [
-        NewsCard(
-          title: _displayTitle,
-          summary: _displaySummary,
-          imageUrl: widget.news.imageUrl,
-          source: widget.news.source,
-          readingTime: widget.news.readingTime,
-          isBookmarked: widget.isBookmarked,
-          onBookmarkPressed: widget.onBookmarkPressed,
-          onSharePressed: _shareStory,
-          isTranslated: _isTranslated,
-          isTranslating: _isTranslating,
-          onTranslatePressed: _toggleTranslation,
-          translationErrorLabel: _translationError,
-          translateTooltip: localizations.translate,
-          showOriginalTooltip: localizations.showOriginal,
-          addBookmarkTooltip: localizations.addBookmark,
-          removeBookmarkTooltip: localizations.removeBookmark,
-          shareTooltip: localizations.share,
-          statusOriginalLabel: localizations.original,
-          statusTranslatedLabel: localizations.translated,
-          statusTranslatingLabel: localizations.translating,
-        ),
-        _buildReaderPage(),
-      ],
+      itemCount: 2,
+      onPageChanged: _handlePageChanged,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return NewsCard(
+            title: _displayTitle,
+            summary: _displaySummary,
+            imageUrl: widget.news.imageUrl,
+            source: widget.news.source,
+            readingTime: widget.news.readingTime,
+            isBookmarked: widget.isBookmarked,
+            onBookmarkPressed: widget.onBookmarkPressed,
+            onSharePressed: _shareStory,
+            isTranslated: _isTranslated,
+            isTranslating: _isTranslating,
+            onTranslatePressed: _toggleTranslation,
+            translationErrorLabel: _translationError,
+            translateTooltip: localizations.translate,
+            showOriginalTooltip: localizations.showOriginal,
+            addBookmarkTooltip: localizations.addBookmark,
+            removeBookmarkTooltip: localizations.removeBookmark,
+            shareTooltip: localizations.share,
+            statusOriginalLabel: localizations.original,
+            statusTranslatedLabel: localizations.translated,
+            statusTranslatingLabel: localizations.translating,
+          );
+        }
+
+        return _buildReaderPage();
+      },
     );
+  }
+
+  void _handlePageChanged(int index) {
+    if (index != 1) {
+      return;
+    }
+
+    _ensureReaderController();
+  }
+
+  void _ensureReaderController() {
+    if (_controller != null || !_isWebViewSupported) {
+      return;
+    }
+
+    final articleUrl = widget.news.originalUrl;
+    if (articleUrl.isEmpty) {
+      return;
+    }
+
+    final controller = WebViewController()..loadRequest(Uri.parse(articleUrl));
+    setState(() {
+      _controller = controller;
+    });
   }
 
   Future<void> _toggleTranslation() async {

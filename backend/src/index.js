@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const compression = require('compression');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -36,6 +37,30 @@ const readyHandler = createReadyHandler({
   isDatabaseConnected,
   isShuttingDown: inFlightRequests.isShuttingDown
 });
+
+function getResponseCompressionThresholdBytes() {
+  const configuredValue = process.env.RESPONSE_COMPRESSION_THRESHOLD_BYTES;
+
+  if (configuredValue === undefined || configuredValue === null || configuredValue === '') {
+    return 1024;
+  }
+
+  const parsedValue = Number(configuredValue);
+
+  if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+    return 1024;
+  }
+
+  return parsedValue;
+}
+
+function shouldCompressResponse(req, res) {
+  if (req.path === '/metrics') {
+    return false;
+  }
+
+  return compression.filter(req, res);
+}
 
 function buildAllowedOrigins() {
   const envOrigins = String(process.env.CORS_ALLOWED_ORIGINS || '')
@@ -97,6 +122,10 @@ app.use(cors(corsOptions));
 app.use(helmet());
 app.use(express.json({
   limit: process.env.JSON_PAYLOAD_LIMIT || '10kb'
+}));
+app.use(compression({
+  threshold: getResponseCompressionThresholdBytes(),
+  filter: shouldCompressResponse
 }));
 app.use(requestLogger);
 app.use(metricsMiddleware);

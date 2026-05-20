@@ -163,6 +163,30 @@ flutter build appbundle --release
 
 Output: `build/app/outputs/bundle/release/app-release.aab`
 
+### Android Size Analysis
+Flutter code size analysis requires a single target ABI. The repository includes a repeatable helper script:
+
+```bash
+npm run mobile:size-check
+```
+
+By default this runs:
+
+```bash
+cd mobile_app
+flutter build apk --release --analyze-size --target-platform android-arm64
+```
+
+Override the ABI when needed:
+
+```bash
+TARGET_PLATFORM=android-x64 npm run mobile:size-check
+```
+
+Use the generated size analysis output to confirm tree shaking stays effective after adding dependencies or new feature modules. CI now runs the same arm64 size-analysis build, enforces an initial 20 MB APK budget, and uploads the resulting JSON report plus APK as a workflow artifact.
+
+The helper also copies the latest Flutter-generated `*-code-size-analysis_*.json` report into `mobile_app/build/size-analysis/` so the file is preserved in a stable repo-local path for CI artifact collection and local inspection.
+
 ## Backend Integration
 
 Current integration uses `NewsApiService` with:

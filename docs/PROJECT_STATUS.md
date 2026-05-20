@@ -145,16 +145,16 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] K5. Digest email template generation and scheduling — ✅ done May 19
 - [x] K6. User cohort segmentation for A/B testing — ✅ done May 19
 
-### ⏳ Track L: Performance Optimization & Caching (3/6 complete)
+### ✅ Track L: Performance Optimization & Caching (6/6 complete)
 - [x] Redis caching layer for trending cards and recommendations
 - [x] Image CDN integration for card artwork
 - [x] Database query optimization (indexing strategy review)
-- [ ] API response compression (gzip)
-- [ ] Mobile app bundle optimization (lazy loading)
-- [ ] Comprehensive load testing regression gates
+- [x] API response compression (gzip)
+- [x] Mobile app bundle optimization (lazy loading + size-check workflow)
+- [x] Comprehensive load testing regression gates
 
 ### ⏳ Infrastructure
-- [ ] Database migrations strategy
+- [x] Database migrations strategy with version tracking
 - [ ] Backup automation and restore runbook
 - [ ] Release telemetry dashboard
 - [ ] Multi-environment load history and trend analysis
@@ -222,7 +222,6 @@ Use this checklist for every track item before marking it done.
 3. **Redis Coverage**: Redis now caches `/api/v1/news/cards`, `/api/v1/news/recommended`, `/api/v1/analytics/trending`, and `/api/v1/analytics/categories`, but write-through invalidation is currently limited to ingest-driven content changes.
 4. **CDN Integration Requires Env Setup**: Artwork delivery now supports CDN rewriting through backend env configuration, but staging/production still need real CDN endpoints or templates configured for optimization to take effect.
 5. **Load Testing Trend History**: Baseline load testing and CI regression gate exist, but cross-environment trend history and telemetry dashboard are still pending.
-6. **Database Migrations**: Schema versioning and migration strategy are not yet implemented (critical for production deployments).
 
 ---
 
@@ -237,17 +236,16 @@ Use this checklist for every track item before marking it done.
 6. ✅ Add user cohort segmentation for A/B testing support — **DONE May 19**
 
 ### Short Term (Track L - Performance, 2-3 weeks)
-1. Add API response compression (gzip)
-2. Optimize mobile app bundle (lazy loading, tree shaking verification)
-3. Establish comprehensive load testing with regression gates (p95 latency, throughput SLOs)
+1. Add cross-environment load-test result history and trend analysis
+2. Tighten compression and caching thresholds using staging measurements
+3. Tune the 20 MB mobile APK budget using CI artifact history over several runs
 
 ### Medium Term (Infrastructure & Polish, 3-4 weeks)
-1. Implement database migration strategy with version tracking
-2. Add backup automation and restore runbook
-3. Create release telemetry dashboard for rollout health
-4. Extend multi-language source coverage with ingestion quality scoring
-5. Complete localization polish for secondary UI copy
-6. Set up cross-environment load history and trend analysis
+1. Add backup automation and restore runbook
+2. Create release telemetry dashboard for rollout health
+3. Extend multi-language source coverage with ingestion quality scoring
+4. Complete localization polish for secondary UI copy
+5. Set up cross-environment load history and trend analysis
 
 ---
 

@@ -187,9 +187,9 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 - [x] L1. Add Redis caching layer for trending cards and user recommendations
 - [x] L2. Add database query optimization (indexing strategy review + execution plans)
 - [x] L3. Add image CDN integration for card artwork delivery
-- [ ] L4. Add API response compression (gzip)
-- [ ] L5. Add mobile app bundle optimization (lazy loading, tree shaking verification)
-- [ ] L6. Add comprehensive load testing with regression gates (p95 latency, throughput SLOs)
+- [x] L4. Add API response compression (gzip)
+- [x] L5. Add mobile app bundle optimization (lazy loading, tree shaking verification)
+- [x] L6. Add comprehensive load testing with regression gates (p95 latency, throughput SLOs)
 
 ## Session Notes
 
@@ -257,3 +257,13 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 	- Validation: Focused backend Jest validation passed for `imageCdnService`, news cards integration, and bookmark controller coverage (37/37).
 	- Risk/Rollback: Misconfigured CDN envs will fall back to original source URLs or malformed CDN URLs in responses only; rollback is isolated to response-layer rewrite logic.
 	- Commit: `4e55af7`.
+- _May 20, 2026_: Completed L.4 API response compression.
+	- Changes: Added Express response compression middleware with a default 1 KB threshold, `RESPONSE_COMPRESSION_THRESHOLD_BYTES` override support, and `/metrics` exclusion to avoid compressing Prometheus scrape output.
+	- Validation: Focused backend Jest validation passed for gzip behavior on large `/api/v1/news/cards` responses and non-compression on small `/health` responses.
+	- Risk/Rollback: Compression increases CPU work on larger responses; rollback is isolated to middleware removal or threshold adjustment.
+	- Commit: pending.
+- _May 20, 2026_: Completed L.5 mobile app bundle optimization.
+	- Changes: Lazy-loaded the reader pane by switching `StoryPager` to builder-based paging and creating the `WebViewController` only when the reader tab is opened. Added repeatable Android size-analysis workflow via `scripts/check-mobile-bundle-size.sh`, documented the required single-ABI `--target-platform` usage for Flutter analyze-size builds, extended CI to upload mobile size-analysis artifacts for Android arm64 release builds, and enforced a tighter 20 MB arm64 APK budget with repo-local copy of the generated size-analysis JSON.
+	- Validation: Focused Flutter widget tests passed for feed/reader behavior. Verified the release size-analysis workflow and confirmed Flutter requires single-ABI analyze-size commands such as `flutter build apk --release --analyze-size --target-platform android-arm64`. Validated CI YAML parsing and helper script syntax after wiring the artifact upload path. Measured current arm64 APK size at 19,298,478 bytes, which passes the 20 MB budget.
+	- Risk/Rollback: Reader initialization now occurs on first reader swipe instead of card mount; rollback is isolated to `StoryPager` paging logic and the helper script.
+	- Commit: pending.

@@ -110,6 +110,12 @@ jobs:
         with:
           channel: stable
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -118,6 +124,25 @@ jobs:
 
       - name: Widget tests with coverage
         run: flutter test --coverage -r compact
+
+      - name: Mobile size analysis build
+        env:
+          TARGET_PLATFORM: android-arm64
+          MAX_APK_SIZE_MB: 20
+        run: ../scripts/check-mobile-bundle-size.sh
+
+      - name: Collect mobile size artifacts
+        run: |
+          mkdir -p ../artifacts/mobile-size
+          cp -R build/size-analysis/. ../artifacts/mobile-size/
+          cp build/app/outputs/flutter-apk/*.apk ../artifacts/mobile-size/
+
+      - name: Upload mobile size artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-size-analysis-android-arm64
+          path: artifacts/mobile-size/
+          if-no-files-found: error
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

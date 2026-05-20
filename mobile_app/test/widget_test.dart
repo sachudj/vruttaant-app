@@ -233,6 +233,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
+    expect(find.text('Read More'), findsNothing);
+
     await tester.drag(find.text('Original Story Title'), const Offset(-500, 0));
     await tester.pumpAndSettle();
 

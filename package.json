@@ -2,7 +2,8 @@
   "name": "vruttaant-app",
   "private": true,
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "mobile:size-check": "bash scripts/check-mobile-bundle-size.sh"
   },
   "lint-staged": {
     "backend/src/**/*.js": "npx --prefix backend eslint --no-warn-ignored --config backend/eslint.config.js",

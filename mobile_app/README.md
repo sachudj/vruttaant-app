@@ -43,6 +43,7 @@ flutter run \
 ```bash
 flutter analyze
 flutter test -r compact
+npm --prefix .. run mobile:size-check
 
 # Optional: verify bookmark APIs from app UI
 # 1) Open any story card and tap bookmark icon.
