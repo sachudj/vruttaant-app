@@ -1,5 +1,6 @@
 # Vruttaant
 [![CI](https://github.com/sachudj/vruttaant-app/actions/workflows/ci.yml/badge.svg)](https://github.com/sachudj/vruttaant-app/actions/workflows/ci.yml)
+[![Reviewdog](https://github.com/sachudj/vruttaant-app/actions/workflows/reviewdog.yml/badge.svg)](https://github.com/sachudj/vruttaant-app/actions/workflows/reviewdog.yml)
 [![Release](https://github.com/sachudj/vruttaant-app/actions/workflows/release.yml/badge.svg)](https://github.com/sachudj/vruttaant-app/actions/workflows/release.yml)
 [![Latest Release](https://img.shields.io/github/v/release/sachudj/vruttaant-app)](https://github.com/sachudj/vruttaant-app/releases)
 [![Coverage](https://codecov.io/gh/sachudj/vruttaant-app/branch/main/graph/badge.svg)](https://codecov.io/gh/sachudj/vruttaant-app)
@@ -193,6 +194,9 @@ This repository now includes CI and release automation:
 - `.github/workflows/ci.yml`
   - Runs backend syntax + startup health checks
   - Runs Flutter analyze + widget tests
+- `.github/workflows/reviewdog.yml`
+  - Runs backend ESLint and Flutter analyze on pull requests
+  - Publishes inline PR review comments for changed lines
 - `.github/workflows/security.yml`
   - Runs CodeQL SAST scans for JavaScript code
   - Runs Trivy filesystem scan for vulnerabilities, secrets, and misconfigurations
