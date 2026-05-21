@@ -129,7 +129,7 @@ jobs:
         env:
           TARGET_PLATFORM: android-arm64
           MAX_APK_SIZE_MB: 20
-        run: ../scripts/check-mobile-bundle-size.sh
+        run: bash ../scripts/check-mobile-bundle-size.sh
 
       - name: Collect mobile size artifacts
         run: |
