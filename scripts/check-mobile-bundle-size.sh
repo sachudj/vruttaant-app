@@ -9,6 +9,17 @@ MAX_APK_SIZE_MB="${MAX_APK_SIZE_MB:-20}"
 APK_PATH="$ROOT_DIR/mobile_app/build/app/outputs/flutter-apk/app-release.apk"
 SIZE_ANALYSIS_DIR="$ROOT_DIR/mobile_app/build/size-analysis"
 
+get_file_size_bytes() {
+	local file_path="$1"
+
+	if stat -c%s "$file_path" >/dev/null 2>&1; then
+		stat -c%s "$file_path"
+		return 0
+	fi
+
+	stat -f%z "$file_path"
+}
+
 cd "$ROOT_DIR/mobile_app"
 flutter build apk --release --analyze-size --target-platform "$TARGET_PLATFORM"
 
@@ -24,7 +35,7 @@ if [[ ! -f "$APK_PATH" ]]; then
 	exit 1
 fi
 
-apk_size_bytes="$(stat -f%z "$APK_PATH")"
+apk_size_bytes="$(get_file_size_bytes "$APK_PATH")"
 max_apk_size_bytes="$((MAX_APK_SIZE_MB * 1024 * 1024))"
 
 echo "APK size: $apk_size_bytes bytes"
