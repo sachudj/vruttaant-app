@@ -195,7 +195,7 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 
 - [x] M1. Add backup automation and restore runbook
 - [x] M2. Add release telemetry dashboard baseline
-- [ ] M3. Add multi-environment load history and trend analysis
+- [x] M3. Add multi-environment load history and trend analysis
 
 ## Session Notes
 
@@ -282,4 +282,9 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 	- Changes: Added admin endpoint `GET /api/v1/admin/release-telemetry` with compact release-health payload (version/env/uptime, DB/cache connectivity, HTTP traffic/error/latency metrics, and 24h engagement/content aggregates). Added Prometheus registry snapshot helper `getMetricsSnapshot()` in observability metrics module.
 	- Validation: Backend lint and focused Jest suites passed for telemetry/metrics (`__tests__/adminController.test.js`, `__tests__/metrics.test.js`).
 	- Risk/Rollback: Changes are additive to admin-only surfaces; rollback is isolated to route/controller/helper removal without affecting user-facing APIs.
+	- Commit: pending.
+- _May 24, 2026_: Completed M.3 multi-environment load history and trend analysis.
+	- Changes: Added `LoadTestRun` persistence model and admin endpoints `POST /api/v1/admin/loadtest/runs`, `GET /api/v1/admin/loadtest/history`, and `GET /api/v1/admin/loadtest/trends`. Extended baseline runner to emit environment-scoped JSON reports and optionally publish results to the backend with admin auth.
+	- Validation: Added controller unit tests for run ingestion/history/trend aggregation (`__tests__/loadtestController.test.js`) and re-verified related suites.
+	- Risk/Rollback: Changes are additive and admin-scoped; rollback is isolated to load-test model/controller/route wiring and report-publish behavior in baseline runner.
 	- Commit: pending.

@@ -157,7 +157,7 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] Database migrations strategy with version tracking
 - [x] Backup automation and restore runbook
 - [x] Release telemetry dashboard (baseline admin API)
-- [ ] Multi-environment load history and trend analysis
+- [x] Multi-environment load history and trend analysis
 
 ---
 
@@ -225,7 +225,7 @@ Use this checklist for every track item before marking it done.
 2. **Localization Scope**: Core feed/settings/auth/bookmarks/reader/analytics surfaces are localized (`en`/`hi`), but secondary UI polish and backend message translations are still pending.
 3. **Redis Coverage**: Redis now caches `/api/v1/news/cards`, `/api/v1/news/recommended`, `/api/v1/analytics/trending`, and `/api/v1/analytics/categories`, but write-through invalidation is currently limited to ingest-driven content changes.
 4. **CDN Integration Requires Env Setup**: Artwork delivery now supports CDN rewriting through backend env configuration, but staging/production still need real CDN endpoints or templates configured for optimization to take effect.
-5. **Load-Test Trend History**: Baseline load testing and CI regression gate exist, but cross-environment trend history is still pending.
+5. **Load-Test Reporting Requires Admin Ingestion Token for Central Storage**: Baseline runs always generate local JSON reports, and backend persistence is available when `LOADTEST_REPORT_ENDPOINT` + `LOADTEST_REPORT_TOKEN` are configured.
 
 ---
 
@@ -247,7 +247,6 @@ Use this checklist for every track item before marking it done.
 ### Medium Term (Infrastructure & Polish, 3-4 weeks)
 1. Extend multi-language source coverage with ingestion quality scoring
 2. Complete localization polish for secondary UI copy
-3. Set up cross-environment load history and trend analysis
 
 ### ✅ Track M: Infrastructure Operations
 1. ✅ M1. Backup automation and restore runbook baseline — **DONE May 24**
@@ -259,6 +258,11 @@ Use this checklist for every track item before marking it done.
   - Admin endpoint: `GET /api/v1/admin/release-telemetry`
   - Includes release metadata, DB/cache connectivity, HTTP traffic/error/latency snapshot, and 24h engagement/content indicators
   - Backed by metrics helper: `getMetricsSnapshot()` in observability module
+3. ✅ M3. Multi-environment load history and trend analysis — **DONE May 24**
+  - Persistence model: `LoadTestRun` (`load_test_runs`)
+  - Admin ingestion endpoint: `POST /api/v1/admin/loadtest/runs`
+  - Admin read endpoints: `GET /api/v1/admin/loadtest/history`, `GET /api/v1/admin/loadtest/trends`
+  - Baseline runner now writes environment-scoped JSON reports and supports optional publish to admin ingestion endpoint
 
 ---
 

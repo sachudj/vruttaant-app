@@ -73,6 +73,35 @@ If `LOADTEST_ACCESS_TOKEN` is missing, authenticated scenario is skipped intenti
 - `SLO_CARDS_READ_MIN_RPS`
 - `SLO_TRANSLATE_MIN_RPS`
 - `SLO_AUTH_READ_MIN_RPS`
+- `LOADTEST_ENVIRONMENT` (`local`, `staging`, `production`; default `local`)
+- `LOADTEST_SOURCE` (for example `ci`, `manual`, `scheduled`)
+- `LOADTEST_REPORT_DIR` (default `backend/loadtest-results`)
+- `LOADTEST_REPORT_ENDPOINT` (admin ingestion endpoint, optional)
+- `LOADTEST_REPORT_TOKEN` (admin JWT for report ingestion, optional)
+
+## Multi-Environment History (M3)
+
+Baseline runs now persist to JSON reports on disk per environment and can be pushed to backend storage for trend analysis.
+
+1. Local file report path (default):
+	- `backend/loadtest-results/<environment>/baseline_<timestamp>.json`
+2. Optional backend ingestion endpoint:
+	- `POST /api/v1/admin/loadtest/runs`
+3. Admin trend endpoints:
+	- `GET /api/v1/admin/loadtest/history?environment=staging&rangeDays=30&limit=20`
+	- `GET /api/v1/admin/loadtest/trends?environment=staging&rangeDays=30`
+
+Example (staging run + publish):
+
+```bash
+export LOADTEST_ENVIRONMENT=staging
+export LOADTEST_SOURCE=ci
+export LOADTEST_REPORT_ENDPOINT="http://127.0.0.1:5001/api/v1/admin/loadtest/runs"
+export LOADTEST_REPORT_TOKEN="<admin_jwt>"
+
+cd backend
+npm run loadtest:baseline:strict
+```
 
 ## Notes
 

@@ -1,4 +1,6 @@
 const autocannon = require('autocannon');
+const fs = require('fs');
+const path = require('path');
 
 const DEFAULT_BASE_URL = process.env.LOADTEST_BASE_URL || 'http://127.0.0.1:5001';
 const DEFAULT_DURATION_SECONDS = Number(process.env.LOADTEST_DURATION_SECONDS || 20);
@@ -6,6 +8,12 @@ const DEFAULT_CONNECTIONS = Number(process.env.LOADTEST_CONNECTIONS || 4);
 const DEFAULT_OVERALL_RATE = Number(process.env.LOADTEST_OVERALL_RATE || 3);
 const STRICT_SLO = String(process.env.LOADTEST_STRICT_SLO || 'false').toLowerCase() === 'true';
 const ACCESS_TOKEN = process.env.LOADTEST_ACCESS_TOKEN || '';
+const LOADTEST_ENVIRONMENT = String(process.env.LOADTEST_ENVIRONMENT || 'local').toLowerCase();
+const LOADTEST_SOURCE = process.env.LOADTEST_SOURCE || 'manual';
+const LOADTEST_REPORT_ENDPOINT = process.env.LOADTEST_REPORT_ENDPOINT || '';
+const LOADTEST_REPORT_TOKEN = process.env.LOADTEST_REPORT_TOKEN || '';
+const LOADTEST_REPORT_DIR = process.env.LOADTEST_REPORT_DIR || path.resolve(process.cwd(), 'loadtest-results');
+const APP_VERSION = process.env.APP_VERSION || '';
 
 const SLO_TARGETS = {
   cardsReadP95Ms: Number(process.env.SLO_CARDS_READ_P95_MS || 350),
@@ -85,6 +93,38 @@ async function ensureReadiness(baseUrl) {
   }
 }
 
+function writeReportToDisk(payload) {
+  const envDir = path.join(LOADTEST_REPORT_DIR, LOADTEST_ENVIRONMENT);
+  fs.mkdirSync(envDir, { recursive: true });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const targetPath = path.join(envDir, `baseline_${timestamp}.json`);
+  fs.writeFileSync(targetPath, JSON.stringify(payload, null, 2), 'utf8');
+  console.log(`Report saved: ${targetPath}`);
+}
+
+async function publishReport(payload) {
+  if (!LOADTEST_REPORT_ENDPOINT || !LOADTEST_REPORT_TOKEN) {
+    console.log('Skipping remote report publish (LOADTEST_REPORT_ENDPOINT or LOADTEST_REPORT_TOKEN missing).');
+    return;
+  }
+
+  const response = await fetch(LOADTEST_REPORT_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${LOADTEST_REPORT_TOKEN}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Failed to publish load-test report (${response.status}): ${body}`);
+  }
+
+  console.log(`Report published to ${LOADTEST_REPORT_ENDPOINT}`);
+}
+
 async function main() {
   printHeader('Vruttaant Backend Load-Test Baseline');
   console.log(`Base URL: ${DEFAULT_BASE_URL}`);
@@ -150,6 +190,7 @@ async function main() {
   }
 
   const allChecks = [];
+  const scenarioResults = [];
 
   for (const scenario of scenarioConfigs) {
     printHeader(`Scenario: ${scenario.label}`);
@@ -174,6 +215,15 @@ async function main() {
       console.log(`- [${status}] ${check.label} (actual: ${check.actual})`);
       allChecks.push(check);
     }
+
+    scenarioResults.push({
+      key: scenario.key,
+      label: scenario.label,
+      requestsPerSecond: evaluated.summary.requestsPerSecond,
+      latencyP95Ms: evaluated.summary.latencyP95Ms,
+      errorRatePercent: evaluated.summary.errorRatePercent,
+      checks: evaluated.checks
+    });
   }
 
   const failedChecks = allChecks.filter((check) => !check.passed);
@@ -193,6 +243,28 @@ async function main() {
   if (STRICT_SLO && failedChecks.length > 0) {
     process.exitCode = 1;
   }
+
+  const reportPayload = {
+    environment: LOADTEST_ENVIRONMENT,
+    source: LOADTEST_SOURCE,
+    appVersion: APP_VERSION,
+    baseUrl: DEFAULT_BASE_URL,
+    durationSeconds: DEFAULT_DURATION_SECONDS,
+    connections: DEFAULT_CONNECTIONS,
+    overallRate: DEFAULT_OVERALL_RATE,
+    strictSlo: STRICT_SLO,
+    sloTargets: SLO_TARGETS,
+    scenarios: scenarioResults,
+    summary: {
+      totalChecks: allChecks.length,
+      passedChecks: allChecks.length - failedChecks.length,
+      failedChecks: failedChecks.length
+    },
+    capturedAt: new Date().toISOString()
+  };
+
+  writeReportToDisk(reportPayload);
+  await publishReport(reportPayload);
 }
 
 main().catch((error) => {
