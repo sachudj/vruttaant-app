@@ -5,12 +5,14 @@ jest.mock('../src/models/RefreshToken');
 jest.mock('bcryptjs');
 jest.mock('jsonwebtoken');
 jest.mock('../src/services/socialAuthService');
+jest.mock('../src/services/socialAuthSecurityService');
 
 const User = require('../src/models/User');
 const RefreshToken = require('../src/models/RefreshToken');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { verifySocialIdentity } = require('../src/services/socialAuthService');
+const { enforceSingleUseNonce } = require('../src/services/socialAuthSecurityService');
 
 const { signup, login, refresh, logout, socialLogin } = require('../src/controllers/authController');
 
@@ -44,12 +46,14 @@ beforeEach(() => {
   jest.clearAllMocks();
   process.env.JWT_ACCESS_SECRET = 'test-access-secret';
   process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
+  process.env.SOCIAL_AUTH_AUTO_LINK_BY_EMAIL = 'false';
   // jwt.sign returns a fake token; jwt.verify/decode set up per test
   jwt.sign.mockReturnValue('mock.jwt.token');
   jwt.decode.mockReturnValue({ jti: 'mock-jti' });
   bcrypt.hash.mockResolvedValue('$2a$12$hashed');
   bcrypt.compare.mockResolvedValue(true);
   RefreshToken.create.mockResolvedValue({});
+  enforceSingleUseNonce.mockResolvedValue();
 });
 
 // ─── signup ───────────────────────────────────────────────────────────────────
@@ -294,6 +298,121 @@ describe('authController.socialLogin', () => {
 
     expect(User.create).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('rejects first-time social sign-in when provider email is not verified', async () => {
+    verifySocialIdentity.mockResolvedValue({
+      provider: 'google',
+      providerSub: 'google-sub-new',
+      email: 'new@example.com',
+      emailVerified: false,
+      displayName: null
+    });
+
+    User.findOne
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+
+    const req = makeReq({}, { provider: 'google', idToken: 'id-token', nonce: null });
+    await socialLogin(req, makeRes(), next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+    expect(User.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects implicit email-link when auto-link policy is disabled', async () => {
+    verifySocialIdentity.mockResolvedValue({
+      provider: 'google',
+      providerSub: 'google-sub-link',
+      email: 'user@example.com',
+      emailVerified: true,
+      displayName: null
+    });
+
+    User.findOne
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        ...MOCK_USER,
+        authProviders: { password: true, googleSub: null, appleSub: null },
+        save: jest.fn().mockResolvedValue(true)
+      });
+
+    const req = makeReq({}, { provider: 'google', idToken: 'id-token', nonce: null });
+    await socialLogin(req, makeRes(), next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 409 }));
+  });
+
+  it('links by email when auto-link policy is enabled and email is verified', async () => {
+    process.env.SOCIAL_AUTH_AUTO_LINK_BY_EMAIL = 'true';
+
+    const existingUser = {
+      ...MOCK_USER,
+      authProviders: { password: true, googleSub: null, appleSub: null },
+      save: jest.fn().mockResolvedValue(true)
+    };
+
+    verifySocialIdentity.mockResolvedValue({
+      provider: 'google',
+      providerSub: 'google-sub-link',
+      email: 'user@example.com',
+      emailVerified: true,
+      displayName: null
+    });
+
+    User.findOne
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(existingUser);
+
+    const req = makeReq({}, { provider: 'google', idToken: 'id-token', nonce: null });
+    const res = makeRes();
+    await socialLogin(req, res, next);
+
+    expect(existingUser.save).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('rejects email-link when provider email is not verified', async () => {
+    process.env.SOCIAL_AUTH_AUTO_LINK_BY_EMAIL = 'true';
+
+    verifySocialIdentity.mockResolvedValue({
+      provider: 'google',
+      providerSub: 'google-sub-link',
+      email: 'user@example.com',
+      emailVerified: false,
+      displayName: null
+    });
+
+    User.findOne
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        ...MOCK_USER,
+        authProviders: { password: true, googleSub: null, appleSub: null },
+        save: jest.fn().mockResolvedValue(true)
+      });
+
+    const req = makeReq({}, { provider: 'google', idToken: 'id-token', nonce: null });
+    await socialLogin(req, makeRes(), next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+  });
+
+  it('rejects Apple login when nonce replay check fails', async () => {
+    verifySocialIdentity.mockResolvedValue({
+      provider: 'apple',
+      providerSub: 'apple-sub-1',
+      email: 'user@example.com',
+      emailVerified: true,
+      displayName: null
+    });
+
+    enforceSingleUseNonce.mockRejectedValue({ statusCode: 401, message: 'Apple login nonce has already been used.' });
+
+    const req = makeReq({}, { provider: 'apple', idToken: 'id-token', nonce: 'nonce-value' });
+    await socialLogin(req, makeRes(), next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+    expect(User.findOne).not.toHaveBeenCalled();
   });
 
   it('returns 400 when first-time social login has no email', async () => {

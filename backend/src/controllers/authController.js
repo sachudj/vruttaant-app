@@ -4,12 +4,17 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
 const { verifySocialIdentity } = require('../services/socialAuthService');
+const { enforceSingleUseNonce } = require('../services/socialAuthSecurityService');
 const { AppError } = require('../middleware/errorHandler');
 
 const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
 const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 const REFRESH_TOKEN_TTL_MS = Number(process.env.REFRESH_TOKEN_TTL_MS) || 7 * 24 * 60 * 60 * 1000;
 const PASSWORD_SALT_ROUNDS = Number(process.env.PASSWORD_SALT_ROUNDS) || 12;
+
+function isSocialEmailAutoLinkEnabled() {
+  return String(process.env.SOCIAL_AUTH_AUTO_LINK_BY_EMAIL || 'false').trim().toLowerCase() === 'true';
+}
 
 function resolveJwtSecret() {
   if (process.env.JWT_ACCESS_SECRET) {
@@ -214,20 +219,40 @@ async function socialLogin(req, res, next) {
   try {
     const { provider, idToken, nonce } = req.validated.body;
     const identity = await verifySocialIdentity(provider, idToken, nonce);
+    await enforceSingleUseNonce(identity.provider, nonce, identity.providerSub);
 
     const providerField = identity.provider === 'google'
       ? 'authProviders.googleSub'
       : 'authProviders.appleSub';
 
     let user = await User.findOne({ [providerField]: identity.providerSub });
+    const matchedByProviderSub = !!user;
 
     if (!user && identity.email) {
-      user = await User.findOne({ email: identity.email });
+      const emailMatch = await User.findOne({ email: identity.email });
+      if (emailMatch) {
+        if (!isSocialEmailAutoLinkEnabled()) {
+          throw new AppError(
+            409,
+            'A user with this email already exists. Sign in with the existing method and link social auth explicitly.'
+          );
+        }
+
+        if (!identity.emailVerified) {
+          throw new AppError(401, 'Social provider email must be verified to link an existing account.');
+        }
+
+        user = emailMatch;
+      }
     }
 
     if (!user) {
       if (!identity.email) {
         throw new AppError(400, 'Email is required from social provider for first-time sign in.');
+      }
+
+      if (!identity.emailVerified) {
+        throw new AppError(401, 'Social provider email must be verified for first-time sign in.');
       }
 
       user = await User.create({
@@ -241,17 +266,29 @@ async function socialLogin(req, res, next) {
         }
       });
     } else {
+      if (identity.email && user.email && user.email !== identity.email) {
+        throw new AppError(401, 'Social identity email does not match the linked account.');
+      }
+
       const authProviders = {
         password: !!user.passwordHash,
         googleSub: user.authProviders?.googleSub || null,
         appleSub: user.authProviders?.appleSub || null
       };
 
+      const linkingFromEmailMatch = !matchedByProviderSub;
+
       if (identity.provider === 'google' && !authProviders.googleSub) {
+        if (linkingFromEmailMatch && !identity.emailVerified) {
+          throw new AppError(401, 'Social provider email must be verified to link an existing account.');
+        }
         authProviders.googleSub = identity.providerSub;
       }
 
       if (identity.provider === 'apple' && !authProviders.appleSub) {
+        if (linkingFromEmailMatch && !identity.emailVerified) {
+          throw new AppError(401, 'Social provider email must be verified to link an existing account.');
+        }
         authProviders.appleSub = identity.providerSub;
       }
 

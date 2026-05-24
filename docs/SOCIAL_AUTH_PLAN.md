@@ -10,7 +10,7 @@
 - [x] O2. Backend social auth endpoint (baseline completed May 24, 2026)
 - [x] O3. Mobile Google sign-in integration (baseline completed May 24, 2026)
 - [x] O4. Mobile Apple sign-in integration (baseline completed May 24, 2026)
-- [ ] O5. Security hardening
+- [x] O5. Security hardening (nonce replay defense + explicit email-linking policy completed May 24, 2026)
 - [ ] O6. Testing + validation
 - [ ] O7. Documentation parity sweep
 

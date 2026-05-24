@@ -327,7 +327,7 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 - [x] O2. Add `POST /api/v1/auth/social` (Google/Apple token verification + JWT issuance)
 - [x] O3. Add mobile Google sign-in integration (provider SDK + backend exchange)
 - [x] O4. Add mobile Apple sign-in integration (provider SDK + backend exchange)
-- [ ] O5. Add security hardening checks (audience/issuer/nonce/linking policy)
+- [x] O5. Add security hardening checks (audience/issuer/nonce/linking policy)
 - [ ] O6. Add backend/mobile tests and contract parity checks for social auth
 - [ ] O7. Update docs (`API_ENDPOINTS`, `BACKEND`, `MOBILE_APP`, `SECRETS_POLICY`) + Postman
 
@@ -352,4 +352,9 @@ Reference plan: `docs/SOCIAL_AUTH_PLAN.md`
 	- Changes: Added `sign_in_with_apple` dependency, implemented `AuthService.loginWithApple()` (nonce-based flow) and Apple sign-in login-sheet action. Hardened backend Apple nonce validation to accept either raw nonce or SHA-256 hashed nonce claim formats.
 	- Validation: `flutter analyze` (touched files), `flutter test test/auth_service_test.dart` (3/3 passing), backend auth tests (`44/44`) and backend lint (no new errors).
 	- Risk/Rollback: Runtime Apple sign-in still depends on iOS capability/provisioning and service ID setup; rollback is isolated to auth service/login sheet/provider verification nonce logic.
+	- Commit: pending.
+- _May 24, 2026_: Completed O5 social-auth security hardening.
+	- Changes: Added one-time nonce replay protection for Apple login (`SocialAuthNonce` + `socialAuthSecurityService`) and introduced explicit email-linking policy (`SOCIAL_AUTH_AUTO_LINK_BY_EMAIL`, disabled by default) with verified-email requirements for first-time social account creation and email-based account linking.
+	- Validation: `npm test -- __tests__/authController.test.js __tests__/authValidators.test.js __tests__/socialAuthSecurityService.test.js` (54/54 passing).
+	- Risk/Rollback: Replay defense now depends on nonce persistence writes; rollback is isolated to social nonce model/service wiring and controller policy checks.
 	- Commit: pending.

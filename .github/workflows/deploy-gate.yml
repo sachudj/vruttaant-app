@@ -87,12 +87,25 @@ jobs:
           JWT_REFRESH_SECRET: ci-refresh-secret
           MONGODB_URI: mongodb://admin:admin123@127.0.0.1:27017/vruttaant?authSource=admin
         run: |
-          ADMIN_EMAIL="ci-admin@vruttaant.local"
+          set -euo pipefail
+
+          ADMIN_EMAIL="ci-admin-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}@vruttaant.local"
           ADMIN_PASSWORD="ci-admin-password"
 
-          curl -sS -X POST http://127.0.0.1:5001/api/v1/auth/signup \
+          SIGNUP_RESPONSE="$(curl -sS -w '\n%{http_code}' -X POST http://127.0.0.1:5001/api/v1/auth/signup \
             -H "Content-Type: application/json" \
-            -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" > /tmp/ci-admin-signup.json
+            -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}")"
+
+          SIGNUP_BODY="$(printf '%s\n' "$SIGNUP_RESPONSE" | sed '$d')"
+          SIGNUP_STATUS="$(printf '%s\n' "$SIGNUP_RESPONSE" | tail -n1)"
+
+          if [ "$SIGNUP_STATUS" != "201" ] && [ "$SIGNUP_STATUS" != "409" ]; then
+            echo "Admin signup failed with status $SIGNUP_STATUS"
+            echo "$SIGNUP_BODY"
+            exit 1
+          fi
+
+          printf '%s\n' "$SIGNUP_BODY" > /tmp/ci-admin-signup.json
 
           ADMIN_EMAIL="$ADMIN_EMAIL" node <<'NODE'
           const mongoose = require('mongoose');
@@ -108,12 +121,21 @@ jobs:
           });
           NODE
 
-          LOGIN_RESPONSE="$(curl -sS -X POST http://127.0.0.1:5001/api/v1/auth/login -H 'Content-Type: application/json' -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}")"
-          TOKEN="$(node -e "const payload = JSON.parse(process.argv[1]); process.stdout.write(payload.data.tokens.accessToken);" "$LOGIN_RESPONSE")"
+          LOGIN_RESPONSE="$(curl -sS -w '\n%{http_code}' -X POST http://127.0.0.1:5001/api/v1/auth/login -H 'Content-Type: application/json' -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}")"
+          LOGIN_BODY="$(printf '%s\n' "$LOGIN_RESPONSE" | sed '$d')"
+          LOGIN_STATUS="$(printf '%s\n' "$LOGIN_RESPONSE" | tail -n1)"
+
+          if [ "$LOGIN_STATUS" != "200" ]; then
+            echo "Admin login failed with status $LOGIN_STATUS"
+            echo "$LOGIN_BODY"
+            exit 1
+          fi
+
+          TOKEN="$(node -e "const payload = JSON.parse(process.argv[1]); process.stdout.write(payload?.data?.tokens?.accessToken || '');" "$LOGIN_BODY")"
 
           if [ -z "$TOKEN" ]; then
             echo "Failed to resolve admin access token"
-            echo "$LOGIN_RESPONSE"
+            echo "$LOGIN_BODY"
             exit 1
           fi
 
