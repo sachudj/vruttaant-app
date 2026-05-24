@@ -7,8 +7,8 @@
 
 A multilingual, card-based news app providing a concise "Vruttaant" (chronicle) of local events through a swipable interface.
 
-**Status**: Active Development (v0.3)  
-**Last Updated**: May 18, 2026
+**Status**: Active Development (v0.7)  
+**Last Updated**: May 24, 2026
 
 ## Quick Start (5 minutes)
 
@@ -28,6 +28,11 @@ flutter run
 ```
 
 Backend running on: `http://localhost:5000` (or next free port)
+
+Interactive API docs:
+- Swagger UI: `http://localhost:5000/api/docs` (or `:5001` if fallback port is used)
+- OpenAPI JSON: `http://localhost:5000/api/docs.json`
+- Postman collection: `docs/Vruttaant.postman_collection.json`
 
 ## Project Structure
 
@@ -129,24 +134,13 @@ vruttaant-app/
 
 ## Project Status
 
-**Test Coverage**: 374/374 tests passing ✅  
-**Overall Progress**: 10 of 12 tracks complete (83%)
+Tracks **A through N are complete** (security, auth, reliability, testing, data governance, mobile UX, feed intelligence, recommendations, analytics, engagement, performance, infrastructure operations, and documentation/UX polish).
 
-**Completed Tracks:**
-- ✅ **Track A** (Security & API Hardening): 9/9 items
-- ✅ **Track B** (Authentication & Access Control): 6/6 items
-- ✅ **Track C** (Reliability & Observability): 7/7 items
-- ✅ **Track D** (Testing & Quality): 7/7 items
-- ✅ **Track E** (Data Governance & Feed Quality): 6/6 items
-- ✅ **Track F** (Product Milestones): 3/3 milestones
-- ✅ **Track G** (Mobile UX Completion): 10/10 items
-- ✅ **Track H** (Feed Intelligence): 4/4 items
-- ✅ **Track I** (Recommendation Engine): 4/4 items
-- ✅ **Track J** (Analytics & User Behavior): 6/6 items
+Current focus is **follow-on optimization** using telemetry and load-history data.
 
-**In Progress:**
-- ⏳ **Track K** (User Engagement Features): 0/6 items
-- ⏳ **Track L** (Performance Optimization): 0/6 items
+For the detailed milestone and step log, see:
+- [docs/ROADMAP.md](./docs/ROADMAP.md)
+- [docs/PROJECT_STATUS.md](./docs/PROJECT_STATUS.md)
 
 For detailed roadmap, see [docs/ROADMAP.md](./docs/ROADMAP.md).
 
@@ -176,6 +170,12 @@ Detailed implementation sequencing now lives in [docs/ROADMAP.md](./docs/ROADMAP
 - [x] Add secrets management policy (no plaintext secrets, rotation, environment separation)
 - [x] Add role-based access controls for admin/internal operations
 - [x] Add data governance for LLM output (category taxonomy validation + fallback rules)
+
+### API Tooling Snapshot
+
+- [x] Swagger/OpenAPI runtime docs at `/api/docs` and `/api/docs.json`
+- [x] Postman import collection at `docs/Vruttaant.postman_collection.json`
+- [x] Docs parity CI guard via `scripts/check-api-docs.sh`
 
 ## Infrastructure Scripts
 

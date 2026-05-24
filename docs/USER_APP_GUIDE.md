@@ -2,7 +2,7 @@
 
 **Audience**: Product, design, QA, and engineering
 **Purpose**: Describe how a user uses the app today, what pages they should expect, and what scenarios should work end-to-end.
-**Last updated**: May 18, 2026
+**Last updated**: May 24, 2026
 
 ---
 
@@ -15,9 +15,10 @@ Primary value for users:
 - Move between stories with vertical swipes
 - Open full article view when needed
 - Personalize feed with language and categories
-- Read news content in a comfortable language (planned translation enhancement)
+- Read and translate story summaries in a comfortable language
 - Save stories to bookmarks
 - Manage account and notification preferences
+- Track recent reading activity and engagement stats from settings
 
 ---
 
@@ -82,14 +83,21 @@ User can:
 - View registered notification devices
 - Remove a registered device
 
-### G. Language & Translation Experience (Planned Core Feature)
-This is a core planned feature that extends the current language preference flow.
+### G. Language & Translation Experience
 
-User can (target behavior):
+User can:
 - Set a preferred reading language from Settings/Profile
-- See story summaries in that preferred language by default
-- Trigger translation on demand for a specific story when needed
-- Keep the original article link available for source verification
+- See story summaries in that preferred language where available
+- Trigger translation on demand for a specific story
+- Toggle between translated and original text (`Translate` / `Show Original`)
+- See translation state badges (`Original` / `Translated`) and loading/error feedback
+
+### H. Activity Overview (Settings/Profile)
+
+User can:
+- See total views, bookmarks, translations, and shares
+- See last active timestamp
+- Browse recent reading activity (latest viewed stories)
 
 ### E. Bookmarks Sheet
 Opened from Feed page.
@@ -108,7 +116,7 @@ User can:
 - Submit credentials
 - See validation/authentication errors
 
-### Visual References (Implemented + Planned)
+### Visual References
 The screenshots below are included for product review and expectation setting.
 
 Implemented screens:
@@ -128,9 +136,9 @@ Implemented screens:
 #### Reader View
 ![Reader View](./images/user-guide/reader-view.png)
 
-Planned screen:
+Additional reference screen:
 
-#### Translation State (Planned)
+#### Translation State
 ![Translation Planned](./images/user-guide/translation-planned.png)
 
 ---
@@ -208,7 +216,7 @@ Expected result:
 - Session is cleared.
 - Protected actions require sign-in again.
 
-## Scenario 8: User reads in preferred language (planned)
+## Scenario 8: User reads in preferred language with on-demand translation
 1. User opens Settings/Profile.
 2. User selects preferred language (example: Hindi).
 3. User returns to feed.
@@ -218,7 +226,16 @@ Expected result:
 
 Expected result:
 - User gets a consistent reading experience in chosen language.
-- User can still access original source for trust and context.
+- User can still access original text/source for trust and context.
+
+## Scenario 9: User checks activity overview
+1. User opens Settings/Profile.
+2. User scrolls to Activity Overview.
+3. User sees summary metrics and recent reading entries.
+
+Expected result:
+- Metrics are fetched from backend and rendered with localized labels.
+- Recent reading shows fallback title when story title is unavailable.
 
 ---
 
@@ -258,12 +275,13 @@ Expected result:
 - Notification preferences and device management UI hooks
 - Language preference selection and backend sync
 - Multi-language summary generation support in backend pipeline
+- On-demand translation controls with state badges and fallback behavior
+- Activity overview in settings (stats + recent reading feed)
 
-### Planned (not fully shipped in UX yet)
-- On-demand per-story translation control in feed/reader
-- Strong fallback behavior when translation is unavailable
-- Translation status indicators (original vs translated)
-- Clear user controls for switching between original and translated text
+### Follow-on UX opportunities
+- Translation quality confidence hints for users
+- Dedicated notifications inbox surface
+- Bookmark folders/tags for heavy readers
 
 ### Product expectations to validate with stakeholders
 - Should onboarding exist before first feed load?
@@ -275,14 +293,14 @@ Expected result:
 
 ---
 
-## 6) Planned Translation Feature Design (User-Facing)
+## 6) Translation Experience Design (User-Facing)
 
-This section documents how translation is expected to work for users.
+This section documents how translation works for users today and what can be improved next.
 
 ### 6.1 User intent
 Users should be able to consume news in their comfortable language without losing trust in original sources.
 
-### 6.2 UX behavior (target)
+### 6.2 UX behavior
 1. Preferred language is set in Settings/Profile.
 2. Feed requests content in that language first.
 3. If content is not available in preferred language, show a Translate action on the card.
@@ -299,10 +317,10 @@ Users should be able to consume news in their comfortable language without losin
 - If translation is delayed, allow user to continue feed browsing.
 - If language is unsupported for a specific card, show clear fallback copy.
 
-### 6.5 Rollout expectation
-- Phase 1: Preferred language feed behavior and summary-level translation consistency.
-- Phase 2: Per-story on-demand translation control in feed and reader view.
-- Phase 3: Optimization for speed, caching, and translation quality signals.
+### 6.5 Optimization direction
+- Improve translation latency consistency on weak networks.
+- Add lightweight quality indicators when translation confidence is low.
+- Extend translation cache hit-rate monitoring for repeat requests.
 
 ---
 
@@ -318,7 +336,8 @@ Use these for release review from a user perspective:
 6. User can update notification preferences and manage devices.
 7. User can sign out and protected features lock correctly.
 8. User can switch to preferred language and receive translated/target-language content where available.
-9. User can toggle between translated and original text for a story (planned target behavior).
+9. User can view activity stats and recent reading history in Settings/Profile.
+10. User can toggle between translated and original text for a story.
 
 ---
 

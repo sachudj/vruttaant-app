@@ -27,6 +27,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 
 ### Reference Documentation
 - **[API_ENDPOINTS.md](./API_ENDPOINTS.md)** - Complete API reference with examples
+- **[Vruttaant.postman_collection.json](./Vruttaant.postman_collection.json)** - Importable Postman collection for end-to-end API testing
 - **[DATABASE.md](./DATABASE.md)** - MongoDB schema, queries, backup/restore
 - **[DOCKER.md](./DOCKER.md)** - Container management, troubleshooting
 - **[LOAD_TESTING.md](./LOAD_TESTING.md)** - Baseline performance testing and SLO targets
@@ -74,6 +75,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 | **MOBILE_APP.md** | Flutter setup & building | Mobile developers |
 | **USER_APP_GUIDE.md** | User journeys, pages, and scenarios | Product, QA, design |
 | **API_ENDPOINTS.md** | Complete API reference | Developers, testers |
+| **Vruttaant.postman_collection.json** | Postman API test collection | QA, developers |
 | **DATABASE.md** | MongoDB schema & operations | Backend, DevOps |
 | **DOCKER.md** | Container management | DevOps, backend |
 | **LOAD_TESTING.md** | Baseline performance tests and SLOs | Backend, DevOps |
@@ -107,6 +109,9 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 **...see all API endpoints**
 → [API_ENDPOINTS.md](./API_ENDPOINTS.md)
 
+**...import APIs into Postman quickly**
+→ [Vruttaant.postman_collection.json](./Vruttaant.postman_collection.json)
+
 **...understand the database schema**
 → [DATABASE.md](./DATABASE.md)
 
@@ -133,10 +138,9 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 
 ## 📝 Document Maintenance
 
-- Last updated: **May 18, 2026**
-- Total documentation: **14 files**
-- Total word count: **~21,000 words**
-- Coverage: Foundation complete with comprehensive environment setup, ready for feature development
+- Last updated: **May 24, 2026**
+- Total documentation: **19 top-level docs/items in `/docs`**
+- Coverage: Tracks A-N are complete; docs include API runtime docs and Postman import assets
 
 ## ✅ Verification
 

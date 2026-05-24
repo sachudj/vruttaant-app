@@ -1,8 +1,8 @@
 # Project Status & Implementation Summary
 
 **Date**: May 24, 2026  
-**Version**: v0.6 (Active Development)  
-**Status**: ✅ Core Platform Complete (API hardening, auth, observability, data governance, feed intelligence, recommendations, analytics, engagement-driven boosting)
+**Version**: v0.7 (Active Development)  
+**Status**: ✅ Tracks A-N Complete (Core platform, engagement, performance, infra operations, docs/UX polish)
 
 Detailed implementation sequencing and security hardening tasks are tracked in [ROADMAP.md](./ROADMAP.md).
 
@@ -14,9 +14,10 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] Express.js 4.21 server setup
 - [x] Environment-based configuration (dotenv)
 - [x] Port auto-fallback logic (5000 → 5001 → ...)
-- [x] CORS enabled for all origins
+- [x] CORS configured via environment allowlist
 - [x] JSON request/response middleware
-- [x] Graceful shutdown handling (SIGINT)
+- [x] Graceful shutdown handling (SIGINT/SIGTERM)
+- [x] Runtime API docs: Swagger UI (`/api/docs`) + OpenAPI JSON (`/api/docs.json`)
 
 ### ✅ Database Layer
 - [x] MongoDB 7 via Docker container
@@ -35,13 +36,10 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] Automatic timestamps (createdAt, updatedAt)
 
 ### ✅ API Endpoints
-- [x] `GET /` - Root endpoint info
-- [x] `GET /health` - Server health + DB status
-- [x] `GET /api/news/ingest/health` - Route health
-- [x] `POST /api/news/ingest` - News scraping & persistence
-  - Accepts: url, language, maxItems, persist
-  - Returns: parsed cards + persistence stats
-  - Handles: upsert to DB, error responses
+- [x] Versioned API namespace (`/api/v1/*`) across platform, news, auth, user, bookmarks, analytics, admin, and badges
+- [x] Legacy route compatibility for `/api/news/*` and `/api/auth/*` with deprecation warning paths
+- [x] Postman collection published: `docs/Vruttaant.postman_collection.json`
+- [x] API contract reference maintained in `docs/API_ENDPOINTS.md`
 
 ### ✅ Advanced Backend Features
 - [x] User authentication (JWT)
@@ -133,31 +131,36 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] TTL auto-purge (90 days) for event storage
 - [x] Coverage: 60+ tests, 74.19% statements, 67.32% branches
 
+### ✅ Track K: User Engagement Features
+- [x] Engagement-driven recommendation refinement
+- [x] Reading-time estimation on story cards
+- [x] User activity history, reading feed, and engagement stats APIs
+- [x] Badge and achievement system (catalog, progress, evaluation)
+- [x] Digest email generation + scheduling
+- [x] User cohort segmentation and admin cohort insights
+
+### ✅ Track L: Performance Optimization & Caching
+- [x] Redis cache layer for feed and analytics reads
+- [x] Query/index optimization passes for key read paths
+- [x] CDN URL rewrite support for artwork delivery
+- [x] API response compression with metrics-safe exclusions
+- [x] Mobile bundle optimization workflow and CI artifacting
+- [x] Load-test baseline + strict SLO regression gate
+
+### ✅ Track N: Documentation and UX Polish
+- [x] API docs parity sweep and CI docs guard
+- [x] Settings/Profile activity overview integration
+- [x] Secondary localization polish on non-core surfaces
+- [x] Runtime Swagger docs + importable Postman collection
+
 ---
 
-## What's NOT Yet Implemented
+## Follow-On Optimization (Post Track N)
 
-### ✅ Track K: User Engagement Features (6/6 complete — DONE)
-- [x] K1. Engagement-driven recommendation refinement (boost articles from bookmarked categories) — ✅ done May 19
-- [x] K2. Reading-time estimation on article cards — ✅ done May 19
-- [x] K3. User activity history/reading feed feature — ✅ done May 19
-- [x] K4. Engagement badges and achievement system — ✅ done May 19
-- [x] K5. Digest email template generation and scheduling — ✅ done May 19
-- [x] K6. User cohort segmentation for A/B testing — ✅ done May 19
-
-### ✅ Track L: Performance Optimization & Caching (6/6 complete)
-- [x] Redis caching layer for trending cards and recommendations
-- [x] Image CDN integration for card artwork
-- [x] Database query optimization (indexing strategy review)
-- [x] API response compression (gzip)
-- [x] Mobile app bundle optimization (lazy loading + size-check workflow)
-- [x] Comprehensive load testing regression gates
-
-### ⏳ Infrastructure
-- [x] Database migrations strategy with version tracking
-- [x] Backup automation and restore runbook
-- [x] Release telemetry dashboard (baseline admin API)
-- [x] Multi-environment load history and trend analysis
+### Current optimization themes
+- Tighten cache/compression thresholds based on release telemetry
+- Track APK size trend from CI artifacts across releases
+- Expand source-quality scoring and translation quality signals
 
 ---
 
@@ -222,7 +225,7 @@ Use this checklist for every track item before marking it done.
 ## Current Limitations
 
 1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` accepts one source URL per request (batch ingestion is not yet implemented).
-2. **Localization Scope**: Core feed/settings/auth/bookmarks/reader/analytics surfaces are localized (`en`/`hi`), but secondary UI polish and backend message translations are still pending.
+2. **Localization Scope**: Product-ready localization is implemented for primary app flows (`en`/`hi`), but broader language coverage and backend message localization can still be expanded.
 3. **Redis Coverage**: Redis now caches `/api/v1/news/cards`, `/api/v1/news/recommended`, `/api/v1/analytics/trending`, and `/api/v1/analytics/categories`, but write-through invalidation is currently limited to ingest-driven content changes.
 4. **CDN Integration Requires Env Setup**: Artwork delivery now supports CDN rewriting through backend env configuration, but staging/production still need real CDN endpoints or templates configured for optimization to take effect.
 5. **Load-Test Reporting Requires Admin Ingestion Token for Central Storage**: Baseline runs always generate local JSON reports, and backend persistence is available when `LOADTEST_REPORT_ENDPOINT` + `LOADTEST_REPORT_TOKEN` are configured.
@@ -244,7 +247,7 @@ Use this checklist for every track item before marking it done.
 ### Follow-On Optimization
 1. Tighten compression and cache thresholds using staging telemetry and load trends
 2. Tune mobile APK budget trend from CI artifact history over multiple releases
-3. Extend multi-language source quality scoring once Track N UX polish is complete
+3. Extend multi-language source quality scoring and translation quality signals
 
 ### ✅ Track M Implementation Details
 1. ✅ M1. Backup automation and restore runbook baseline — **DONE May 24**
@@ -338,4 +341,4 @@ All prerequisites are already installed on your machine.
 
 Refer to the relevant documentation file or check [DEVELOPMENT.md](./DEVELOPMENT.md) troubleshooting section.
 
-**Last validated**: May 5, 2026 - All systems operational ✅
+**Last validated**: May 24, 2026 - Tracks A-N complete and docs/tooling synchronized ✅

@@ -1,6 +1,6 @@
 # Product Roadmap
 
-**Date**: May 18, 2026  
+**Date**: May 24, 2026  
 **Purpose**: Break down pending work into small, trackable implementation steps.
 
 ## Current Status
@@ -202,6 +202,7 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 - [x] N1. API and project status documentation parity sweep + CI guard
 - [x] N2. Mobile activity history and reading-feed UI integration
 - [x] N3. Secondary localization polish for non-core surfaces
+- [x] N4. Publish runtime API docs and importable Postman collection
 
 ## Session Notes
 
@@ -298,14 +299,19 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 	- Changes: Rebuilt `docs/API_ENDPOINTS.md` to current v1 contracts (news/auth/user/bookmarks/analytics/admin/badges), updated project next-step status framing, and added `scripts/check-api-docs.sh` wired into `.github/workflows/ci.yml`.
 	- Validation: Script-based docs parity check verifies required v1 endpoints and blocks stale claims (for example `v0` markers and "not implemented" auth/rate-limit assertions).
 	- Risk/Rollback: Documentation and CI check changes are isolated; rollback is limited to docs and one CI step.
-	- Commit: pending.
+	- Commit: `0313ff4`.
 - _May 24, 2026_: Completed N.2 mobile activity history and reading-feed UI integration.
 	- Changes: Added mobile API methods for `/api/v1/user/activity/stats` and `/api/v1/user/activity/reading-feed`, surfaced activity overview metrics plus recent reading feed inside the Settings/Profile page, and added localization keys for the new surface (`en`/`hi`).
 	- Validation: `flutter test test/news_api_service_test.dart` passing with new service coverage for activity stats and reading feed.
 	- Risk/Rollback: Feature is read-only UI integration on existing APIs; rollback is isolated to mobile settings/activity rendering and API client methods.
-	- Commit: pending.
+	- Commit: `0313ff4`.
 - _May 24, 2026_: Completed N.3 secondary localization polish for non-core surfaces.
 	- Changes: Removed hardcoded fallback English copy in shared card UI, localized reading-time label rendering, replaced raw backend exception text with safe localized feedback in feed/settings error surfaces, and corrected docs API base URL to the backend default (`5000`).
 	- Validation: `flutter analyze`, targeted `flutter test`, and docs parity script checks pass.
 	- Risk/Rollback: Changes are presentation-layer and docs-only; rollback is limited to mobile localization strings and UI messaging paths.
-	- Commit: pending.
+	- Commit: `d61a894`.
+- _May 24, 2026_: Completed N.4 runtime API docs and Postman import bundle.
+	- Changes: Added OpenAPI spec source (`backend/src/docs/openapi.js`), mounted Swagger UI (`/api/docs`) and JSON spec (`/api/docs.json`), and published importable Postman collection at `docs/Vruttaant.postman_collection.json`.
+	- Validation: Local docs routes verified on fallback port and Postman collection includes all current v1 route groups.
+	- Risk/Rollback: Additive docs/tooling surface only; rollback is isolated to docs routes and spec assets.
+	- Commit: `72c0c72`.
