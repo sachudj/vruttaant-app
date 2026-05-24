@@ -23,16 +23,12 @@ const userSchema = new mongoose.Schema(
       googleSub: {
         type: String,
         default: null,
-        trim: true,
-        unique: true,
-        sparse: true
+        trim: true
       },
       appleSub: {
         type: String,
         default: null,
-        trim: true,
-        unique: true,
-        sparse: true
+        trim: true
       }
     },
     role: {
@@ -95,6 +91,23 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true
+  }
+);
+
+// Enforce provider-sub uniqueness only when a real string value exists.
+userSchema.index(
+  { 'authProviders.googleSub': 1 },
+  {
+    unique: true,
+    partialFilterExpression: { 'authProviders.googleSub': { $type: 'string' } }
+  }
+);
+
+userSchema.index(
+  { 'authProviders.appleSub': 1 },
+  {
+    unique: true,
+    partialFilterExpression: { 'authProviders.appleSub': { $type: 'string' } }
   }
 );
 

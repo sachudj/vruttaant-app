@@ -8,7 +8,8 @@ const migrations = [
   require('./001_add_trending_fields'),
   require('./002_seed_news_sources'),
   require('./003_expand_news_sources_india'),
-  require('./004_news_source_reliability_controls')
+  require('./004_news_source_reliability_controls'),
+  require('./005_fix_social_provider_partial_indexes')
 ];
 
 /**
