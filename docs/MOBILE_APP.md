@@ -9,6 +9,15 @@ Flutter mobile app for browsing news in an InShorts-style vertical swipe interfa
 - iOS: Xcode 26.4.1+, CocoaPods 1.16.2+
 - Android: Android Studio 2025.3+, Android SDK 36+, Java 26+
 
+## Supported Platforms
+
+- Android: API 24+ (Android 7.0+)
+- iOS: 15.0+
+
+Notes:
+- Android minimum is inherited from `flutter.minSdkVersion` in `android/app/build.gradle.kts` (Flutter currently resolves this project to API 24).
+- iOS minimum is pinned in both `ios/Podfile` and `ios/Runner.xcodeproj/project.pbxproj`.
+
 ## Verify Installation
 
 ```bash
@@ -115,6 +124,12 @@ flutter run -d "chrome"
 2. Connect via USB
 3. Run: `flutter devices` (verify device listed)
 4. Run: `flutter run`
+5. If you need backend access from device to local server, run: `adb reverse tcp:5000 tcp:5000` and then launch with `flutter run --dart-define=API_BASE_URL=http://127.0.0.1:5000`
+
+No SIM card is required for local testing. You only need:
+1. Device power and USB cable
+2. Developer options + USB debugging enabled
+3. Internet via Wi-Fi if your flow needs external APIs (Google/Apple auth or remote backend)
 
 ## Development Workflow
 
@@ -179,6 +194,37 @@ flutter build apk --release
 ```
 
 Output: `build/app/outputs/flutter-apk/app-release.apk`
+
+### Keep Latest APK In Repo (No CI Artifacts)
+
+If you cannot use CI artifacts, you can publish a latest APK into a tracked repo path:
+
+```bash
+npm run mobile:publish-apk
+```
+
+This command:
+1. Builds a release APK locally.
+2. Copies it to `artifacts/mobile/android/app-release-latest.apk`.
+3. Writes metadata to `artifacts/mobile/android/app-release-latest.json` with commit SHA, file size, and SHA256.
+
+Then include it in your commit:
+
+```bash
+git add artifacts/mobile/android
+git commit -m "chore: update latest mobile APK"
+git push origin main
+```
+
+Recommendation: if repo size becomes a concern, move this APK path to Git LFS while keeping the same workflow.
+
+If your local git pre-push hook is enabled, push now also validates APK freshness using `npm run mobile:apk-sync-check` and blocks if `mobile_app` code is newer than the committed `artifacts/mobile/android/app-release-latest.apk`.
+
+Emergency bypass for a one-off push:
+
+```bash
+SKIP_APK_SYNC_CHECK=1 git push origin main
+```
 
 For Google Play (AAB format):
 ```bash
