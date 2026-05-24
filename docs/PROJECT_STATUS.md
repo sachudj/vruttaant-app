@@ -1,7 +1,7 @@
 # Project Status & Implementation Summary
 
-**Date**: May 19, 2026  
-**Version**: v0.4 (Active Development)  
+**Date**: May 24, 2026  
+**Version**: v0.5 (Active Development)  
 **Status**: ✅ Core Platform Complete (API hardening, auth, observability, data governance, feed intelligence, recommendations, analytics, engagement-driven boosting)
 
 Detailed implementation sequencing and security hardening tasks are tracked in [ROADMAP.md](./ROADMAP.md).
@@ -155,7 +155,7 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 
 ### ⏳ Infrastructure
 - [x] Database migrations strategy with version tracking
-- [ ] Backup automation and restore runbook
+- [x] Backup automation and restore runbook
 - [ ] Release telemetry dashboard
 - [ ] Multi-environment load history and trend analysis
 
@@ -192,6 +192,10 @@ curl -X POST http://localhost:5001/api/news/ingest \
 mongosh "mongodb://admin:admin123@127.0.0.1:27017/vruttaant?authSource=admin"
 db.newscards.countDocuments()
 # Expected: Returns number of scraped articles
+
+# 7. Backup + restore drill verification
+npm run infra:backup:verify
+# Expected: Backup/restore verification passed for DB 'vruttaant_backup_verify'.
 ```
 
 ## Step Completion Checklist (Operational)
@@ -221,7 +225,7 @@ Use this checklist for every track item before marking it done.
 2. **Localization Scope**: Core feed/settings/auth/bookmarks/reader/analytics surfaces are localized (`en`/`hi`), but secondary UI polish and backend message translations are still pending.
 3. **Redis Coverage**: Redis now caches `/api/v1/news/cards`, `/api/v1/news/recommended`, `/api/v1/analytics/trending`, and `/api/v1/analytics/categories`, but write-through invalidation is currently limited to ingest-driven content changes.
 4. **CDN Integration Requires Env Setup**: Artwork delivery now supports CDN rewriting through backend env configuration, but staging/production still need real CDN endpoints or templates configured for optimization to take effect.
-5. **Load Testing Trend History**: Baseline load testing and CI regression gate exist, but cross-environment trend history and telemetry dashboard are still pending.
+5. **Release Telemetry and Trend History**: Baseline load testing and CI regression gate exist, but release telemetry dashboard and cross-environment trend history are still pending.
 
 ---
 
@@ -241,11 +245,17 @@ Use this checklist for every track item before marking it done.
 3. Tune the 20 MB mobile APK budget using CI artifact history over several runs
 
 ### Medium Term (Infrastructure & Polish, 3-4 weeks)
-1. Add backup automation and restore runbook
-2. Create release telemetry dashboard for rollout health
-3. Extend multi-language source coverage with ingestion quality scoring
-4. Complete localization polish for secondary UI copy
-5. Set up cross-environment load history and trend analysis
+1. Create release telemetry dashboard for rollout health
+2. Extend multi-language source coverage with ingestion quality scoring
+3. Complete localization polish for secondary UI copy
+4. Set up cross-environment load history and trend analysis
+
+### ✅ Track M: Infrastructure Operations
+1. ✅ M1. Backup automation and restore runbook baseline — **DONE May 24**
+  - `scripts/backup-mongodb.sh`: gzip archive backup + checksum + retention pruning
+  - `scripts/restore-mongodb.sh`: checksum-verified restore (`--latest`, `--backup-file`, `--dry-run`, `--drop`)
+  - `scripts/verify-backup-restore.sh`: deterministic restore-drill verification
+  - Backend npm scripts: `infra:backup`, `infra:restore`, `infra:backup:verify`
 
 ---
 

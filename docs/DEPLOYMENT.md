@@ -31,6 +31,16 @@ Required production/staging variables:
 9. `IMAGE_CDN_DEFAULT_WIDTH` (recommended, for example `1200`)
 10. `IMAGE_CDN_DEFAULT_QUALITY` (recommended, for example `80`)
 
+Backup automation variables (for scripts):
+
+1. `BACKUP_DIR` (default: `../backups/mongodb`)
+2. `BACKUP_RETENTION_COUNT` (default: `14`)
+3. `DB_NAME` (default: `vruttaant`)
+4. `MONGO_USER`, `MONGO_PASSWORD`, `MONGO_AUTH_DB`
+5. Optional: `VERIFY_DB`, `VERIFY_BACKUP_DIR` for restore drills
+
+Reference template: `backend/.env.backup.example`
+
 Image delivery notes:
 
 1. Use `IMAGE_CDN_BASE_URL` when your CDN exposes a fetch endpoint that accepts a source `url` query parameter.
@@ -121,6 +131,65 @@ Trigger modes:
 2. Smoke checks fail in production
 3. Deploy gate SLO checks fail after release cut
 4. Authentication or bookmark core flows are degraded
+
+## Backup and Restore Operations
+
+### RPO/RTO Targets
+
+1. Recovery Point Objective (RPO): 24 hours
+2. Recovery Time Objective (RTO): 60 minutes
+
+### Backup Schedule
+
+1. Run daily backup in staging and production via scheduler:
+
+```bash
+cd backend
+npm run infra:backup
+```
+
+2. Suggested schedule example (UTC 02:15 daily):
+
+```bash
+15 2 * * * cd /path/to/vruttaant-app/backend && npm run infra:backup >> /var/log/vruttaant-backup.log 2>&1
+```
+
+### Restore Commands
+
+1. Validate latest snapshot without applying changes:
+
+```bash
+cd backend
+npm run infra:restore -- --latest --dry-run
+```
+
+2. Restore latest snapshot into target DB:
+
+```bash
+cd backend
+npm run infra:restore -- --latest --drop
+```
+
+3. Restore explicit snapshot:
+
+```bash
+cd backend
+npm run infra:restore -- --backup-file ../backups/mongodb/vruttaant_YYYYMMDD_HHMMSS.archive.gz --drop
+```
+
+### Weekly Restore Drill
+
+Run deterministic backup/restore verification over isolated DB:
+
+```bash
+cd backend
+npm run infra:backup:verify
+```
+
+Expected result:
+
+1. Verification dataset restored with marker/count parity
+2. Script exits with status code `0`
 
 ## Post-Deploy Verification
 

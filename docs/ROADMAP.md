@@ -5,7 +5,7 @@
 
 ## Current Status
 
-Tracks A-J completed. Detailed session notes are below. Next phase: Tracks K (User Engagement) and L (Performance Optimization).
+Tracks A-L completed. Detailed session notes are below. Next phase: Track M (Infrastructure Operations).
 
 ### Planned Execution Order
 
@@ -191,6 +191,10 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 - [x] L5. Add mobile app bundle optimization (lazy loading, tree shaking verification)
 - [x] L6. Add comprehensive load testing with regression gates (p95 latency, throughput SLOs)
 
+## Track M: Infrastructure Operations
+
+- [x] M1. Add backup automation and restore runbook
+
 ## Session Notes
 
 - _Add short notes here after each implementation session._
@@ -266,4 +270,9 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 	- Changes: Lazy-loaded the reader pane by switching `StoryPager` to builder-based paging and creating the `WebViewController` only when the reader tab is opened. Added repeatable Android size-analysis workflow via `scripts/check-mobile-bundle-size.sh`, documented the required single-ABI `--target-platform` usage for Flutter analyze-size builds, extended CI to upload mobile size-analysis artifacts for Android arm64 release builds, and enforced a tighter 20 MB arm64 APK budget with repo-local copy of the generated size-analysis JSON.
 	- Validation: Focused Flutter widget tests passed for feed/reader behavior. Verified the release size-analysis workflow and confirmed Flutter requires single-ABI analyze-size commands such as `flutter build apk --release --analyze-size --target-platform android-arm64`. Validated CI YAML parsing and helper script syntax after wiring the artifact upload path. Measured current arm64 APK size at 19,298,478 bytes, which passes the 20 MB budget.
 	- Risk/Rollback: Reader initialization now occurs on first reader swipe instead of card mount; rollback is isolated to `StoryPager` paging logic and the helper script.
+	- Commit: pending.
+- _May 24, 2026_: Completed M.1 backup automation and restore runbook baseline.
+	- Changes: Added `scripts/backup-mongodb.sh`, `scripts/restore-mongodb.sh`, and `scripts/verify-backup-restore.sh` for archive backups, checksum validation, retention pruning, and restore-drill verification. Wired backend npm scripts (`infra:backup`, `infra:restore`, `infra:backup:verify`) and added backup env template `backend/.env.backup.example`.
+	- Validation: Added deterministic restore verification flow over isolated `vruttaant_backup_verify` DB and dry-run restore mode for operator safety.
+	- Risk/Rollback: Backup/restore logic is isolated to scripts and docs; rollback is limited to removing script wiring without runtime API impact.
 	- Commit: pending.

@@ -74,6 +74,10 @@ web_modules/
 !.env.example
 !backend/.env.staging.example
 !backend/.env.production.example
+!backend/.env.backup.example
+
+# Generated Mongo backup archives (M1)
+backups/
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

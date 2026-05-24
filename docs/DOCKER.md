@@ -120,6 +120,43 @@ Set in `backend/.env` (or override with environment variable).
 
 ## Backup & Restore
 
+### Automated Backup (Recommended)
+
+```bash
+cd backend
+npm run infra:backup
+```
+
+This creates a compressed archive in `backups/mongodb/` plus:
+
+1. `.sha256` checksum file
+2. `.meta` metadata file
+3. Retention pruning (default keeps last 14 archives)
+
+### Automated Restore (Recommended)
+
+```bash
+cd backend
+
+# Validate latest archive only
+npm run infra:restore -- --latest --dry-run
+
+# Restore latest archive
+npm run infra:restore -- --latest --drop
+
+# Restore explicit archive
+npm run infra:restore -- --backup-file ../backups/mongodb/vruttaant_YYYYMMDD_HHMMSS.archive.gz --drop
+```
+
+### Restore Drill Verification
+
+```bash
+cd backend
+npm run infra:backup:verify
+```
+
+This command seeds a verification DB, backs it up, restores it, and checks deterministic marker parity.
+
 ### Manual Backup
 ```bash
 docker exec vruttaant-mongodb mongodump --username admin --password admin123 --authenticationDatabase admin --out /backup

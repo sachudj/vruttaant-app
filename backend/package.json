@@ -18,7 +18,10 @@
     "security:audit": "npm audit --audit-level=high",
     "infra:up": "docker compose -f ../docker-compose.yml up -d",
     "infra:down": "docker compose -f ../docker-compose.yml down",
-    "infra:ps": "docker compose -f ../docker-compose.yml ps"
+    "infra:ps": "docker compose -f ../docker-compose.yml ps",
+    "infra:backup": "bash ../scripts/backup-mongodb.sh",
+    "infra:restore": "bash ../scripts/restore-mongodb.sh",
+    "infra:backup:verify": "bash ../scripts/verify-backup-restore.sh"
   },
   "keywords": [
     "news",
