@@ -372,11 +372,16 @@ Reference plan: `docs/SOCIAL_AUTH_PLAN.md`
 ## Track P: Follow-On Optimization
 
 - [x] P1. Tighten cache/compression defaults using current telemetry profile
-- [ ] P2. Tune mobile APK size budget trend gates from CI artifact history
+- [x] P2. Tune mobile APK size budget trend gates from CI artifact history
 - [ ] P3. Extend source-quality scoring with translation quality signals
 
 - _May 24, 2026_: Completed P1 telemetry-driven cache/compression default tuning.
 	- Changes: Tightened default cache TTLs (`news/cards` 300 -> 180, `news/recommended` 120 -> 90, analytics 600 -> 300) and raised default compression threshold (1024 -> 1536 bytes) to reduce CPU spent compressing tiny responses. Updated backend env templates and backend docs to match.
 	- Validation: Focused backend tests for cache/compression behavior and lint.
 	- Risk/Rollback: Lower TTLs increase cache churn during traffic spikes and higher compression threshold may slightly reduce bandwidth savings for near-threshold payloads; rollback is isolated to env defaults and helper constants.
+	- Commit: pending.
+- _May 24, 2026_: Completed P2 mobile APK trend-gate tuning.
+	- Changes: Added CI-enforced APK trend gate script (`scripts/check-mobile-size-trend.sh`) that compares current arm64 APK size against versioned baseline (`mobile_app/env/apk-size-baseline.json`) with configurable growth ceiling (`MAX_APK_GROWTH_PERCENT`, default 4%). Extended existing mobile size-check script to emit machine-readable APK metadata and wired trend gate into `.github/workflows/ci.yml`.
+	- Validation: Local script sanity checks for pass/fail thresholds and CI workflow wiring review.
+	- Risk/Rollback: Trend gate may block legitimate growth spikes if baseline is stale; rollback is isolated to CI step removal or growth-threshold env tuning.
 	- Commit: pending.

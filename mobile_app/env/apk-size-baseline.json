@@ -1,0 +1,10 @@
+{
+  "platforms": {
+    "android-arm64": {
+      "baselineBytes": 19298478,
+      "capturedAt": "2026-05-18",
+      "source": "ci-size-analysis",
+      "notes": "Initial arm64 APK baseline for trend gating"
+    }
+  }
+}

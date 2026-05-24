@@ -8,6 +8,7 @@ TARGET_PLATFORM="${TARGET_PLATFORM:-android-arm64}"
 MAX_APK_SIZE_MB="${MAX_APK_SIZE_MB:-20}"
 APK_PATH="$ROOT_DIR/mobile_app/build/app/outputs/flutter-apk/app-release.apk"
 SIZE_ANALYSIS_DIR="$ROOT_DIR/mobile_app/build/size-analysis"
+METADATA_PATH="$SIZE_ANALYSIS_DIR/apk-size-metadata.json"
 
 get_file_size_bytes() {
 	local file_path="$1"
@@ -40,6 +41,19 @@ max_apk_size_bytes="$((MAX_APK_SIZE_MB * 1024 * 1024))"
 
 echo "APK size: $apk_size_bytes bytes"
 echo "APK budget: $max_apk_size_bytes bytes (${MAX_APK_SIZE_MB} MB)"
+
+cat >"$METADATA_PATH" <<EOF
+{
+	"targetPlatform": "$TARGET_PLATFORM",
+	"apkPath": "$APK_PATH",
+	"apkSizeBytes": $apk_size_bytes,
+	"apkBudgetBytes": $max_apk_size_bytes,
+	"maxApkSizeMb": $MAX_APK_SIZE_MB,
+	"generatedAt": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+}
+EOF
+
+echo "APK metadata: $METADATA_PATH"
 
 if (( apk_size_bytes > max_apk_size_bytes )); then
 	echo "APK size budget exceeded: ${apk_size_bytes} bytes > ${max_apk_size_bytes} bytes" >&2

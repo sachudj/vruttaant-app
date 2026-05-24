@@ -158,8 +158,8 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 ## Follow-On Optimization (Post Track N)
 
 ### Current optimization themes
-- Tighten cache/compression thresholds based on release telemetry
-- Track APK size trend from CI artifacts across releases
+- Tighten cache/compression thresholds based on release telemetry (P1 complete)
+- Track APK size trend from CI artifacts across releases (P2 complete)
 - Expand source-quality scoring and translation quality signals
 
 ---
@@ -246,7 +246,7 @@ Use this checklist for every track item before marking it done.
 
 ### Follow-On Optimization
 1. ✅ P1 tighten compression/cache defaults using telemetry profile — **DONE May 24**
-2. P2 tune mobile APK budget trend from CI artifact history over multiple releases
+2. ✅ P2 tune mobile APK budget trend from CI artifact history over multiple releases — **DONE May 24**
 3. P3 extend multi-language source quality scoring and translation quality signals
 4. Track O progress: O1 (user model compatibility baseline), O2 (backend social auth endpoint baseline), O3 (mobile Google sign-in baseline), O4 (mobile Apple sign-in baseline), O5 (security hardening: nonce replay defense + explicit linking policy), O6 (backend/mobile test + contract parity coverage), and O7 (docs + Postman parity sweep) completed on May 24, 2026
 

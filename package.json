@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "prepare": "husky",
-    "mobile:size-check": "bash scripts/check-mobile-bundle-size.sh"
+    "mobile:size-check": "bash scripts/check-mobile-bundle-size.sh",
+    "mobile:size-trend-check": "bash scripts/check-mobile-size-trend.sh"
   },
   "lint-staged": {
     "backend/src/**/*.js": "npx --prefix backend eslint --no-warn-ignored --config backend/eslint.config.js",

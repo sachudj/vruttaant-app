@@ -211,6 +211,22 @@ Use the generated size analysis output to confirm tree shaking stays effective a
 
 The helper also copies the latest Flutter-generated `*-code-size-analysis_*.json` report into `mobile_app/build/size-analysis/` so the file is preserved in a stable repo-local path for CI artifact collection and local inspection.
 
+CI now enforces both:
+1. Absolute APK cap (`MAX_APK_SIZE_MB`, default 20 MB)
+2. Relative growth trend gate (`MAX_APK_GROWTH_PERCENT`, default 4%) versus baseline in `mobile_app/env/apk-size-baseline.json`
+
+Run the trend gate locally (after a size build):
+
+```bash
+npm run mobile:size-trend-check
+```
+
+Update baseline when intentionally shipping larger binaries:
+1. Validate release intent and dependency/module justification.
+2. Measure new arm64 APK size using `npm run mobile:size-check`.
+3. Update `mobile_app/env/apk-size-baseline.json` with the approved `baselineBytes` and `capturedAt`.
+4. Include rationale in PR notes so future trend deltas remain explainable.
+
 ## Backend Integration
 
 Current integration uses `NewsApiService` with:
