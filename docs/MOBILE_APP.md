@@ -77,6 +77,12 @@ Platform prerequisites:
 - Google: configure OAuth client IDs for Android/iOS and ensure the app receives an ID token.
 - Apple: configure Sign In with Apple capability and matching service identifiers.
 
+Runtime behavior in app:
+- Login sheet shows Email/Password plus `Sign in with Google` and `Sign in with Apple` actions.
+- Provider tokens are exchanged only with backend `/api/v1/auth/social`; the app does not call protected APIs using provider tokens directly.
+- On successful social login, mobile stores backend JWT access/refresh tokens exactly like password login.
+- If backend rejects linking due to O5 policy checks (for example `409` conflict or `401` unverified email), the backend error message is surfaced in the login sheet.
+
 ## Running the App
 
 ### On Simulator/Emulator

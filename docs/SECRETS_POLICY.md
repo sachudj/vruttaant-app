@@ -34,8 +34,16 @@ Applies to:
 - `MONGODB_URI`
 - `GOOGLE_OAUTH_CLIENT_ID` (when Google social login is enabled)
 - `APPLE_SERVICE_ID` (when Apple social login is enabled)
+- `SOCIAL_AUTH_AUTO_LINK_BY_EMAIL` (social-account linking policy control; default `false`)
 - `SENTRY_DSN` (if enabled)
 - LLM provider key(s) as configured in backend service
+
+## Social Auth Credential Handling
+
+- Treat Google and Apple OAuth identifiers/configuration as environment-managed deployment config.
+- Do not hardcode OAuth audience values in code or mobile client constants.
+- Keep `SOCIAL_AUTH_AUTO_LINK_BY_EMAIL=false` by default in production unless explicit support processes exist for account-link conflict resolution.
+- If Apple private-key based server flows are added in future, store related private keys only in managed secret stores and rotate on the same 90-day cadence.
 
 ## Rotation Policy
 

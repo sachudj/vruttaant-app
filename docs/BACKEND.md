@@ -55,6 +55,8 @@ JWT_ACCESS_SECRET=
 JWT_REFRESH_SECRET=
 GOOGLE_OAUTH_CLIENT_ID=
 APPLE_SERVICE_ID=
+SOCIAL_AUTH_AUTO_LINK_BY_EMAIL=false
+SOCIAL_AUTH_NONCE_TTL_MS=600000
 LLM_API_KEY=
 LLM_API_URL=https://api.openai.com/v1/chat/completions
 LLM_MODEL=gpt-4o-mini
@@ -70,6 +72,8 @@ IMAGE_CDN_DEFAULT_QUALITY=80
 **JWT_REFRESH_SECRET**: Signing secret for refresh tokens (required in production)
 **GOOGLE_OAUTH_CLIENT_ID**: OAuth client ID used to verify Google ID token audience
 **APPLE_SERVICE_ID**: Apple audience/service identifier used to verify Apple identity token audience
+**SOCIAL_AUTH_AUTO_LINK_BY_EMAIL**: Enable implicit email-based account linking for social login (`false` by default; recommended to keep disabled unless support and account-recovery workflows are ready)
+**SOCIAL_AUTH_NONCE_TTL_MS**: Apple social-login nonce replay window in milliseconds (default: 10 minutes)
 **LLM_API_KEY**: API key for summary generation
 **LLM_API_URL**: OpenAI-compatible chat completions endpoint
 **LLM_MODEL**: Model used for AI summaries
@@ -89,6 +93,22 @@ The backend supports password and social auth flows under `/api/v1/auth`:
 - `POST /api/v1/auth/social` (provider-based login for `google` and `apple`)
 - `POST /api/v1/auth/refresh`
 - `POST /api/v1/auth/logout`
+
+### Social Authentication Hardening
+
+`POST /api/v1/auth/social` performs provider-token verification first and then uses standard
+Vruttaant JWT issuance (`accessToken` + `refreshToken`).
+
+Security controls:
+- Strict claim checks for provider identity tokens (`iss`, `aud`, `exp`, `sub`)
+- Apple nonce validation supports both raw and SHA-256 nonce claim formats
+- Apple nonce replay defense with one-time nonce storage (`SocialAuthNonce` model)
+- Explicit email-linking policy (`SOCIAL_AUTH_AUTO_LINK_BY_EMAIL=false` by default)
+- Verified-email requirements for first-time social sign-in and for email-based linking
+
+Expected conflict behavior:
+- If a user already exists by email and implicit auto-linking is disabled, `/auth/social` returns `409`
+- If provider email is unverified where verification is required, `/auth/social` returns `401`
 
 For MongoDB Atlas (cloud):
 ```

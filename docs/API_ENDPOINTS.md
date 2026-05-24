@@ -83,6 +83,34 @@ Notes:
 - `provider` must be `google` or `apple`.
 - `nonce` is required for Apple token verification.
 - Response shape matches login/signup token response (`data.user`, `data.tokens`).
+- Email-linking policy is explicit. If an account already exists for the same email and
+	`SOCIAL_AUTH_AUTO_LINK_BY_EMAIL` is disabled (default), the endpoint returns `409`.
+- First-time social sign-in and email-based linking require a verified provider email.
+- Apple nonce values are enforced as single-use server-side to prevent replay.
+
+Common `/auth/social` failure responses:
+
+```json
+{
+	"success": false,
+	"error": {
+		"statusCode": 401,
+		"message": "Invalid Google id token.",
+		"requestId": "..."
+	}
+}
+```
+
+```json
+{
+	"success": false,
+	"error": {
+		"statusCode": 409,
+		"message": "A user with this email already exists. Sign in with the existing method and link social auth explicitly.",
+		"requestId": "..."
+	}
+}
+```
 
 ### User
 

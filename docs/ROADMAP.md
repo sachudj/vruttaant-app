@@ -329,7 +329,7 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 - [x] O4. Add mobile Apple sign-in integration (provider SDK + backend exchange)
 - [x] O5. Add security hardening checks (audience/issuer/nonce/linking policy)
 - [x] O6. Add backend/mobile tests and contract parity checks for social auth
-- [ ] O7. Update docs (`API_ENDPOINTS`, `BACKEND`, `MOBILE_APP`, `SECRETS_POLICY`) + Postman
+- [x] O7. Update docs (`API_ENDPOINTS`, `BACKEND`, `MOBILE_APP`, `SECRETS_POLICY`) + Postman
 
 Reference plan: `docs/SOCIAL_AUTH_PLAN.md`
 
@@ -362,4 +362,9 @@ Reference plan: `docs/SOCIAL_AUTH_PLAN.md`
 	- Changes: Added direct provider-verification unit coverage for `socialAuthService` (Google claim checks, Apple nonce handling, unsupported provider path), added `/api/v1/auth/social` contract tests for success and error envelope parity, and expanded mobile `AuthService` social-login tests for malformed-success payload handling.
 	- Validation: Backend `npm test -- __tests__/socialAuthService.test.js __tests__/socialAuthSecurityService.test.js __tests__/authController.test.js __tests__/authSocialContract.test.js` (42/42 passing) and mobile `flutter test test/auth_service_test.dart -r compact` (4/4 passing).
 	- Risk/Rollback: Test-only and contract-assertion updates; rollback is isolated to the new social-auth test files if assertion strategy needs adjustment.
+	- Commit: pending.
+- _May 24, 2026_: Completed O7 social-auth documentation and Postman parity sweep.
+	- Changes: Updated `API_ENDPOINTS.md`, `BACKEND.md`, `MOBILE_APP.md`, and `SECRETS_POLICY.md` with O5/O6 social-auth behavior (linking policy, nonce replay defense, provider setup notes) and added Postman social login requests for Google and Apple token exchange under the Auth collection.
+	- Validation: Manual docs parity review plus `scripts/check-api-docs.sh` gate.
+	- Risk/Rollback: Documentation and API-tooling-only updates; rollback is isolated to docs and Postman collection content.
 	- Commit: pending.
