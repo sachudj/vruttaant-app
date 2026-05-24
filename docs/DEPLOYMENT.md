@@ -73,6 +73,14 @@ Create a new Render Web Service pointing at this repository with:
 4. Health check path: `/health`
 5. Auto deploy: enabled for testing, optional later for production discipline
 
+If you want Render to pre-fill most of this configuration, use the repo blueprint:
+
+```text
+render.yaml
+```
+
+Then create the service from the Render Blueprint flow and fill only the secret values Render cannot sync from source control.
+
 Expected public URL example:
 
 ```text
@@ -108,12 +116,13 @@ These are the minimum vars to set in Render for a functional backend deployment:
 
 ```bash
 NODE_ENV=production
-PORT=5000
 MONGODB_URI=<Atlas connection string>
 JWT_ACCESS_SECRET=<long random secret>
 JWT_REFRESH_SECRET=<long random secret>
 APP_VERSION=render-test
 ```
+
+Note: do not set `PORT` manually on Render. Render injects the correct runtime port automatically, and the backend already reads `process.env.PORT`.
 
 Recommended additions:
 
