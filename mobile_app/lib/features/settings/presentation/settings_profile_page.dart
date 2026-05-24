@@ -55,6 +55,8 @@ class _SettingsProfilePageState extends State<SettingsProfilePage> {
   bool _isLoggedIn = false;
   bool _hasServerNotificationPrefs = false;
   List<Map<String, dynamic>> _devices = const [];
+  Map<String, dynamic> _activityStats = const {};
+  List<Map<String, dynamic>> _readingEvents = const [];
   String? _error;
 
   @override
@@ -119,6 +121,16 @@ class _SettingsProfilePageState extends State<SettingsProfilePage> {
         devices = await widget.newsApiService.fetchNotificationDevices();
       } catch (_) {}
 
+      Map<String, dynamic> activityStats = const {};
+      try {
+        activityStats = await widget.newsApiService.fetchActivityStats();
+      } catch (_) {}
+
+      List<Map<String, dynamic>> readingEvents = const [];
+      try {
+        readingEvents = await widget.newsApiService.fetchReadingFeed(limit: 6);
+      } catch (_) {}
+
       if (!mounted) return;
       setState(() {
         _pendingLanguage = nextLanguage;
@@ -126,6 +138,8 @@ class _SettingsProfilePageState extends State<SettingsProfilePage> {
         _pendingNotifications = nextNotifications;
         _hasServerNotificationPrefs = hasNotificationPrefs;
         _devices = devices;
+        _activityStats = activityStats;
+        _readingEvents = readingEvents;
         _isLoading = false;
       });
     } catch (error) {
@@ -223,6 +237,145 @@ class _SettingsProfilePageState extends State<SettingsProfilePage> {
           _pendingLanguage = code;
         });
       },
+    );
+  }
+
+  String _formatLastActive(BuildContext context, dynamic value) {
+    final localizations = AppLocalizations.of(context);
+    if (value == null) {
+      return localizations.lastActiveUnknown;
+    }
+
+    final timestamp = DateTime.tryParse('$value');
+    if (timestamp == null) {
+      return localizations.lastActiveUnknown;
+    }
+
+    final local = timestamp.toLocal();
+    final paddedMonth = local.month.toString().padLeft(2, '0');
+    final paddedDay = local.day.toString().padLeft(2, '0');
+    final paddedHour = local.hour.toString().padLeft(2, '0');
+    final paddedMinute = local.minute.toString().padLeft(2, '0');
+    return localizations.lastActive(
+      '${local.year}-$paddedMonth-$paddedDay $paddedHour:$paddedMinute',
+    );
+  }
+
+  Widget _activityMetricChip(String label, dynamic value) {
+    final count = value is int ? value : int.tryParse('${value ?? 0}') ?? 0;
+    return Chip(
+      backgroundColor: Colors.white12,
+      side: BorderSide(color: Colors.white24),
+      label: Text(
+        '$label: $count',
+        style: const TextStyle(color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildActivitySection(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(color: Colors.white24),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+          child: Text(
+            localizations.activityOverview,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _activityMetricChip(
+                localizations.totalViews,
+                _activityStats['totalViews'],
+              ),
+              _activityMetricChip(
+                localizations.totalBookmarks,
+                _activityStats['totalBookmarks'],
+              ),
+              _activityMetricChip(
+                localizations.totalTranslations,
+                _activityStats['totalTranslations'],
+              ),
+              _activityMetricChip(
+                localizations.totalShares,
+                _activityStats['totalShares'],
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Text(
+            _formatLastActive(context, _activityStats['lastActivityAt']),
+            style: const TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          child: Text(
+            localizations.recentReading,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+        ),
+        if (_readingEvents.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Text(
+              localizations.noRecentActivity,
+              style: const TextStyle(color: Colors.white70),
+            ),
+          )
+        else
+          ..._readingEvents.map((event) {
+            final metadata = event['cardMetadata'] as Map<String, dynamic>?;
+            final title =
+                (metadata?['title'] as String?)?.trim().isNotEmpty == true
+                ? (metadata!['title'] as String).trim()
+                : localizations.storyFallbackTitle;
+            final category = (metadata?['category'] as String?)?.trim();
+            final language = (metadata?['language'] as String?)?.trim();
+            final subtitleParts = [
+              if (category != null && category.isNotEmpty) category,
+              if (language != null && language.isNotEmpty)
+                language.toUpperCase(),
+            ];
+
+            return ListTile(
+              leading: const Icon(
+                Icons.menu_book_outlined,
+                color: Colors.white70,
+              ),
+              title: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white),
+              ),
+              subtitle: Text(
+                subtitleParts.isEmpty
+                    ? localizations.noRecentActivity
+                    : subtitleParts.join(' | '),
+                style: const TextStyle(color: Colors.white54),
+              ),
+            );
+          }),
+      ],
     );
   }
 
@@ -421,6 +574,7 @@ class _SettingsProfilePageState extends State<SettingsProfilePage> {
                   ),
                 ),
                 if (_isLoggedIn) ...[
+                  _buildActivitySection(context),
                   const Divider(color: Colors.white24),
                   Padding(
                     padding: EdgeInsets.fromLTRB(16, 4, 16, 4),

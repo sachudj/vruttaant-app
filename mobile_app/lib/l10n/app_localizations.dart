@@ -69,6 +69,16 @@ class AppLocalizations {
       'registered_devices': 'Registered Devices',
       'no_notification_devices': 'No notification devices registered yet.',
       'device_removed': 'Device removed.',
+      'activity_overview': 'Activity Overview',
+      'recent_reading': 'Recent Reading',
+      'no_recent_activity': 'No recent reading activity yet.',
+      'total_views': 'Views',
+      'total_bookmarks': 'Bookmarks',
+      'total_translations': 'Translations',
+      'total_shares': 'Shares',
+      'last_active': 'Last active: {value}',
+      'last_active_unknown': 'Last active: unavailable',
+      'story_fallback_title': 'Story',
       'read_more': 'Read More',
       'reader_hint':
           'Swipe left from the news card to open the full article in supported mobile platforms.',
@@ -161,6 +171,16 @@ class AppLocalizations {
       'registered_devices': 'रजिस्टर्ड डिवाइस',
       'no_notification_devices': 'अभी कोई नोटिफिकेशन डिवाइस रजिस्टर्ड नहीं है।',
       'device_removed': 'डिवाइस हटा दिया गया।',
+      'activity_overview': 'गतिविधि सारांश',
+      'recent_reading': 'हाल की पढ़ाई',
+      'no_recent_activity': 'अभी हाल की पढ़ाई गतिविधि नहीं है।',
+      'total_views': 'व्यूज़',
+      'total_bookmarks': 'बुकमार्क',
+      'total_translations': 'अनुवाद',
+      'total_shares': 'शेयर',
+      'last_active': 'आखिरी सक्रिय: {value}',
+      'last_active_unknown': 'आखिरी सक्रिय: उपलब्ध नहीं',
+      'story_fallback_title': 'स्टोरी',
       'read_more': 'और पढ़ें',
       'reader_hint':
           'समर्थित मोबाइल प्लेटफॉर्म पर पूरा लेख खोलने के लिए न्यूज़ कार्ड से बाएं स्वाइप करें।',
@@ -258,6 +278,17 @@ class AppLocalizations {
   String get registeredDevices => _t('registered_devices');
   String get noNotificationDevices => _t('no_notification_devices');
   String get deviceRemoved => _t('device_removed');
+  String get activityOverview => _t('activity_overview');
+  String get recentReading => _t('recent_reading');
+  String get noRecentActivity => _t('no_recent_activity');
+  String get totalViews => _t('total_views');
+  String get totalBookmarks => _t('total_bookmarks');
+  String get totalTranslations => _t('total_translations');
+  String get totalShares => _t('total_shares');
+  String lastActive(String value) =>
+      _t('last_active').replaceAll('{value}', value);
+  String get lastActiveUnknown => _t('last_active_unknown');
+  String get storyFallbackTitle => _t('story_fallback_title');
   String get readMore => _t('read_more');
   String get readerHint => _t('reader_hint');
   String get noOriginalUrl => _t('no_original_url');

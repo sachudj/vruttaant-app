@@ -1,7 +1,7 @@
 # Project Status & Implementation Summary
 
 **Date**: May 24, 2026  
-**Version**: v0.5 (Active Development)  
+**Version**: v0.6 (Active Development)  
 **Status**: ✅ Core Platform Complete (API hardening, auth, observability, data governance, feed intelligence, recommendations, analytics, engagement-driven boosting)
 
 Detailed implementation sequencing and security hardening tasks are tracked in [ROADMAP.md](./ROADMAP.md).
@@ -231,24 +231,22 @@ Use this checklist for every track item before marking it done.
 
 ## Next Steps for Continuation
 
-### ✅ Immediate (Track K - User Engagement, COMPLETE)
-1. ✅ Add engagement-driven recommendation refinement (boost articles from bookmarked categories) — **DONE May 19**
-2. ✅ Add reading-time estimation on article cards and reader experience — **DONE May 19**
-3. ✅ Add user activity history / reading feed feature — **DONE May 19**
-4. ✅ Add engagement badges and achievement system (reader milestones) — **DONE May 19**
-5. ✅ Add digest email template generation and scheduling (complementing push notifications) — **DONE May 19**
-6. ✅ Add user cohort segmentation for A/B testing support — **DONE May 19**
+### ✅ Track M: Infrastructure Operations (COMPLETE)
+1. ✅ M1 backup automation and restore runbook baseline — **DONE May 24**
+2. ✅ M2 release telemetry dashboard baseline — **DONE May 24**
+3. ✅ M3 multi-environment load history and trend analysis — **DONE May 24**
 
-### Short Term (Track L - Performance, 2-3 weeks)
-1. Add cross-environment load-test result history and trend analysis
-2. Tighten compression and caching thresholds using staging measurements
-3. Tune the 20 MB mobile APK budget using CI artifact history over several runs
+### Track N: Documentation and UX Polish (Current)
+1. ✅ N1 API and project-status docs parity sweep + CI docs guard — **DONE May 24**
+2. ✅ N2 mobile activity history and reading-feed UI integration — **DONE May 24**
+3. ⏳ N3 localization polish for secondary UI surfaces and backend-facing copy
 
-### Medium Term (Infrastructure & Polish, 3-4 weeks)
-1. Extend multi-language source coverage with ingestion quality scoring
-2. Complete localization polish for secondary UI copy
+### Follow-On Optimization
+1. Tighten compression and cache thresholds using staging telemetry and load trends
+2. Tune mobile APK budget trend from CI artifact history over multiple releases
+3. Extend multi-language source quality scoring once Track N UX polish is complete
 
-### ✅ Track M: Infrastructure Operations
+### ✅ Track M Implementation Details
 1. ✅ M1. Backup automation and restore runbook baseline — **DONE May 24**
   - `scripts/backup-mongodb.sh`: gzip archive backup + checksum + retention pruning
   - `scripts/restore-mongodb.sh`: checksum-verified restore (`--latest`, `--backup-file`, `--dry-run`, `--drop`)

@@ -34,6 +34,9 @@ jobs:
       - name: Static syntax checks
         run: npm run ci:syntax
 
+      - name: API docs parity check
+        run: bash ../scripts/check-api-docs.sh
+
       - name: Lint
         run: npm run lint
 

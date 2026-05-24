@@ -7,6 +7,81 @@ import 'package:mobile_app/models/news_item.dart';
 import 'package:mobile_app/services/news_api_service.dart';
 
 void main() {
+  test('fetchActivityStats returns stats data payload', () async {
+    final client = MockClient((request) async {
+      expect(request.method, 'GET');
+      expect(
+        request.url.toString(),
+        'https://api.example.com/api/v1/user/activity/stats',
+      );
+      expect(request.headers['Authorization'], 'Bearer test-token');
+
+      return http.Response(
+        jsonEncode({
+          'success': true,
+          'data': {
+            'totalViews': 9,
+            'totalBookmarks': 3,
+            'totalTranslations': 1,
+            'totalShares': 2,
+            'lastActivityAt': '2026-05-24T10:00:00.000Z',
+          },
+        }),
+        200,
+      );
+    });
+
+    final service = NewsApiService(
+      baseUrl: 'https://api.example.com',
+      accessToken: 'test-token',
+      client: client,
+    );
+
+    final stats = await service.fetchActivityStats();
+    expect(stats['totalViews'], 9);
+    expect(stats['totalBookmarks'], 3);
+  });
+
+  test('fetchReadingFeed returns reading events', () async {
+    final client = MockClient((request) async {
+      expect(request.method, 'GET');
+      expect(
+        request.url.toString(),
+        'https://api.example.com/api/v1/user/activity/reading-feed?limit=5',
+      );
+
+      return http.Response(
+        jsonEncode({
+          'success': true,
+          'data': {
+            'readingEvents': [
+              {
+                'eventType': 'view',
+                'cardMetadata': {
+                  'title': 'Story A',
+                  'category': 'Tech',
+                  'language': 'en',
+                },
+              },
+            ],
+          },
+        }),
+        200,
+      );
+    });
+
+    final service = NewsApiService(
+      baseUrl: 'https://api.example.com',
+      accessToken: 'test-token',
+      client: client,
+    );
+
+    final feed = await service.fetchReadingFeed(limit: 5);
+    expect(feed, hasLength(1));
+    final meta = feed.first['cardMetadata'] as Map<String, dynamic>;
+    expect(meta['title'], 'Story A');
+  });
+
   test('fetchNotificationPreferences returns notifications payload', () async {
     final client = MockClient((request) async {
       expect(request.method, 'GET');

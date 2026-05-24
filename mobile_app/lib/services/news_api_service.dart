@@ -387,6 +387,63 @@ class NewsApiService {
   }
 
   // ---------------------------------------------------------------------------
+  // User activity
+  // ---------------------------------------------------------------------------
+
+  Future<Map<String, dynamic>> fetchActivityStats() async {
+    final uri = Uri.parse('$baseUrl/api/v1/user/activity/stats');
+    final response = await _authRequest((h) => _client.get(uri, headers: h));
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to fetch activity stats (${response.statusCode}).',
+      );
+    }
+
+    final dynamic payload = jsonDecode(response.body);
+    if (payload is! Map<String, dynamic>) {
+      throw Exception('Unexpected activity stats response format.');
+    }
+
+    final dynamic data = payload['data'];
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Missing activity stats data in response.');
+    }
+
+    return data;
+  }
+
+  Future<List<Map<String, dynamic>>> fetchReadingFeed({int limit = 8}) async {
+    final uri = Uri.parse(
+      '$baseUrl/api/v1/user/activity/reading-feed',
+    ).replace(queryParameters: {'limit': '$limit'});
+    final response = await _authRequest((h) => _client.get(uri, headers: h));
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to fetch reading feed (${response.statusCode}).');
+    }
+
+    final dynamic payload = jsonDecode(response.body);
+    if (payload is! Map<String, dynamic>) {
+      throw Exception('Unexpected reading feed response format.');
+    }
+
+    final dynamic data = payload['data'];
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Missing reading feed data in response.');
+    }
+
+    final dynamic readingEvents = data['readingEvents'];
+    if (readingEvents is! List) {
+      throw Exception('Missing reading feed events in response.');
+    }
+
+    return readingEvents.whereType<Map<String, dynamic>>().toList(
+      growable: false,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Notification preferences
   // ---------------------------------------------------------------------------
 

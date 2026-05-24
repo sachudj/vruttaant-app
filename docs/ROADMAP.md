@@ -5,7 +5,7 @@
 
 ## Current Status
 
-Tracks A-L completed. Detailed session notes are below. Next phase: Track M (Infrastructure Operations).
+Tracks A-M completed. Track N is in progress (N1-N2 complete, N3 pending). Detailed session notes are below.
 
 ### Planned Execution Order
 
@@ -197,6 +197,12 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 - [x] M2. Add release telemetry dashboard baseline
 - [x] M3. Add multi-environment load history and trend analysis
 
+## Track N: Documentation and UX Polish
+
+- [x] N1. API and project status documentation parity sweep + CI guard
+- [x] N2. Mobile activity history and reading-feed UI integration
+- [ ] N3. Secondary localization polish for non-core surfaces
+
 ## Session Notes
 
 - _Add short notes here after each implementation session._
@@ -287,4 +293,14 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 	- Changes: Added `LoadTestRun` persistence model and admin endpoints `POST /api/v1/admin/loadtest/runs`, `GET /api/v1/admin/loadtest/history`, and `GET /api/v1/admin/loadtest/trends`. Extended baseline runner to emit environment-scoped JSON reports and optionally publish results to the backend with admin auth.
 	- Validation: Added controller unit tests for run ingestion/history/trend aggregation (`__tests__/loadtestController.test.js`) and re-verified related suites.
 	- Risk/Rollback: Changes are additive and admin-scoped; rollback is isolated to load-test model/controller/route wiring and report-publish behavior in baseline runner.
+	- Commit: pending.
+- _May 24, 2026_: Completed N.1 docs parity sweep and CI docs guard.
+	- Changes: Rebuilt `docs/API_ENDPOINTS.md` to current v1 contracts (news/auth/user/bookmarks/analytics/admin/badges), updated project next-step status framing, and added `scripts/check-api-docs.sh` wired into `.github/workflows/ci.yml`.
+	- Validation: Script-based docs parity check verifies required v1 endpoints and blocks stale claims (for example `v0` markers and "not implemented" auth/rate-limit assertions).
+	- Risk/Rollback: Documentation and CI check changes are isolated; rollback is limited to docs and one CI step.
+	- Commit: pending.
+- _May 24, 2026_: Completed N.2 mobile activity history and reading-feed UI integration.
+	- Changes: Added mobile API methods for `/api/v1/user/activity/stats` and `/api/v1/user/activity/reading-feed`, surfaced activity overview metrics plus recent reading feed inside the Settings/Profile page, and added localization keys for the new surface (`en`/`hi`).
+	- Validation: `flutter test test/news_api_service_test.dart` passing with new service coverage for activity stats and reading feed.
+	- Risk/Rollback: Feature is read-only UI integration on existing APIs; rollback is isolated to mobile settings/activity rendering and API client methods.
 	- Commit: pending.
