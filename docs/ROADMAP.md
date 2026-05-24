@@ -328,7 +328,7 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 - [x] O3. Add mobile Google sign-in integration (provider SDK + backend exchange)
 - [x] O4. Add mobile Apple sign-in integration (provider SDK + backend exchange)
 - [x] O5. Add security hardening checks (audience/issuer/nonce/linking policy)
-- [ ] O6. Add backend/mobile tests and contract parity checks for social auth
+- [x] O6. Add backend/mobile tests and contract parity checks for social auth
 - [ ] O7. Update docs (`API_ENDPOINTS`, `BACKEND`, `MOBILE_APP`, `SECRETS_POLICY`) + Postman
 
 Reference plan: `docs/SOCIAL_AUTH_PLAN.md`
@@ -357,4 +357,9 @@ Reference plan: `docs/SOCIAL_AUTH_PLAN.md`
 	- Changes: Added one-time nonce replay protection for Apple login (`SocialAuthNonce` + `socialAuthSecurityService`) and introduced explicit email-linking policy (`SOCIAL_AUTH_AUTO_LINK_BY_EMAIL`, disabled by default) with verified-email requirements for first-time social account creation and email-based account linking.
 	- Validation: `npm test -- __tests__/authController.test.js __tests__/authValidators.test.js __tests__/socialAuthSecurityService.test.js` (54/54 passing).
 	- Risk/Rollback: Replay defense now depends on nonce persistence writes; rollback is isolated to social nonce model/service wiring and controller policy checks.
+	- Commit: pending.
+- _May 24, 2026_: Completed O6 social-auth backend/mobile tests and contract parity checks.
+	- Changes: Added direct provider-verification unit coverage for `socialAuthService` (Google claim checks, Apple nonce handling, unsupported provider path), added `/api/v1/auth/social` contract tests for success and error envelope parity, and expanded mobile `AuthService` social-login tests for malformed-success payload handling.
+	- Validation: Backend `npm test -- __tests__/socialAuthService.test.js __tests__/socialAuthSecurityService.test.js __tests__/authController.test.js __tests__/authSocialContract.test.js` (42/42 passing) and mobile `flutter test test/auth_service_test.dart -r compact` (4/4 passing).
+	- Risk/Rollback: Test-only and contract-assertion updates; rollback is isolated to the new social-auth test files if assertion strategy needs adjustment.
 	- Commit: pending.

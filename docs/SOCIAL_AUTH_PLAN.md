@@ -11,7 +11,7 @@
 - [x] O3. Mobile Google sign-in integration (baseline completed May 24, 2026)
 - [x] O4. Mobile Apple sign-in integration (baseline completed May 24, 2026)
 - [x] O5. Security hardening (nonce replay defense + explicit email-linking policy completed May 24, 2026)
-- [ ] O6. Testing + validation
+- [x] O6. Testing + validation (provider verification tests + auth/social contract parity + mobile service coverage completed May 24, 2026)
 - [ ] O7. Documentation parity sweep
 
 ## Objectives

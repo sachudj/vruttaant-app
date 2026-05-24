@@ -128,4 +128,39 @@ void main() {
     expect(result.success, isTrue);
     expect(service.rawAccessToken, 'apple-access-token');
   });
+
+  test(
+    'loginWithSocialToken fails when tokens are missing in success payload',
+    () async {
+      final client = MockClient((_) async {
+        return http.Response(
+          jsonEncode({
+            'success': true,
+            'data': {
+              'user': {
+                'id': 'uid-3',
+                'email': 'broken@example.com',
+                'role': 'user',
+              },
+              'tokens': {'accessToken': 'only-access-token'},
+            },
+          }),
+          200,
+        );
+      });
+
+      final service = AuthService(
+        baseUrl: 'https://api.example.com',
+        client: client,
+      );
+
+      final result = await service.loginWithSocialToken(
+        provider: 'google',
+        idToken: 'google-id-token',
+      );
+
+      expect(result.success, isFalse);
+      expect(result.errorMessage, 'Unexpected response from server.');
+    },
+  );
 }
