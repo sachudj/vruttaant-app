@@ -29,9 +29,11 @@ Applies to:
 
 ## Required Environment Variables
 
-- `JWT_SECRET`
+- `JWT_ACCESS_SECRET`
 - `JWT_REFRESH_SECRET`
 - `MONGODB_URI`
+- `GOOGLE_OAUTH_CLIENT_ID` (when Google social login is enabled)
+- `APPLE_SERVICE_ID` (when Apple social login is enabled)
 - `SENTRY_DSN` (if enabled)
 - LLM provider key(s) as configured in backend service
 

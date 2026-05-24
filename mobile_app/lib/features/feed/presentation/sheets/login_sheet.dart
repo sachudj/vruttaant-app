@@ -43,6 +43,44 @@ Future<void> showLoginSheet({
             }
           }
 
+          Future<void> doGoogleLogin() async {
+            setModalState(() {
+              isLoading = true;
+              loginError = null;
+            });
+            final result = await authService.loginWithGoogle();
+            if (!context.mounted) return;
+            if (result.success) {
+              Navigator.of(context).pop();
+              onSignedIn();
+              await onLoginSuccess();
+            } else {
+              setModalState(() {
+                loginError = result.errorMessage;
+                isLoading = false;
+              });
+            }
+          }
+
+          Future<void> doAppleLogin() async {
+            setModalState(() {
+              isLoading = true;
+              loginError = null;
+            });
+            final result = await authService.loginWithApple();
+            if (!context.mounted) return;
+            if (result.success) {
+              Navigator.of(context).pop();
+              onSignedIn();
+              await onLoginSuccess();
+            } else {
+              setModalState(() {
+                loginError = result.errorMessage;
+                isLoading = false;
+              });
+            }
+          }
+
           return SafeArea(
             child: Padding(
               padding: EdgeInsets.only(
@@ -117,6 +155,18 @@ Future<void> showLoginSheet({
                             ),
                           )
                         : Text(localizations.signIn),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: isLoading ? null : doGoogleLogin,
+                    icon: const Icon(Icons.g_mobiledata),
+                    label: Text(localizations.signInWithGoogle),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: isLoading ? null : doAppleLogin,
+                    icon: const Icon(Icons.apple),
+                    label: Text(localizations.signInWithApple),
                   ),
                 ],
               ),

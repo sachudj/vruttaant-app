@@ -315,3 +315,41 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 	- Validation: Local docs routes verified on fallback port and Postman collection includes all current v1 route groups.
 	- Risk/Rollback: Additive docs/tooling surface only; rollback is isolated to docs routes and spec assets.
 	- Commit: `72c0c72`.
+- _May 24, 2026_: Expanded source-registry coverage with India-focused multilingual defaults.
+	- Changes: Added migration `003_expand_news_sources_india` to seed reliable Indian news sources for all supported languages (`en`, `hi`, `bn`, `mr`, `te`, `ta`, `gu`, `ur`, `kn`, `or`, `ml`) and wired migration runner to version 3.
+	- Validation: Migration is additive (`$setOnInsert`) and safe to re-run; existing source records are not overwritten.
+	- Risk/Rollback: If a source has parsing or access issues, disable that source row without code rollback; migration rollback is isolated to deleting inserted source rows.
+	- Commit: pending.
+
+## Track O: Social Authentication (Planned)
+
+- [x] O1. Extend user identity model for social providers with backward compatibility
+- [x] O2. Add `POST /api/v1/auth/social` (Google/Apple token verification + JWT issuance)
+- [x] O3. Add mobile Google sign-in integration (provider SDK + backend exchange)
+- [x] O4. Add mobile Apple sign-in integration (provider SDK + backend exchange)
+- [ ] O5. Add security hardening checks (audience/issuer/nonce/linking policy)
+- [ ] O6. Add backend/mobile tests and contract parity checks for social auth
+- [ ] O7. Update docs (`API_ENDPOINTS`, `BACKEND`, `MOBILE_APP`, `SECRETS_POLICY`) + Postman
+
+Reference plan: `docs/SOCIAL_AUTH_PLAN.md`
+
+- _May 24, 2026_: Completed O1 social-auth compatibility baseline.
+	- Changes: Updated `User` schema to support social identity linkage (`authProviders.googleSub`, `authProviders.appleSub`) while preserving existing email/password users, and made `passwordHash` optional for future social-only users. Hardened password login path to reject users without a password hash safely.
+	- Validation: `npm test -- __tests__/authController.test.js` (18/18 passing), including new test case for social-only account password-login rejection.
+	- Risk/Rollback: Schema additions are backward compatible; rollback is isolated to removing new provider fields and restoring `passwordHash` requirement.
+	- Commit: pending.
+- _May 24, 2026_: Completed O2 social auth endpoint baseline.
+	- Changes: Added `POST /api/v1/auth/social` with payload validation (`provider`, `idToken`, `nonce`) and provider verification service (`socialAuthService`) for Google tokeninfo verification and Apple identity-token/JWKS verification. Added account linking by provider subject first, with email fallback, then reused existing JWT access/refresh issuance.
+	- Validation: `npm test -- __tests__/authValidators.test.js __tests__/authController.test.js` (44/44 passing).
+	- Risk/Rollback: Endpoint is additive; rollback is isolated to auth route/controller/service wiring.
+	- Commit: pending.
+- _May 24, 2026_: Completed O3 mobile Google sign-in integration baseline.
+	- Changes: Added `google_sign_in` dependency, implemented `AuthService.loginWithGoogle()` + reusable social token exchange method, and added Google sign-in action to login sheet UI.
+	- Validation: `flutter analyze` on touched auth/localization/UI files and `flutter test test/auth_service_test.dart` (2/2 passing).
+	- Risk/Rollback: Runtime sign-in still requires platform OAuth client configuration (Android/iOS) for id-token issuance; rollback is isolated to mobile auth service and login sheet changes.
+	- Commit: pending.
+- _May 24, 2026_: Completed O4 mobile Apple sign-in integration baseline.
+	- Changes: Added `sign_in_with_apple` dependency, implemented `AuthService.loginWithApple()` (nonce-based flow) and Apple sign-in login-sheet action. Hardened backend Apple nonce validation to accept either raw nonce or SHA-256 hashed nonce claim formats.
+	- Validation: `flutter analyze` (touched files), `flutter test test/auth_service_test.dart` (3/3 passing), backend auth tests (`44/44`) and backend lint (no new errors).
+	- Risk/Rollback: Runtime Apple sign-in still depends on iOS capability/provisioning and service ID setup; rollback is isolated to auth service/login sheet/provider verification nonce logic.
+	- Commit: pending.

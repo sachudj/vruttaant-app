@@ -48,6 +48,8 @@ Check `pubspec.yaml` for dependencies. Key packages:
 
 - `http: ^1.2.2` for backend API calls
 - `cupertino_icons` for iOS icon set
+- `google_sign_in` for Google auth
+- `sign_in_with_apple` for Apple auth
 
 ### iOS Setup (macOS only)
 
@@ -58,6 +60,22 @@ cd ..
 ```
 
 This installs CocoaPods dependencies for iOS.
+
+For Apple sign-in support, also enable the **Sign In with Apple** capability in the iOS target.
+
+### Social Sign-In Setup
+
+Google and Apple sign-in call backend `POST /api/v1/auth/social` and exchange provider identity tokens for app JWTs.
+
+Required backend env vars for verification:
+
+- `GOOGLE_OAUTH_CLIENT_ID`
+- `APPLE_SERVICE_ID`
+
+Platform prerequisites:
+
+- Google: configure OAuth client IDs for Android/iOS and ensure the app receives an ID token.
+- Apple: configure Sign In with Apple capability and matching service identifiers.
 
 ## Running the App
 

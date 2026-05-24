@@ -4,13 +4,15 @@ jest.mock('../src/models/User');
 jest.mock('../src/models/RefreshToken');
 jest.mock('bcryptjs');
 jest.mock('jsonwebtoken');
+jest.mock('../src/services/socialAuthService');
 
 const User = require('../src/models/User');
 const RefreshToken = require('../src/models/RefreshToken');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { verifySocialIdentity } = require('../src/services/socialAuthService');
 
-const { signup, login, refresh, logout } = require('../src/controllers/authController');
+const { signup, login, refresh, logout, socialLogin } = require('../src/controllers/authController');
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 function makeReq(bodyOverrides = {}, validatedOverrides = {}) {
@@ -112,6 +114,20 @@ describe('authController.login', () => {
 
     await login(makeReq({}, { email: 'user@example.com', password: 'wrongpass' }), makeRes(), next);
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+  });
+
+  it('calls next with 401 when user has no password hash', async () => {
+    User.findOne.mockResolvedValue({
+      ...MOCK_USER,
+      passwordHash: null,
+      authProviders: { password: false, googleSub: 'google-sub-1' },
+      save: jest.fn()
+    });
+
+    await login(makeReq({}, { email: 'user@example.com', password: 'password123' }), makeRes(), next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+    expect(bcrypt.compare).not.toHaveBeenCalled();
   });
 
   it('calls next on unexpected error', async () => {
@@ -221,6 +237,89 @@ describe('authController.logout', () => {
   it('calls next on DB error during logout', async () => {
     RefreshToken.updateOne.mockRejectedValue(new Error('update failed'));
     await logout(makeReq({}, { refreshToken: 'token' }), makeRes(), next);
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
+});
+
+describe('authController.socialLogin', () => {
+  it('returns 200 and links existing user by provider sub', async () => {
+    verifySocialIdentity.mockResolvedValue({
+      provider: 'google',
+      providerSub: 'google-sub-1',
+      email: 'user@example.com',
+      emailVerified: true,
+      displayName: 'Test User'
+    });
+
+    User.findOne
+      .mockResolvedValueOnce({
+        ...MOCK_USER,
+        authProviders: { password: true, googleSub: 'google-sub-1', appleSub: null },
+        save: jest.fn().mockResolvedValue(true)
+      });
+
+    const req = makeReq({}, { provider: 'google', idToken: 'id-token', nonce: null });
+    const res = makeRes();
+
+    await socialLogin(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+  });
+
+  it('creates a new user when provider sub and email are not found', async () => {
+    verifySocialIdentity.mockResolvedValue({
+      provider: 'google',
+      providerSub: 'google-sub-new',
+      email: 'new@example.com',
+      emailVerified: true,
+      displayName: null
+    });
+
+    User.findOne
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    User.create.mockResolvedValue({
+      ...MOCK_USER,
+      _id: 'uid2',
+      email: 'new@example.com',
+      passwordHash: null,
+      authProviders: { password: false, googleSub: 'google-sub-new', appleSub: null }
+    });
+
+    const req = makeReq({}, { provider: 'google', idToken: 'id-token', nonce: null });
+    const res = makeRes();
+
+    await socialLogin(req, res, next);
+
+    expect(User.create).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('returns 400 when first-time social login has no email', async () => {
+    verifySocialIdentity.mockResolvedValue({
+      provider: 'apple',
+      providerSub: 'apple-sub-1',
+      email: null,
+      emailVerified: false,
+      displayName: null
+    });
+
+    User.findOne
+      .mockResolvedValueOnce(null);
+
+    const req = makeReq({}, { provider: 'apple', idToken: 'id-token', nonce: 'nonce' });
+    await socialLogin(req, makeRes(), next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 400 }));
+  });
+
+  it('calls next when provider verification fails', async () => {
+    verifySocialIdentity.mockRejectedValue(new Error('verification failed'));
+
+    const req = makeReq({}, { provider: 'google', idToken: 'id-token', nonce: null });
+    await socialLogin(req, makeRes(), next);
+
     expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 });

@@ -12,7 +12,28 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: {
       type: String,
-      required: true
+      required: false,
+      default: null
+    },
+    authProviders: {
+      password: {
+        type: Boolean,
+        default: true
+      },
+      googleSub: {
+        type: String,
+        default: null,
+        trim: true,
+        unique: true,
+        sparse: true
+      },
+      appleSub: {
+        type: String,
+        default: null,
+        trim: true,
+        unique: true,
+        sparse: true
+      }
     },
     role: {
       type: String,

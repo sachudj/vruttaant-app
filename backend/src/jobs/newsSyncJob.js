@@ -4,16 +4,48 @@ const NewsCard = require('../models/NewsCard');
 const NewsSource = require('../models/NewsSource');
 const { isDatabaseConnected } = require('../config/database');
 
+const SOURCE_FAIL_THRESHOLD = Number(process.env.NEWS_SOURCE_FAIL_THRESHOLD || 3);
+const SOURCE_RETRY_COOLDOWN_MINUTES = Number(process.env.NEWS_SOURCE_RETRY_COOLDOWN_MINUTES || 120);
+const RELIABILITY_DECAY_STEP = Number(process.env.NEWS_SOURCE_RELIABILITY_DECAY_STEP || 0.1);
+const RELIABILITY_RECOVERY_STEP = Number(process.env.NEWS_SOURCE_RELIABILITY_RECOVERY_STEP || 0.03);
+
 // Fallback sources used when the DB has no sources configured yet.
 const FALLBACK_SOURCES = [
-  { url: 'https://www.bbc.com/news',       language: 'en', maxItems: 20, name: 'BBC News' },
-  { url: 'https://www.reuters.com/world/', language: 'en', maxItems: 20, name: 'Reuters' },
-  { url: 'https://www.aljazeera.com/news/', language: 'en', maxItems: 20, name: 'Al Jazeera' }
+  {
+    url: 'https://www.bbc.com/news',
+    language: 'en',
+    maxItems: 20,
+    name: 'BBC News',
+    priority: 100,
+    reliabilityScore: 0.7
+  },
+  {
+    url: 'https://www.reuters.com/world/',
+    language: 'en',
+    maxItems: 20,
+    name: 'Reuters',
+    priority: 100,
+    reliabilityScore: 0.7
+  },
+  {
+    url: 'https://www.aljazeera.com/news/',
+    language: 'en',
+    maxItems: 20,
+    name: 'Al Jazeera',
+    priority: 100,
+    reliabilityScore: 0.7
+  }
 ];
 
 async function loadSources() {
   try {
-    const dbSources = await NewsSource.find({ enabled: true }).lean();
+    const now = new Date();
+    const dbSources = await NewsSource.find({
+      enabled: true,
+      $or: [{ suspendedUntil: null }, { suspendedUntil: { $lte: now } }]
+    })
+      .sort({ priority: 1, reliabilityScore: -1, failCount: 1, name: 1 })
+      .lean();
     if (dbSources.length) return dbSources;
   } catch (err) {
     console.warn('[newsSyncJob] Failed to load sources from DB, using fallback.', err.message);
@@ -77,21 +109,53 @@ async function syncSource(url, language, maxItems = 20) {
     const writeResult = await NewsCard.bulkWrite(operations, { ordered: false });
     const persistedCount = (writeResult.upsertedCount || 0) + (writeResult.modifiedCount || 0);
 
-    // Update lastSyncedAt and reset failCount on success
-    await NewsSource.findOneAndUpdate(
-      { url },
-      { $set: { lastSyncedAt: new Date(), failCount: 0 } }
-    ).catch(() => {}); // non-critical
+    // Update source health on success.
+    const source = await NewsSource.findOne({ url }).lean();
+    if (source) {
+      const currentReliability = Number(source.reliabilityScore ?? 0.7);
+      const nextReliability = Math.min(1, currentReliability + RELIABILITY_RECOVERY_STEP);
+
+      await NewsSource.findOneAndUpdate(
+        { url },
+        {
+          $set: {
+            lastSyncedAt: new Date(),
+            failCount: 0,
+            suspendedUntil: null,
+            reliabilityScore: nextReliability,
+            lastError: ''
+          }
+        }
+      ).catch(() => {}); // non-critical
+    }
 
     return { url, status: 'success', persistedCount };
   } catch (error) {
     console.error(`[newsSyncJob] Failed to sync ${url}:`, error.message);
 
-    // Track consecutive failures on the source record
-    await NewsSource.findOneAndUpdate(
-      { url },
-      { $inc: { failCount: 1 } }
-    ).catch(() => {}); // non-critical
+    // Track failures and temporarily suspend noisy sources.
+    const source = await NewsSource.findOne({ url }).lean().catch(() => null);
+    if (source) {
+      const nextFailCount = Number(source.failCount || 0) + 1;
+      const currentReliability = Number(source.reliabilityScore ?? 0.7);
+      const nextReliability = Math.max(0, currentReliability - RELIABILITY_DECAY_STEP);
+      const shouldSuspend = nextFailCount >= SOURCE_FAIL_THRESHOLD;
+      const suspendedUntil = shouldSuspend
+        ? new Date(Date.now() + SOURCE_RETRY_COOLDOWN_MINUTES * 60 * 1000)
+        : null;
+
+      await NewsSource.findOneAndUpdate(
+        { url },
+        {
+          $set: {
+            failCount: shouldSuspend ? 0 : nextFailCount,
+            reliabilityScore: nextReliability,
+            suspendedUntil,
+            lastError: String(error.message || '').slice(0, 300)
+          }
+        }
+      ).catch(() => {}); // non-critical
+    }
 
     return { url, status: 'error', error: error.message };
   }

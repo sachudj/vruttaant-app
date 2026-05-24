@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
+const { verifySocialIdentity } = require('../services/socialAuthService');
 const { AppError } = require('../middleware/errorHandler');
 
 const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
@@ -117,7 +118,7 @@ async function login(req, res, next) {
     const { email, password } = req.validated.body;
     const user = await User.findOne({ email });
 
-    if (!user) {
+    if (!user || !user.passwordHash) {
       throw new AppError(401, 'Invalid email or password.');
     }
 
@@ -209,9 +210,72 @@ async function logout(req, res, next) {
   }
 }
 
+async function socialLogin(req, res, next) {
+  try {
+    const { provider, idToken, nonce } = req.validated.body;
+    const identity = await verifySocialIdentity(provider, idToken, nonce);
+
+    const providerField = identity.provider === 'google'
+      ? 'authProviders.googleSub'
+      : 'authProviders.appleSub';
+
+    let user = await User.findOne({ [providerField]: identity.providerSub });
+
+    if (!user && identity.email) {
+      user = await User.findOne({ email: identity.email });
+    }
+
+    if (!user) {
+      if (!identity.email) {
+        throw new AppError(400, 'Email is required from social provider for first-time sign in.');
+      }
+
+      user = await User.create({
+        email: identity.email,
+        passwordHash: null,
+        role: 'user',
+        authProviders: {
+          password: false,
+          googleSub: identity.provider === 'google' ? identity.providerSub : null,
+          appleSub: identity.provider === 'apple' ? identity.providerSub : null
+        }
+      });
+    } else {
+      const authProviders = {
+        password: !!user.passwordHash,
+        googleSub: user.authProviders?.googleSub || null,
+        appleSub: user.authProviders?.appleSub || null
+      };
+
+      if (identity.provider === 'google' && !authProviders.googleSub) {
+        authProviders.googleSub = identity.providerSub;
+      }
+
+      if (identity.provider === 'apple' && !authProviders.appleSub) {
+        authProviders.appleSub = identity.providerSub;
+      }
+
+      user.authProviders = authProviders;
+      if (identity.email && !user.email) {
+        user.email = identity.email;
+      }
+      user.lastLoginAt = new Date();
+      await user.save();
+    }
+
+    const accessToken = buildAccessToken(user);
+    const refreshToken = await buildAndStoreRefreshToken(user._id);
+
+    res.status(200).json(authResponse(user, accessToken, refreshToken));
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   signup,
   login,
   refresh,
-  logout
+  logout,
+  socialLogin
 };

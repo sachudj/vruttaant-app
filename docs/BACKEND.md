@@ -51,6 +51,10 @@ Edit `backend/.env`:
 ```env
 PORT=5000
 MONGODB_URI=mongodb://admin:admin123@127.0.0.1:27017/vruttaant?authSource=admin
+JWT_ACCESS_SECRET=
+JWT_REFRESH_SECRET=
+GOOGLE_OAUTH_CLIENT_ID=
+APPLE_SERVICE_ID=
 LLM_API_KEY=
 LLM_API_URL=https://api.openai.com/v1/chat/completions
 LLM_MODEL=gpt-4o-mini
@@ -62,6 +66,10 @@ IMAGE_CDN_DEFAULT_QUALITY=80
 
 **PORT**: Server listening port (auto-fallback to next free port if occupied)
 **MONGODB_URI**: Connection string to MongoDB
+**JWT_ACCESS_SECRET**: Signing secret for access tokens (required in production)
+**JWT_REFRESH_SECRET**: Signing secret for refresh tokens (required in production)
+**GOOGLE_OAUTH_CLIENT_ID**: OAuth client ID used to verify Google ID token audience
+**APPLE_SERVICE_ID**: Apple audience/service identifier used to verify Apple identity token audience
 **LLM_API_KEY**: API key for summary generation
 **LLM_API_URL**: OpenAI-compatible chat completions endpoint
 **LLM_MODEL**: Model used for AI summaries
@@ -71,6 +79,16 @@ IMAGE_CDN_DEFAULT_QUALITY=80
 **IMAGE_CDN_DEFAULT_QUALITY**: Default artwork quality hint when CDN rewriting is enabled
 
 If both CDN variables are empty, the API returns the original source `imageUrl` unchanged.
+
+### Authentication Endpoints
+
+The backend supports password and social auth flows under `/api/v1/auth`:
+
+- `POST /api/v1/auth/signup`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/social` (provider-based login for `google` and `apple`)
+- `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/logout`
 
 For MongoDB Atlas (cloud):
 ```

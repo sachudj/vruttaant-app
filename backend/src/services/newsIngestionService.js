@@ -46,7 +46,7 @@ const LANGUAGE_LABELS = {
 };
 
 const QUALITY_RULES = {
-  minTitleLength: 25,
+  minTitleLength: 15,
   maxTitleLength: 180
 };
 
@@ -112,6 +112,79 @@ function cleanText(value) {
   return (value || '').replace(/\s+/g, ' ').trim();
 }
 
+function getFirstNonEmpty(values) {
+  for (const value of values) {
+    const cleaned = cleanText(value);
+    if (cleaned) {
+      return cleaned;
+    }
+  }
+  return '';
+}
+
+function extractFirstSrcFromSrcset(srcset) {
+  const normalized = String(srcset || '').trim();
+  if (!normalized) {
+    return '';
+  }
+
+  const first = normalized.split(',')[0] || '';
+  return first.trim().split(/\s+/)[0] || '';
+}
+
+function extractImageUrl(node, $, baseUrl) {
+  const imgNode = node.find('img').first();
+  const pictureSourceNode = node.find('picture source').first();
+
+  const fromImageNode = getFirstNonEmpty([
+    imgNode.attr('src'),
+    imgNode.attr('data-src'),
+    imgNode.attr('data-lazy-src'),
+    imgNode.attr('data-original'),
+    extractFirstSrcFromSrcset(imgNode.attr('srcset')),
+    extractFirstSrcFromSrcset(imgNode.attr('data-srcset')),
+    extractFirstSrcFromSrcset(pictureSourceNode.attr('srcset'))
+  ]);
+
+  if (fromImageNode) {
+    return resolveUrl(baseUrl, fromImageNode);
+  }
+
+  const fromMeta = getFirstNonEmpty([
+    $('meta[property="og:image"]').first().attr('content'),
+    $('meta[name="twitter:image"]').first().attr('content')
+  ]);
+
+  return resolveUrl(baseUrl, fromMeta);
+}
+
+function extractPrimaryTitle(node) {
+  return getFirstNonEmpty([
+    node.find('h1').first().text(),
+    node.find('h2').first().text(),
+    node.find('h3').first().text(),
+    node.find('a[title]').first().attr('title'),
+    node.find('a').first().text()
+  ]);
+}
+
+function extractPrimarySummary(node) {
+  return getFirstNonEmpty([
+    node.find('p').first().text(),
+    node.find('[class*="summary"]').first().text(),
+    node.find('[class*="excerpt"]').first().text(),
+    node.find('[class*="description"]').first().text()
+  ]);
+}
+
+function extractPrimaryLink(node, baseUrl) {
+  const link = getFirstNonEmpty([
+    node.find('a[href]').first().attr('href'),
+    node.attr('href')
+  ]);
+  return resolveUrl(baseUrl, link);
+}
+
 function normalizeLanguage(language) {
   const normalized = String(language || 'en').trim().toLowerCase();
   return SUPPORTED_LANGUAGE_ALIASES[normalized] || 'en';
@@ -151,7 +224,7 @@ function validateCardQuality(card) {
     reasons.push('invalid_url');
   }
 
-  if (!imageUrl || !hasValidHttpUrl(imageUrl)) {
+  if (imageUrl && !hasValidHttpUrl(imageUrl)) {
     reasons.push('missing_image');
   }
 
@@ -394,7 +467,13 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
 
   const response = await fetch(normalizedUrl, {
     headers: {
-      'User-Agent': 'VruttaantBot/1.0 (+https://vruttaant.app)'
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+      Accept:
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-IN,en;q=0.9,hi-IN;q=0.8',
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache'
     }
   });
 
@@ -422,17 +501,10 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
     }
 
     const node = $(element);
-    const title = cleanText(
-      node.find('h1, h2, h3, [title], a').first().text() ||
-      node.find('a').first().attr('title')
-    );
-
-    const summary = cleanText(node.find('p').first().text());
-    const link = resolveUrl(normalizedUrl, node.find('a').first().attr('href'));
-    const imageUrl = resolveUrl(
-      normalizedUrl,
-      node.find('img').first().attr('src') || node.find('img').first().attr('data-src')
-    );
+    const title = extractPrimaryTitle(node);
+    const summary = extractPrimarySummary(node);
+    const link = extractPrimaryLink(node, normalizedUrl);
+    const imageUrl = extractImageUrl(node, $, normalizedUrl);
     const source = cleanText(node.find('.source, .publisher, [data-source]').first().text());
     const publishedAt = parseDate(
       node.find('time').first().attr('datetime') || node.find('time').first().text()

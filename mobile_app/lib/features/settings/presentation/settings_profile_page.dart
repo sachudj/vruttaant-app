@@ -576,6 +576,17 @@ class _SettingsProfilePageState extends State<SettingsProfilePage> {
                         .toList(growable: false),
                   ),
                 ),
+                const Divider(color: Colors.white24),
+                ListTile(
+                  leading: const Icon(Icons.replay, color: Colors.white70),
+                  title: Text(
+                    localizations.onboardingReset,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).pop({'resetOnboardingRequested': true}),
+                ),
                 if (_isLoggedIn) ...[
                   _buildActivitySection(context),
                   const Divider(color: Colors.white24),

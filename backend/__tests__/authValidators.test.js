@@ -3,7 +3,8 @@
 const {
   validateSignupPayload,
   validateLoginPayload,
-  validateRefreshPayload
+  validateRefreshPayload,
+  validateSocialLoginPayload
 } = require('../src/validation/authValidators');
 
 describe('authValidators.validateSignupPayload', () => {
@@ -104,5 +105,55 @@ describe('authValidators.validateRefreshPayload', () => {
   it('handles null payload gracefully', () => {
     const result = validateRefreshPayload(null);
     expect(result.valid).toBe(false);
+  });
+});
+
+describe('authValidators.validateSocialLoginPayload', () => {
+  it('returns valid result for google payload', () => {
+    const result = validateSocialLoginPayload({
+      provider: 'google',
+      idToken: 'google-id-token'
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.value).toEqual({
+      provider: 'google',
+      idToken: 'google-id-token',
+      nonce: null
+    });
+  });
+
+  it('returns valid result for apple payload with nonce', () => {
+    const result = validateSocialLoginPayload({
+      provider: 'apple',
+      idToken: 'apple-id-token',
+      nonce: 'nonce-value'
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('fails when provider is missing', () => {
+    const result = validateSocialLoginPayload({ idToken: 'id-token' });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('provider is required.');
+  });
+
+  it('fails when provider is unsupported', () => {
+    const result = validateSocialLoginPayload({ provider: 'facebook', idToken: 'id-token' });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('provider must be one of: google, apple.');
+  });
+
+  it('fails when idToken is missing', () => {
+    const result = validateSocialLoginPayload({ provider: 'google' });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('idToken is required.');
+  });
+
+  it('fails when apple nonce is missing', () => {
+    const result = validateSocialLoginPayload({ provider: 'apple', idToken: 'apple-id-token' });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('nonce is required for apple provider.');
   });
 });

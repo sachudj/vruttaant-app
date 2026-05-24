@@ -5,7 +5,10 @@ const {
   getDetailedHealth,
   getSystemStats,
   sendAdminNotification,
-  getReleaseTelemetry
+  getReleaseTelemetry,
+  listNewsSources,
+  updateNewsSource,
+  updateNewsSourcesByLanguage
 } = require('../controllers/adminController');
 const {
   createLoadTestRun,
@@ -27,6 +30,15 @@ router.get('/stats', getSystemStats);
 
 // GET /admin/release-telemetry - Release health telemetry snapshot
 router.get('/release-telemetry', getReleaseTelemetry);
+
+// GET /admin/sources - Source registry listing and filtering
+router.get('/sources', listNewsSources);
+
+// PATCH /admin/sources/:sourceId - Update one source
+router.patch('/sources/:sourceId', updateNewsSource);
+
+// PATCH /admin/sources/language/:language - Bulk update all sources by language
+router.patch('/sources/language/:language', updateNewsSourcesByLanguage);
 
 // POST /admin/loadtest/runs - Persist load-test execution results
 router.post('/loadtest/runs', createLoadTestRun);

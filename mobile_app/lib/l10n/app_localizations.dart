@@ -34,6 +34,8 @@ class AppLocalizations {
       'clear': 'Clear',
       'apply': 'Apply',
       'sign_in': 'Sign In',
+      'sign_in_with_google': 'Continue with Google',
+      'sign_in_with_apple': 'Continue with Apple',
       'email': 'Email',
       'password': 'Password',
       'sign_in_to_bookmark': 'Sign in to bookmark stories.',
@@ -123,6 +125,17 @@ class AppLocalizations {
       'lang_ml': 'Malayalam',
       'unknown_platform': 'unknown',
       'device_fallback_name': 'Device',
+      'onboarding_welcome_title': 'Welcome to Vruttaant',
+      'onboarding_welcome_body':
+          'Get short, swipeable news cards in your language. We will personalize your feed in one quick step.',
+      'onboarding_continue': 'Continue',
+      'onboarding_category_title': 'Choose your primary interest',
+      'onboarding_category_body':
+          'Pick at least 3 content types to start with. You can change these anytime in settings.',
+      'onboarding_start_reading': 'Start Reading',
+      'onboarding_category_selection_hint':
+          'Select at least 3 categories ({count} selected)',
+      'onboarding_reset': 'Show onboarding again',
     },
     'hi': {
       'app_title': 'वृत्तांत',
@@ -139,6 +152,8 @@ class AppLocalizations {
       'clear': 'साफ करें',
       'apply': 'लागू करें',
       'sign_in': 'साइन इन',
+      'sign_in_with_google': 'Google से जारी रखें',
+      'sign_in_with_apple': 'Apple से जारी रखें',
       'email': 'ईमेल',
       'password': 'पासवर्ड',
       'sign_in_to_bookmark': 'स्टोरी बुकमार्क करने के लिए साइन इन करें।',
@@ -229,6 +244,17 @@ class AppLocalizations {
       'lang_ml': 'मलयालम',
       'unknown_platform': 'अज्ञात',
       'device_fallback_name': 'डिवाइस',
+      'onboarding_welcome_title': 'वृत्तांत में आपका स्वागत है',
+      'onboarding_welcome_body':
+          'अपनी भाषा में छोटे, स्वाइप करने योग्य न्यूज़ कार्ड पढ़ें। एक छोटे चरण में हम आपका फ़ीड वैयक्तिकृत करेंगे।',
+      'onboarding_continue': 'आगे बढ़ें',
+      'onboarding_category_title': 'अपनी मुख्य रुचि चुनें',
+      'onboarding_category_body':
+          'शुरुआत के लिए कम से कम 3 कंटेंट प्रकार चुनें। आप इन्हें सेटिंग्स में कभी भी बदल सकते हैं।',
+      'onboarding_start_reading': 'पढ़ना शुरू करें',
+      'onboarding_category_selection_hint':
+          'कम से कम 3 श्रेणियां चुनें ({count} चुनी गई)',
+      'onboarding_reset': 'ऑनबोर्डिंग फिर से दिखाएं',
     },
   };
 
@@ -252,6 +278,8 @@ class AppLocalizations {
   String get clear => _t('clear');
   String get apply => _t('apply');
   String get signIn => _t('sign_in');
+  String get signInWithGoogle => _t('sign_in_with_google');
+  String get signInWithApple => _t('sign_in_with_apple');
   String get email => _t('email');
   String get password => _t('password');
   String get signInToBookmark => _t('sign_in_to_bookmark');
@@ -319,6 +347,15 @@ class AppLocalizations {
   String get removeBookmark => _t('remove_bookmark');
   String get unknownPlatform => _t('unknown_platform');
   String get deviceFallbackName => _t('device_fallback_name');
+  String get onboardingWelcomeTitle => _t('onboarding_welcome_title');
+  String get onboardingWelcomeBody => _t('onboarding_welcome_body');
+  String get onboardingContinue => _t('onboarding_continue');
+  String get onboardingCategoryTitle => _t('onboarding_category_title');
+  String get onboardingCategoryBody => _t('onboarding_category_body');
+  String get onboardingStartReading => _t('onboarding_start_reading');
+  String onboardingCategorySelectionHint(int count) =>
+      _t('onboarding_category_selection_hint').replaceAll('{count}', '$count');
+  String get onboardingReset => _t('onboarding_reset');
 
   String categoryLabel(String category) {
     return switch (category.trim().toLowerCase()) {

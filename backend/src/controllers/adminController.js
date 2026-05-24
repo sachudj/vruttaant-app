@@ -3,10 +3,49 @@ const Bookmark = require('../models/Bookmark');
 const NewsCard = require('../models/NewsCard');
 const RefreshToken = require('../models/RefreshToken');
 const NotificationDevice = require('../models/NotificationDevice');
+const NewsSource = require('../models/NewsSource');
 const pushNotificationService = require('../services/pushNotificationService');
 const { isRedisConnected } = require('../config/redis');
 const { getMetricsSnapshot } = require('../observability/metrics');
 const { AppError } = require('../middleware/errorHandler');
+
+const SUPPORTED_LANGUAGE_ALIASES = {
+  en: 'en', english: 'en',
+  hi: 'hi', hindi: 'hi',
+  bn: 'bn', bengali: 'bn',
+  mr: 'mr', marathi: 'mr',
+  te: 'te', telugu: 'te',
+  ta: 'ta', tamil: 'ta',
+  gu: 'gu', gujarati: 'gu',
+  ur: 'ur', urdu: 'ur',
+  kn: 'kn', kannada: 'kn',
+  or: 'or', od: 'or', odia: 'or',
+  ml: 'ml', malayalam: 'ml'
+};
+
+function normalizeLanguage(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return SUPPORTED_LANGUAGE_ALIASES[normalized] || '';
+}
+
+function parseOptionalBoolean(value) {
+  if (value === undefined) return undefined;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+  throw new AppError(400, 'Boolean fields must be true or false.');
+}
+
+function toClampedNumber(value, field, min, max) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) {
+    throw new AppError(400, `${field} must be a valid number.`);
+  }
+  return Math.min(max, Math.max(min, num));
+}
 
 /**
  * Get detailed health information (admin only)
@@ -273,9 +312,173 @@ async function getReleaseTelemetry(req, res, next) {
   }
 }
 
+/**
+ * List news sources for operations (admin only)
+ * Optional filters: language, includeDisabled, includeSuspended
+ */
+async function listNewsSources(req, res, next) {
+  try {
+    const language = normalizeLanguage(req.query.language);
+    const includeDisabled = req.query.includeDisabled !== 'false';
+    const includeSuspended = req.query.includeSuspended !== 'false';
+
+    const filter = {};
+    if (language) {
+      filter.language = language;
+    } else if (req.query.language) {
+      throw new AppError(400, 'Unsupported language filter.');
+    }
+
+    if (!includeDisabled) {
+      filter.enabled = true;
+    }
+
+    if (!includeSuspended) {
+      filter.$or = [{ suspendedUntil: null }, { suspendedUntil: { $lte: new Date() } }];
+    }
+
+    const sources = await NewsSource.find(filter)
+      .sort({ language: 1, priority: 1, reliabilityScore: -1, name: 1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        count: sources.length,
+        sources
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Update one source by id (admin only)
+ */
+async function updateNewsSource(req, res, next) {
+  try {
+    const { sourceId } = req.params;
+    const patch = {};
+    const body = req.body || {};
+
+    if (body.enabled !== undefined) {
+      patch.enabled = parseOptionalBoolean(body.enabled);
+    }
+
+    if (body.maxItems !== undefined) {
+      patch.maxItems = Math.floor(toClampedNumber(body.maxItems, 'maxItems', 1, 100));
+    }
+
+    if (body.priority !== undefined) {
+      patch.priority = Math.floor(toClampedNumber(body.priority, 'priority', 1, 1000));
+    }
+
+    if (body.reliabilityScore !== undefined) {
+      patch.reliabilityScore = toClampedNumber(body.reliabilityScore, 'reliabilityScore', 0, 1);
+    }
+
+    if (body.name !== undefined) {
+      patch.name = String(body.name || '').trim().slice(0, 120);
+    }
+
+    if (body.language !== undefined) {
+      const normalized = normalizeLanguage(body.language);
+      if (!normalized) {
+        throw new AppError(400, 'Unsupported language value.');
+      }
+      patch.language = normalized;
+    }
+
+    if (body.clearSuspension === true || body.clearSuspension === 'true') {
+      patch.suspendedUntil = null;
+      patch.failCount = 0;
+      patch.lastError = '';
+    }
+
+    if (body.suspendedUntil !== undefined && !(body.clearSuspension === true || body.clearSuspension === 'true')) {
+      if (!body.suspendedUntil) {
+        patch.suspendedUntil = null;
+      } else {
+        const parsed = new Date(body.suspendedUntil);
+        if (Number.isNaN(parsed.getTime())) {
+          throw new AppError(400, 'suspendedUntil must be a valid ISO date string.');
+        }
+        patch.suspendedUntil = parsed;
+      }
+    }
+
+    if (!Object.keys(patch).length) {
+      throw new AppError(400, 'No updatable fields provided.');
+    }
+
+    const updated = await NewsSource.findByIdAndUpdate(sourceId, { $set: patch }, { new: true }).lean();
+    if (!updated) {
+      throw new AppError(404, 'News source not found.');
+    }
+
+    res.status(200).json({ success: true, data: { source: updated } });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Bulk update all sources for a language (admin only)
+ */
+async function updateNewsSourcesByLanguage(req, res, next) {
+  try {
+    const language = normalizeLanguage(req.params.language);
+    if (!language) {
+      throw new AppError(400, 'Unsupported language value.');
+    }
+
+    const body = req.body || {};
+    const patch = {};
+
+    if (body.enabled !== undefined) {
+      patch.enabled = parseOptionalBoolean(body.enabled);
+    }
+    if (body.maxItems !== undefined) {
+      patch.maxItems = Math.floor(toClampedNumber(body.maxItems, 'maxItems', 1, 100));
+    }
+    if (body.priority !== undefined) {
+      patch.priority = Math.floor(toClampedNumber(body.priority, 'priority', 1, 1000));
+    }
+    if (body.reliabilityScore !== undefined) {
+      patch.reliabilityScore = toClampedNumber(body.reliabilityScore, 'reliabilityScore', 0, 1);
+    }
+    if (body.clearSuspensions === true || body.clearSuspensions === 'true') {
+      patch.suspendedUntil = null;
+      patch.failCount = 0;
+      patch.lastError = '';
+    }
+
+    if (!Object.keys(patch).length) {
+      throw new AppError(400, 'No updatable fields provided.');
+    }
+
+    const result = await NewsSource.updateMany({ language }, { $set: patch });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        language,
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getDetailedHealth,
   getSystemStats,
   sendAdminNotification,
-  getReleaseTelemetry
+  getReleaseTelemetry,
+  listNewsSources,
+  updateNewsSource,
+  updateNewsSourcesByLanguage
 };

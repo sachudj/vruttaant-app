@@ -248,6 +248,8 @@ Use this checklist for every track item before marking it done.
 1. Tighten compression and cache thresholds using staging telemetry and load trends
 2. Tune mobile APK budget trend from CI artifact history over multiple releases
 3. Extend multi-language source quality scoring and translation quality signals
+4. Implement Track O social login (Google + Apple) using backend-verified token exchange
+5. Track O progress: O1 (user model compatibility baseline), O2 (backend social auth endpoint baseline), O3 (mobile Google sign-in baseline), and O4 (mobile Apple sign-in baseline) completed on May 24, 2026
 
 ### ✅ Track M Implementation Details
 1. ✅ M1. Backup automation and restore runbook baseline — **DONE May 24**

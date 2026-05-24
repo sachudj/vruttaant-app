@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 /// Manages login, logout, token storage, and silent refresh.
 ///
@@ -19,14 +22,19 @@ class AuthService {
 
   final String baseUrl;
   final http.Client _client;
+  final GoogleSignIn _googleSignIn;
 
   String? _accessToken;
   String? _refreshToken;
   String? _userEmail;
   String? _userId;
 
-  AuthService({required this.baseUrl, http.Client? client})
-    : _client = client ?? http.Client();
+  AuthService({
+    required this.baseUrl,
+    http.Client? client,
+    GoogleSignIn? googleSignIn,
+  }) : _client = client ?? http.Client(),
+       _googleSignIn = googleSignIn ?? GoogleSignIn();
 
   bool get isLoggedIn => _accessToken != null && _accessToken!.isNotEmpty;
   String? get userEmail => _userEmail;
@@ -78,32 +86,99 @@ class AuthService {
       final body = _decodeBody(response);
 
       if (response.statusCode == 200 && body['success'] == true) {
-        final data = body['data'] as Map<String, dynamic>?;
-        final tokens = data?['tokens'] as Map<String, dynamic>?;
-        final user = data?['user'] as Map<String, dynamic>?;
-
-        final accessToken = tokens?['accessToken'] as String?;
-        final refreshToken = tokens?['refreshToken'] as String?;
-        final userEmail = user?['email'] as String?;
-        final userId = user?['id'] as String?;
-
-        if (accessToken == null || refreshToken == null) {
-          return AuthResult.failure('Unexpected response from server.');
-        }
-
-        await _storeTokens(
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-          userEmail: userEmail,
-          userId: userId,
-        );
-        return AuthResult.success();
+        return _storeAuthSuccessResponse(body);
       }
 
       final message = _extractErrorMessage(body) ?? 'Login failed.';
       return AuthResult.failure(message);
     } catch (e) {
       return AuthResult.failure('Network error: $e');
+    }
+  }
+
+  Future<AuthResult> loginWithGoogle() async {
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        return AuthResult.failure('Google sign-in was cancelled.');
+      }
+
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null || idToken.trim().isEmpty) {
+        return AuthResult.failure(
+          'Google sign-in did not return an id token. Check client configuration.',
+        );
+      }
+
+      return loginWithSocialToken(provider: 'google', idToken: idToken);
+    } catch (e) {
+      return AuthResult.failure('Google sign-in failed: $e');
+    }
+  }
+
+  Future<AuthResult> loginWithSocialToken({
+    required String provider,
+    required String idToken,
+    String? nonce,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/auth/social');
+    try {
+      final response = await _client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'provider': provider.trim().toLowerCase(),
+          'idToken': idToken.trim(),
+          if (nonce != null && nonce.trim().isNotEmpty) 'nonce': nonce.trim(),
+        }),
+      );
+
+      final body = _decodeBody(response);
+
+      if (response.statusCode == 200 && body['success'] == true) {
+        return _storeAuthSuccessResponse(body);
+      }
+
+      final message = _extractErrorMessage(body) ?? 'Social login failed.';
+      return AuthResult.failure(message);
+    } catch (e) {
+      return AuthResult.failure('Network error: $e');
+    }
+  }
+
+  Future<AuthResult> loginWithApple() async {
+    try {
+      final isAvailable = await SignInWithApple.isAvailable();
+      if (!isAvailable) {
+        return AuthResult.failure(
+          'Apple sign-in is not available on this device.',
+        );
+      }
+
+      final nonce = _generateNonce();
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: nonce,
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null || idToken.trim().isEmpty) {
+        return AuthResult.failure(
+          'Apple sign-in did not return an identity token. Check platform configuration.',
+        );
+      }
+
+      return loginWithSocialToken(
+        provider: 'apple',
+        idToken: idToken,
+        nonce: nonce,
+      );
+    } catch (e) {
+      return AuthResult.failure('Apple sign-in failed: $e');
     }
   }
 
@@ -193,6 +268,31 @@ class AuthService {
     if (userId != null) await prefs.setString(_keyUserId, userId);
   }
 
+  Future<AuthResult> _storeAuthSuccessResponse(
+    Map<String, dynamic> body,
+  ) async {
+    final data = body['data'] as Map<String, dynamic>?;
+    final tokens = data?['tokens'] as Map<String, dynamic>?;
+    final user = data?['user'] as Map<String, dynamic>?;
+
+    final accessToken = tokens?['accessToken'] as String?;
+    final refreshToken = tokens?['refreshToken'] as String?;
+    final userEmail = user?['email'] as String?;
+    final userId = user?['id'] as String?;
+
+    if (accessToken == null || refreshToken == null) {
+      return AuthResult.failure('Unexpected response from server.');
+    }
+
+    await _storeTokens(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      userEmail: userEmail,
+      userId: userId,
+    );
+    return AuthResult.success();
+  }
+
   Future<void> _clearTokens() async {
     _accessToken = null;
     _refreshToken = null;
@@ -242,6 +342,16 @@ class AuthService {
       return error['message'] as String?;
     }
     return body['message'] as String?;
+  }
+
+  static String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List<String>.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
   }
 }
 

@@ -67,6 +67,22 @@ Setup after import:
 | POST | `/api/v1/auth/login` | Public | Login and issue access/refresh tokens |
 | POST | `/api/v1/auth/refresh` | Public | Rotate refresh token and issue new access token |
 | POST | `/api/v1/auth/logout` | Public | Revoke refresh token |
+| POST | `/api/v1/auth/social` | Public | Social sign-in (Google/Apple) and issue access/refresh tokens |
+
+`POST /api/v1/auth/social` request body:
+
+```json
+{
+	"provider": "google",
+	"idToken": "<provider-id-token>",
+	"nonce": "<required-for-apple>"
+}
+```
+
+Notes:
+- `provider` must be `google` or `apple`.
+- `nonce` is required for Apple token verification.
+- Response shape matches login/signup token response (`data.user`, `data.tokens`).
 
 ### User
 
@@ -121,6 +137,9 @@ Setup after import:
 | POST | `/api/v1/admin/notifications/send` | Admin | Broadcast admin push notification |
 | GET | `/api/v1/admin/cohorts/stats` | Admin | Cohort aggregate stats |
 | GET | `/api/v1/admin/cohorts/:cohortId/users` | Admin | Paginated users in cohort |
+| GET | `/api/v1/admin/sources` | Admin | List source registry entries (`language`, `includeDisabled`, `includeSuspended` filters) |
+| PATCH | `/api/v1/admin/sources/:sourceId` | Admin | Update one source (enable/disable, priority, reliability, suspension) |
+| PATCH | `/api/v1/admin/sources/language/:language` | Admin | Bulk update all sources for a language |
 
 ### Public Badge Catalog
 

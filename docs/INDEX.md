@@ -32,6 +32,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 - **[DOCKER.md](./DOCKER.md)** - Container management, troubleshooting
 - **[LOAD_TESTING.md](./LOAD_TESTING.md)** - Baseline performance testing and SLO targets
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Environment profiles, rollout steps, rollback playbook, and CI deployment gate
+- **[SOCIAL_AUTH_PLAN.md](./SOCIAL_AUTH_PLAN.md)** - Planned implementation and documentation checklist for Google/Apple sign-in
 
 ## 🎯 Quick Navigation by Role
 
@@ -80,6 +81,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 | **DOCKER.md** | Container management | DevOps, backend |
 | **LOAD_TESTING.md** | Baseline performance tests and SLOs | Backend, DevOps |
 | **DEPLOYMENT.md** | Deployment profiles, rollout and rollback runbook | DevOps, backend, release managers |
+| **SOCIAL_AUTH_PLAN.md** | Social auth implementation phases and doc parity checklist | Backend, mobile, PM |
 
 ## 🚦 Common Tasks
 
@@ -139,8 +141,8 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 ## 📝 Document Maintenance
 
 - Last updated: **May 24, 2026**
-- Total documentation: **19 top-level docs/items in `/docs`**
-- Coverage: Tracks A-N are complete; docs include API runtime docs and Postman import assets
+- Total documentation: **20 top-level docs/items in `/docs`**
+- Coverage: Tracks A-N are complete; social auth planning doc added for next phase execution
 
 ## ✅ Verification
 

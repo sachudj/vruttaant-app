@@ -20,6 +20,9 @@ class NewsFeedPage extends StatefulWidget {
     super.key,
     this.newsLoader,
     this.storyTranslator,
+    this.initialCategory,
+    this.initialPreferredCategories = const <String>[],
+    this.onResetOnboardingRequested,
     this.currentThemeMode = ThemeMode.system,
     this.onThemeModeChanged,
     this.onLanguageChanged,
@@ -27,6 +30,9 @@ class NewsFeedPage extends StatefulWidget {
 
   final NewsLoader? newsLoader;
   final StoryTranslator? storyTranslator;
+  final String? initialCategory;
+  final List<String> initialPreferredCategories;
+  final Future<void> Function()? onResetOnboardingRequested;
   final ThemeMode currentThemeMode;
   final Future<void> Function(ThemeMode mode)? onThemeModeChanged;
   final Future<void> Function(String languageCode)? onLanguageChanged;
@@ -37,6 +43,8 @@ class NewsFeedPage extends StatefulWidget {
 
 class _NewsFeedPageState extends State<NewsFeedPage> {
   static const Duration _feedCacheTtl = Duration(minutes: 45);
+  static const int _defaultLoadMoreBufferThreshold = 10;
+  static const int _maxAdaptiveBufferThreshold = 18;
 
   final AuthService _authService = AuthService(
     baseUrl: const String.fromEnvironment(
@@ -92,12 +100,43 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   String? _selectedCategory;
   String _searchQuery = '';
   String _sort = 'latest';
+  int _adaptiveLoadMoreBufferThreshold = _defaultLoadMoreBufferThreshold;
+  int _consecutiveLoadMoreFailures = 0;
   late final PushNotificationService _pushService;
   late final EventTrackingService _eventTrackingService;
+
+  int _resolveAdaptiveBufferThreshold(int fetchDurationMs) {
+    var nextThreshold = _defaultLoadMoreBufferThreshold;
+
+    if (fetchDurationMs > 2500) {
+      nextThreshold = 14;
+    } else if (fetchDurationMs > 1200) {
+      nextThreshold = 12;
+    } else if (fetchDurationMs < 500) {
+      nextThreshold = 8;
+    }
+
+    if (_consecutiveLoadMoreFailures > 0) {
+      nextThreshold += 2;
+    }
+
+    return nextThreshold.clamp(
+      _defaultLoadMoreBufferThreshold,
+      _maxAdaptiveBufferThreshold,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
+    _selectedCategory = widget.initialCategory?.trim().isNotEmpty == true
+        ? widget.initialCategory!.trim()
+        : null;
+    _preferredCategories = widget.initialPreferredCategories
+        .map((category) => category.trim())
+        .where((category) => category.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
     _newsApiService = NewsApiService(authService: _authService);
     _eventTrackingService = EventTrackingService(_newsApiService);
     _feedCacheService = FeedCacheService();
@@ -283,6 +322,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
           ..clear()
           ..addAll(firstPage);
         _currentPage = 1;
+        _consecutiveLoadMoreFailures = 0;
+        _adaptiveLoadMoreBufferThreshold = _defaultLoadMoreBufferThreshold;
         _activeFeedIndex = 0;
         _activeFeedStartedAt = DateTime.now();
         _isInitialLoading = false;
@@ -315,15 +356,21 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   Future<void> _loadMoreIfNeeded(int index) async {
     if (_isLoadingMore || _isInitialLoading) return;
     if (_feed.isEmpty) return;
-    if (index < _feed.length - 2) return;
+    final remainingCards = _feed.length - 1 - index;
+    if (remainingCards > _adaptiveLoadMoreBufferThreshold) return;
 
     setState(() {
       _isLoadingMore = true;
     });
 
+    final startedAt = DateTime.now();
+
     try {
       final nextPage = _currentPage + 1;
       final incoming = await _fetchNewsPage(nextPage);
+      final fetchDurationMs = DateTime.now()
+          .difference(startedAt)
+          .inMilliseconds;
       if (!mounted) return;
 
       if (incoming.isEmpty) {
@@ -340,6 +387,10 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
           ..clear()
           ..addAll(mergedFeed);
         _currentPage = nextPage;
+        _consecutiveLoadMoreFailures = 0;
+        _adaptiveLoadMoreBufferThreshold = _resolveAdaptiveBufferThreshold(
+          fetchDurationMs,
+        );
         _isLoadingMore = false;
         _showingCachedFeed = false;
         _cachedFeedAt = null;
@@ -352,6 +403,8 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
+        _consecutiveLoadMoreFailures += 1;
+        _adaptiveLoadMoreBufferThreshold = _maxAdaptiveBufferThreshold;
         _isLoadingMore = false;
       });
     }
@@ -618,6 +671,14 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     );
 
     if (result == null || !mounted) return;
+
+    if (result['resetOnboardingRequested'] == true) {
+      final onResetOnboardingRequested = widget.onResetOnboardingRequested;
+      if (onResetOnboardingRequested != null) {
+        await onResetOnboardingRequested();
+      }
+      return;
+    }
 
     if (result['signInRequested'] == true) {
       await _openLoginSheet();
