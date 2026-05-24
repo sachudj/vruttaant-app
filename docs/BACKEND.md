@@ -57,6 +57,10 @@ GOOGLE_OAUTH_CLIENT_ID=
 APPLE_SERVICE_ID=
 SOCIAL_AUTH_AUTO_LINK_BY_EMAIL=false
 SOCIAL_AUTH_NONCE_TTL_MS=600000
+RESPONSE_COMPRESSION_THRESHOLD_BYTES=1536
+CACHE_TTL_NEWS_CARDS=180
+CACHE_TTL_RECOMMENDED=90
+CACHE_TTL_ANALYTICS=300
 LLM_API_KEY=
 LLM_API_URL=https://api.openai.com/v1/chat/completions
 LLM_MODEL=gpt-4o-mini
@@ -74,6 +78,10 @@ IMAGE_CDN_DEFAULT_QUALITY=80
 **APPLE_SERVICE_ID**: Apple audience/service identifier used to verify Apple identity token audience
 **SOCIAL_AUTH_AUTO_LINK_BY_EMAIL**: Enable implicit email-based account linking for social login (`false` by default; recommended to keep disabled unless support and account-recovery workflows are ready)
 **SOCIAL_AUTH_NONCE_TTL_MS**: Apple social-login nonce replay window in milliseconds (default: 10 minutes)
+**RESPONSE_COMPRESSION_THRESHOLD_BYTES**: Minimum response size before gzip compression applies (default: 1536 bytes)
+**CACHE_TTL_NEWS_CARDS**: Cache TTL for `/api/v1/news/cards` responses in seconds (default: 180)
+**CACHE_TTL_RECOMMENDED**: Cache TTL for `/api/v1/news/recommended` responses in seconds (default: 90)
+**CACHE_TTL_ANALYTICS**: Cache TTL for trending/category analytics read endpoints in seconds (default: 300)
 **LLM_API_KEY**: API key for summary generation
 **LLM_API_URL**: OpenAI-compatible chat completions endpoint
 **LLM_MODEL**: Model used for AI summaries

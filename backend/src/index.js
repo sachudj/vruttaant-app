@@ -44,13 +44,13 @@ function getResponseCompressionThresholdBytes() {
   const configuredValue = process.env.RESPONSE_COMPRESSION_THRESHOLD_BYTES;
 
   if (configuredValue === undefined || configuredValue === null || configuredValue === '') {
-    return 1024;
+    return 1536;
   }
 
   const parsedValue = Number(configuredValue);
 
   if (!Number.isFinite(parsedValue) || parsedValue < 0) {
-    return 1024;
+    return 1536;
   }
 
   return parsedValue;

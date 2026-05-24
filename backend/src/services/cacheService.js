@@ -2,10 +2,10 @@ const { getRedisClient, isRedisConnected } = require('../config/redis');
 
 // Default TTLs (seconds)
 const TTL = {
-  NEWS_CARDS: Number(process.env.CACHE_TTL_NEWS_CARDS) || 300,       // 5 min
-  RECOMMENDED: Number(process.env.CACHE_TTL_RECOMMENDED) || 120,     // 2 min
-  ANALYTICS_TRENDING: Number(process.env.CACHE_TTL_ANALYTICS) || 600, // 10 min
-  ANALYTICS_CATEGORIES: Number(process.env.CACHE_TTL_ANALYTICS) || 600
+  NEWS_CARDS: Number(process.env.CACHE_TTL_NEWS_CARDS) || 180,       // 3 min
+  RECOMMENDED: Number(process.env.CACHE_TTL_RECOMMENDED) || 90,      // 1.5 min
+  ANALYTICS_TRENDING: Number(process.env.CACHE_TTL_ANALYTICS) || 300, // 5 min
+  ANALYTICS_CATEGORIES: Number(process.env.CACHE_TTL_ANALYTICS) || 300
 };
 
 /**

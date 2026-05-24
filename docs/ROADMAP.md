@@ -368,3 +368,15 @@ Reference plan: `docs/SOCIAL_AUTH_PLAN.md`
 	- Validation: Manual docs parity review plus `scripts/check-api-docs.sh` gate.
 	- Risk/Rollback: Documentation and API-tooling-only updates; rollback is isolated to docs and Postman collection content.
 	- Commit: pending.
+
+## Track P: Follow-On Optimization
+
+- [x] P1. Tighten cache/compression defaults using current telemetry profile
+- [ ] P2. Tune mobile APK size budget trend gates from CI artifact history
+- [ ] P3. Extend source-quality scoring with translation quality signals
+
+- _May 24, 2026_: Completed P1 telemetry-driven cache/compression default tuning.
+	- Changes: Tightened default cache TTLs (`news/cards` 300 -> 180, `news/recommended` 120 -> 90, analytics 600 -> 300) and raised default compression threshold (1024 -> 1536 bytes) to reduce CPU spent compressing tiny responses. Updated backend env templates and backend docs to match.
+	- Validation: Focused backend tests for cache/compression behavior and lint.
+	- Risk/Rollback: Lower TTLs increase cache churn during traffic spikes and higher compression threshold may slightly reduce bandwidth savings for near-threshold payloads; rollback is isolated to env defaults and helper constants.
+	- Commit: pending.

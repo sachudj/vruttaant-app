@@ -245,11 +245,10 @@ Use this checklist for every track item before marking it done.
 3. ✅ N3 localization polish for secondary UI surfaces and backend-facing copy — **DONE May 24**
 
 ### Follow-On Optimization
-1. Tighten compression and cache thresholds using staging telemetry and load trends
-2. Tune mobile APK budget trend from CI artifact history over multiple releases
-3. Extend multi-language source quality scoring and translation quality signals
-4. Implement Track O social login (Google + Apple) using backend-verified token exchange
-5. Track O progress: O1 (user model compatibility baseline), O2 (backend social auth endpoint baseline), O3 (mobile Google sign-in baseline), O4 (mobile Apple sign-in baseline), O5 (security hardening: nonce replay defense + explicit linking policy), O6 (backend/mobile test + contract parity coverage), and O7 (docs + Postman parity sweep) completed on May 24, 2026
+1. ✅ P1 tighten compression/cache defaults using telemetry profile — **DONE May 24**
+2. P2 tune mobile APK budget trend from CI artifact history over multiple releases
+3. P3 extend multi-language source quality scoring and translation quality signals
+4. Track O progress: O1 (user model compatibility baseline), O2 (backend social auth endpoint baseline), O3 (mobile Google sign-in baseline), O4 (mobile Apple sign-in baseline), O5 (security hardening: nonce replay defense + explicit linking policy), O6 (backend/mobile test + contract parity coverage), and O7 (docs + Postman parity sweep) completed on May 24, 2026
 
 ### ✅ Track M Implementation Details
 1. ✅ M1. Backup automation and restore runbook baseline — **DONE May 24**
