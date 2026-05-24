@@ -203,6 +203,12 @@ If you cannot use CI artifacts, you can publish a latest APK into a tracked repo
 npm run mobile:publish-apk
 ```
 
+Use a custom runtime endpoint file when needed (for example, LAN/ngrok backend):
+
+```bash
+MOBILE_DEFINE_FILE=env/staging.json npm run mobile:publish-apk
+```
+
 This command:
 1. Builds a release APK locally.
 2. Copies it to `artifacts/mobile/android/app-release-latest.apk`.

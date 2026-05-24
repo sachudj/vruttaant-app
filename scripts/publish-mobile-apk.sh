@@ -9,9 +9,10 @@ OUTPUT_DIR="${APK_PUBLISH_DIR:-$ROOT_DIR/artifacts/mobile/android}"
 OUTPUT_APK="$OUTPUT_DIR/app-release-latest.apk"
 OUTPUT_META="$OUTPUT_DIR/app-release-latest.json"
 SOURCE_APK="$MOBILE_DIR/build/app/outputs/flutter-apk/app-release.apk"
+DEFINE_FILE="${MOBILE_DEFINE_FILE:-env/production.json}"
 
 cd "$MOBILE_DIR"
-flutter build apk --release --dart-define-from-file=env/production.json
+flutter build apk --release --dart-define-from-file="$DEFINE_FILE"
 
 if [[ ! -f "$SOURCE_APK" ]]; then
   echo "APK not found at expected path: $SOURCE_APK" >&2
