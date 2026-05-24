@@ -144,8 +144,9 @@ class _SettingsProfilePageState extends State<SettingsProfilePage> {
       });
     } catch (error) {
       if (!mounted) return;
+      final localizations = AppLocalizations.of(context);
       setState(() {
-        _error = '$error';
+        _error = localizations.settingsLoadFailed;
         _isLoading = false;
       });
     }
@@ -192,8 +193,9 @@ class _SettingsProfilePageState extends State<SettingsProfilePage> {
       });
     } catch (error) {
       if (!mounted) return;
+      final localizations = AppLocalizations.of(context);
       setState(() {
-        _error = '$error';
+        _error = localizations.settingsSaveFailed;
         _isSaving = false;
       });
     }
@@ -214,9 +216,10 @@ class _SettingsProfilePageState extends State<SettingsProfilePage> {
       ).showSnackBar(SnackBar(content: Text(localizations.deviceRemoved)));
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('$error')));
+      final localizations = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizations.genericActionFailed)),
+      );
     }
   }
 

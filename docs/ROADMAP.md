@@ -5,7 +5,7 @@
 
 ## Current Status
 
-Tracks A-M completed. Track N is in progress (N1-N2 complete, N3 pending). Detailed session notes are below.
+Tracks A-N completed. Detailed session notes are below. Next phase: Follow-On Optimization.
 
 ### Planned Execution Order
 
@@ -201,7 +201,7 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 
 - [x] N1. API and project status documentation parity sweep + CI guard
 - [x] N2. Mobile activity history and reading-feed UI integration
-- [ ] N3. Secondary localization polish for non-core surfaces
+- [x] N3. Secondary localization polish for non-core surfaces
 
 ## Session Notes
 
@@ -303,4 +303,9 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 	- Changes: Added mobile API methods for `/api/v1/user/activity/stats` and `/api/v1/user/activity/reading-feed`, surfaced activity overview metrics plus recent reading feed inside the Settings/Profile page, and added localization keys for the new surface (`en`/`hi`).
 	- Validation: `flutter test test/news_api_service_test.dart` passing with new service coverage for activity stats and reading feed.
 	- Risk/Rollback: Feature is read-only UI integration on existing APIs; rollback is isolated to mobile settings/activity rendering and API client methods.
+	- Commit: pending.
+- _May 24, 2026_: Completed N.3 secondary localization polish for non-core surfaces.
+	- Changes: Removed hardcoded fallback English copy in shared card UI, localized reading-time label rendering, replaced raw backend exception text with safe localized feedback in feed/settings error surfaces, and corrected docs API base URL to the backend default (`5000`).
+	- Validation: `flutter analyze`, targeted `flutter test`, and docs parity script checks pass.
+	- Risk/Rollback: Changes are presentation-layer and docs-only; rollback is limited to mobile localization strings and UI messaging paths.
 	- Commit: pending.

@@ -79,6 +79,10 @@ class AppLocalizations {
       'last_active': 'Last active: {value}',
       'last_active_unknown': 'Last active: unavailable',
       'story_fallback_title': 'Story',
+      'read_time_minutes': '{minutes} min read',
+      'generic_action_failed': 'Action failed. Please try again.',
+      'settings_load_failed': 'Could not load profile settings right now.',
+      'settings_save_failed': 'Could not save settings right now.',
       'read_more': 'Read More',
       'reader_hint':
           'Swipe left from the news card to open the full article in supported mobile platforms.',
@@ -181,6 +185,10 @@ class AppLocalizations {
       'last_active': 'आखिरी सक्रिय: {value}',
       'last_active_unknown': 'आखिरी सक्रिय: उपलब्ध नहीं',
       'story_fallback_title': 'स्टोरी',
+      'read_time_minutes': '{minutes} मिनट पढ़ें',
+      'generic_action_failed': 'कार्रवाई विफल हुई। कृपया फिर से कोशिश करें।',
+      'settings_load_failed': 'अभी प्रोफाइल सेटिंग्स लोड नहीं हो सकीं।',
+      'settings_save_failed': 'अभी सेटिंग्स सेव नहीं हो सकीं।',
       'read_more': 'और पढ़ें',
       'reader_hint':
           'समर्थित मोबाइल प्लेटफॉर्म पर पूरा लेख खोलने के लिए न्यूज़ कार्ड से बाएं स्वाइप करें।',
@@ -289,6 +297,11 @@ class AppLocalizations {
       _t('last_active').replaceAll('{value}', value);
   String get lastActiveUnknown => _t('last_active_unknown');
   String get storyFallbackTitle => _t('story_fallback_title');
+  String readTimeMinutes(int minutes) =>
+      _t('read_time_minutes').replaceAll('{minutes}', '$minutes');
+  String get genericActionFailed => _t('generic_action_failed');
+  String get settingsLoadFailed => _t('settings_load_failed');
+  String get settingsSaveFailed => _t('settings_save_failed');
   String get readMore => _t('read_more');
   String get readerHint => _t('reader_hint');
   String get noOriginalUrl => _t('no_original_url');

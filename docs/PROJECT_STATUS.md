@@ -236,10 +236,10 @@ Use this checklist for every track item before marking it done.
 2. ✅ M2 release telemetry dashboard baseline — **DONE May 24**
 3. ✅ M3 multi-environment load history and trend analysis — **DONE May 24**
 
-### Track N: Documentation and UX Polish (Current)
+### ✅ Track N: Documentation and UX Polish (COMPLETE)
 1. ✅ N1 API and project-status docs parity sweep + CI docs guard — **DONE May 24**
 2. ✅ N2 mobile activity history and reading-feed UI integration — **DONE May 24**
-3. ⏳ N3 localization polish for secondary UI surfaces and backend-facing copy
+3. ✅ N3 localization polish for secondary UI surfaces and backend-facing copy — **DONE May 24**
 
 ### Follow-On Optimization
 1. Tighten compression and cache thresholds using staging telemetry and load trends

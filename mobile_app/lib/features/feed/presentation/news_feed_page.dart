@@ -532,7 +532,9 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       );
     } catch (error) {
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text('$error')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(localizations.genericActionFailed)),
+      );
     }
   }
 

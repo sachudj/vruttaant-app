@@ -5,10 +5,10 @@
 Primary API base:
 
 ```text
-http://localhost:5001/api/v1
+http://localhost:5000/api/v1
 ```
 
-The backend auto-falls back to the next free port if `5001` is occupied.
+The backend auto-falls back to the next free port if `5000` is occupied.
 
 ## Versioning
 

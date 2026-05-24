@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app/l10n/app_localizations.dart';
 
 class NewsCard extends StatelessWidget {
   const NewsCard({
@@ -48,6 +49,8 @@ class NewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return SizedBox.expand(
       child: Stack(
         fit: StackFit.expand,
@@ -131,8 +134,9 @@ class NewsCard extends StatelessWidget {
                                 color: Colors.white,
                               ),
                         tooltip: isTranslated
-                            ? (showOriginalTooltip ?? 'Show original')
-                            : (translateTooltip ?? 'Translate'),
+                            ? (showOriginalTooltip ??
+                                  localizations.showOriginal)
+                            : (translateTooltip ?? localizations.translate),
                       ),
                       IconButton.filledTonal(
                         onPressed: onSharePressed,
@@ -140,7 +144,7 @@ class NewsCard extends StatelessWidget {
                           Icons.share_outlined,
                           color: Colors.white,
                         ),
-                        tooltip: shareTooltip ?? 'Share',
+                        tooltip: shareTooltip ?? localizations.share,
                       ),
                       IconButton.filledTonal(
                         onPressed: onBookmarkPressed,
@@ -149,8 +153,9 @@ class NewsCard extends StatelessWidget {
                           color: isBookmarked ? Colors.amber : Colors.white,
                         ),
                         tooltip: isBookmarked
-                            ? (removeBookmarkTooltip ?? 'Remove bookmark')
-                            : (addBookmarkTooltip ?? 'Add bookmark'),
+                            ? (removeBookmarkTooltip ??
+                                  localizations.removeBookmark)
+                            : (addBookmarkTooltip ?? localizations.addBookmark),
                       ),
                     ],
                   ),
@@ -172,10 +177,12 @@ class NewsCard extends StatelessWidget {
                         ),
                         child: Text(
                           isTranslating
-                              ? (statusTranslatingLabel ?? 'Translating...')
+                              ? (statusTranslatingLabel ??
+                                    localizations.translating)
                               : isTranslated
-                              ? (statusTranslatedLabel ?? 'Translated')
-                              : (statusOriginalLabel ?? 'Original'),
+                              ? (statusTranslatedLabel ??
+                                    localizations.translated)
+                              : (statusOriginalLabel ?? localizations.original),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -203,7 +210,7 @@ class NewsCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '$readingTime min read',
+                                localizations.readTimeMinutes(readingTime!),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
