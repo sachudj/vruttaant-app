@@ -142,6 +142,22 @@ curl -sS "http://127.0.0.1:5001/api/v1/admin/loadtest/history?environment=stagin
 
 Use these views to catch regressions after releases and to tune SLO thresholds with observed trend data.
 
+## Auto-Generated Markdown Summary
+
+The deploy gate now generates a markdown summary from stored JSON run reports:
+
+```bash
+node scripts/summarize-loadtest-results.js \
+	--input backend/loadtest-results \
+	--output backend/loadtest-results/summary.md \
+	--max-runs 30
+```
+
+The generated file (`backend/loadtest-results/summary.md`) is uploaded with CI artifacts and includes:
+
+1. Environment overview (run count, pass count, pass rate, latest run)
+2. Scenario averages (p95 latency, throughput, error rate)
+
 ## Notes
 
 1. These SLOs are baseline targets, not production contractual SLAs.

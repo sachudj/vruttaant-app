@@ -137,6 +137,13 @@ jobs:
           APP_VERSION: ${{ github.sha }}
         run: npm run loadtest:baseline
 
+      - name: Generate load-test markdown summary
+        run: |
+          node scripts/summarize-loadtest-results.js \
+            --input backend/loadtest-results \
+            --output backend/loadtest-results/summary.md \
+            --max-runs 30
+
       - name: Upload load-test reports
         if: always()
         uses: actions/upload-artifact@v4
