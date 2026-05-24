@@ -215,6 +215,12 @@ Use a direct URL override (highest priority) when DNS or env files are not usabl
 MOBILE_API_BASE_URL=http://192.168.1.20:5001 npm run mobile:publish-apk
 ```
 
+For current hosted test backend on Render:
+
+```bash
+MOBILE_API_BASE_URL=https://vruttaant-app.onrender.com npm run mobile:publish-apk
+```
+
 This is the quickest fix for `Failed host lookup` errors on phone builds.
 
 This command:

@@ -81,10 +81,10 @@ render.yaml
 
 Then create the service from the Render Blueprint flow and fill only the secret values Render cannot sync from source control.
 
-Expected public URL example:
+Current test backend URL:
 
 ```text
-https://vruttaant-backend-test.onrender.com
+https://vruttaant-app.onrender.com
 ```
 
 ### MongoDB Atlas Setup
@@ -169,9 +169,9 @@ CORS_ALLOWED_ORIGINS=https://your-web-app.example.com,http://localhost:3000
 After Render marks the service healthy, verify these URLs:
 
 ```bash
-curl https://your-render-url.onrender.com/health
-curl https://your-render-url.onrender.com/ready
-curl https://your-render-url.onrender.com/api/docs.json
+curl https://vruttaant-app.onrender.com/health
+curl https://vruttaant-app.onrender.com/ready
+curl https://vruttaant-app.onrender.com/api/docs.json
 ```
 
 Expected first-pass success criteria:
@@ -186,7 +186,7 @@ Once the backend URL is live, build the APK against it:
 
 ```bash
 cd /path/to/vruttaant-app
-MOBILE_API_BASE_URL=https://your-render-url.onrender.com npm run mobile:publish-apk
+MOBILE_API_BASE_URL=https://vruttaant-app.onrender.com npm run mobile:publish-apk
 ```
 
 Then commit/push the refreshed APK artifact if you want the latest installable APK kept in the repository.
@@ -197,7 +197,7 @@ Then commit/push the refreshed APK artifact if you want the latest installable A
 2. Connect MongoDB Atlas
 3. Omit Redis on first attempt if you want the smallest moving surface
 4. Validate `/health`
-5. Build Android APK using `MOBILE_API_BASE_URL=https://your-render-url.onrender.com`
+5. Build Android APK using `MOBILE_API_BASE_URL=https://vruttaant-app.onrender.com`
 6. Install APK on phone and test feed loading
 
 ### Known Free-Tier Tradeoffs
