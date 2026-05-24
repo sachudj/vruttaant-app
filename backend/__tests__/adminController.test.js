@@ -1,10 +1,17 @@
-const { getDetailedHealth, getSystemStats, sendAdminNotification } = require('../src/controllers/adminController');
+const {
+  getDetailedHealth,
+  getSystemStats,
+  sendAdminNotification,
+  getReleaseTelemetry
+} = require('../src/controllers/adminController');
 const User = require('../src/models/User');
 const Bookmark = require('../src/models/Bookmark');
 const NewsCard = require('../src/models/NewsCard');
 const RefreshToken = require('../src/models/RefreshToken');
 const NotificationDevice = require('../src/models/NotificationDevice');
 const pushNotificationService = require('../src/services/pushNotificationService');
+const { isRedisConnected } = require('../src/config/redis');
+const { getMetricsSnapshot } = require('../src/observability/metrics');
 
 jest.mock('../src/models/User');
 jest.mock('../src/models/Bookmark');
@@ -12,6 +19,12 @@ jest.mock('../src/models/NewsCard');
 jest.mock('../src/models/RefreshToken');
 jest.mock('../src/models/NotificationDevice');
 jest.mock('../src/services/pushNotificationService');
+jest.mock('../src/config/redis', () => ({
+  isRedisConnected: jest.fn()
+}));
+jest.mock('../src/observability/metrics', () => ({
+  getMetricsSnapshot: jest.fn()
+}));
 
 // Mock database module
 jest.mock('../src/config/database', () => ({
@@ -372,6 +385,83 @@ describe('adminController', () => {
       req.body = { title: 'Title', body: 'Body', audience: 'all' };
       await sendAdminNotification(req, res, next);
       expect(next).toHaveBeenCalledWith(expect.any(Error));
+    });
+  });
+
+  describe('getReleaseTelemetry', () => {
+    it('returns release telemetry with traffic and engagement metrics', async () => {
+      User.countDocuments
+        .mockResolvedValueOnce(100) // usersTotal
+        .mockResolvedValueOnce(40); // activeUsers24h
+
+      Bookmark.countDocuments
+        .mockResolvedValueOnce(500) // bookmarksTotal
+        .mockResolvedValueOnce(120); // bookmarks24h
+
+      NewsCard.countDocuments
+        .mockResolvedValueOnce(5000) // newsCardsTotal
+        .mockResolvedValueOnce(300); // newsCards24h
+
+      NotificationDevice.countDocuments.mockResolvedValueOnce(25);
+
+      isRedisConnected.mockReturnValue(true);
+      getMetricsSnapshot.mockResolvedValue({
+        requestsTotal: 1000,
+        errorsTotal: 20,
+        errorRatePercent: 2,
+        avgLatencyMs: 140,
+        requestDurationCount: 1000
+      });
+
+      await getReleaseTelemetry(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        success: true,
+        data: {
+          telemetry: expect.objectContaining({
+            timestamp: expect.any(String),
+            release: expect.objectContaining({
+              appVersion: expect.any(String),
+              nodeEnv: expect.any(String),
+              nodeVersion: expect.any(String),
+              uptimeSeconds: expect.any(Number)
+            }),
+            serviceHealth: {
+              databaseConnected: true,
+              cacheConnected: true
+            },
+            traffic: {
+              requestsTotal: 1000,
+              errorsTotal: 20,
+              errorRatePercent: 2,
+              avgLatencyMs: 140,
+              requestDurationCount: 1000
+            },
+            engagement: {
+              usersTotal: 100,
+              activeUsers24h: 40,
+              bookmarksTotal: 500,
+              bookmarks24h: 120,
+              enabledDevices: 25
+            },
+            content: {
+              newsCardsTotal: 5000,
+              newsCards24h: 300
+            }
+          })
+        }
+      }));
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('calls next when telemetry aggregation fails', async () => {
+      const error = new Error('aggregation failed');
+      User.countDocuments.mockRejectedValue(error);
+
+      await getReleaseTelemetry(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
     });
   });
 });

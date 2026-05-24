@@ -4,7 +4,8 @@ const {
   resolveRequestPath,
   createMetricsMiddleware,
   createMetricsHandler,
-  updateDatabaseConnectivity
+  updateDatabaseConnectivity,
+  getMetricsSnapshot
 } = require('../src/observability/metrics');
 
 describe('metrics', () => {
@@ -122,6 +123,59 @@ describe('metrics', () => {
 
       expect(value).toBe(0);
       expect(gauge.set).toHaveBeenCalledWith(0);
+    });
+  });
+
+  describe('getMetricsSnapshot', () => {
+    it('aggregates request, error, and latency metrics', async () => {
+      const registry = {
+        getMetricsAsJSON: jest.fn().mockResolvedValue([
+          {
+            name: 'vruttaant_http_requests_total',
+            values: [
+              { value: 10 },
+              { value: 5 }
+            ]
+          },
+          {
+            name: 'vruttaant_http_errors_total',
+            values: [
+              { value: 2 }
+            ]
+          },
+          {
+            name: 'vruttaant_http_request_duration_seconds',
+            values: [
+              { metricName: 'vruttaant_http_request_duration_seconds_count', value: 3 },
+              { metricName: 'vruttaant_http_request_duration_seconds_sum', value: 0.75 }
+            ]
+          }
+        ])
+      };
+
+      const snapshot = await getMetricsSnapshot({ registry });
+
+      expect(snapshot.requestsTotal).toBe(15);
+      expect(snapshot.errorsTotal).toBe(2);
+      expect(snapshot.requestDurationCount).toBe(3);
+      expect(snapshot.avgLatencyMs).toBeCloseTo(250, 5);
+      expect(snapshot.errorRatePercent).toBeCloseTo((2 / 15) * 100, 5);
+    });
+
+    it('returns zeros when metrics are absent', async () => {
+      const registry = {
+        getMetricsAsJSON: jest.fn().mockResolvedValue([])
+      };
+
+      const snapshot = await getMetricsSnapshot({ registry });
+
+      expect(snapshot).toEqual({
+        requestsTotal: 0,
+        errorsTotal: 0,
+        errorRatePercent: 0,
+        avgLatencyMs: 0,
+        requestDurationCount: 0
+      });
     });
   });
 });

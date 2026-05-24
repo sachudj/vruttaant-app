@@ -156,7 +156,7 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 ### ⏳ Infrastructure
 - [x] Database migrations strategy with version tracking
 - [x] Backup automation and restore runbook
-- [ ] Release telemetry dashboard
+- [x] Release telemetry dashboard (baseline admin API)
 - [ ] Multi-environment load history and trend analysis
 
 ---
@@ -225,7 +225,7 @@ Use this checklist for every track item before marking it done.
 2. **Localization Scope**: Core feed/settings/auth/bookmarks/reader/analytics surfaces are localized (`en`/`hi`), but secondary UI polish and backend message translations are still pending.
 3. **Redis Coverage**: Redis now caches `/api/v1/news/cards`, `/api/v1/news/recommended`, `/api/v1/analytics/trending`, and `/api/v1/analytics/categories`, but write-through invalidation is currently limited to ingest-driven content changes.
 4. **CDN Integration Requires Env Setup**: Artwork delivery now supports CDN rewriting through backend env configuration, but staging/production still need real CDN endpoints or templates configured for optimization to take effect.
-5. **Release Telemetry and Trend History**: Baseline load testing and CI regression gate exist, but release telemetry dashboard and cross-environment trend history are still pending.
+5. **Load-Test Trend History**: Baseline load testing and CI regression gate exist, but cross-environment trend history is still pending.
 
 ---
 
@@ -245,10 +245,9 @@ Use this checklist for every track item before marking it done.
 3. Tune the 20 MB mobile APK budget using CI artifact history over several runs
 
 ### Medium Term (Infrastructure & Polish, 3-4 weeks)
-1. Create release telemetry dashboard for rollout health
-2. Extend multi-language source coverage with ingestion quality scoring
-3. Complete localization polish for secondary UI copy
-4. Set up cross-environment load history and trend analysis
+1. Extend multi-language source coverage with ingestion quality scoring
+2. Complete localization polish for secondary UI copy
+3. Set up cross-environment load history and trend analysis
 
 ### ✅ Track M: Infrastructure Operations
 1. ✅ M1. Backup automation and restore runbook baseline — **DONE May 24**
@@ -256,6 +255,10 @@ Use this checklist for every track item before marking it done.
   - `scripts/restore-mongodb.sh`: checksum-verified restore (`--latest`, `--backup-file`, `--dry-run`, `--drop`)
   - `scripts/verify-backup-restore.sh`: deterministic restore-drill verification
   - Backend npm scripts: `infra:backup`, `infra:restore`, `infra:backup:verify`
+2. ✅ M2. Release telemetry dashboard baseline — **DONE May 24**
+  - Admin endpoint: `GET /api/v1/admin/release-telemetry`
+  - Includes release metadata, DB/cache connectivity, HTTP traffic/error/latency snapshot, and 24h engagement/content indicators
+  - Backed by metrics helper: `getMetricsSnapshot()` in observability module
 
 ---
 

@@ -137,6 +137,37 @@ function createMetricsHandler(options = {}) {
   };
 }
 
+async function getMetricsSnapshot(options = {}) {
+  const register = options.registry || registry;
+  const metrics = await Promise.resolve(register.getMetricsAsJSON());
+
+  const requestsMetric = metrics.find((metric) => metric.name === 'vruttaant_http_requests_total');
+  const errorsMetric = metrics.find((metric) => metric.name === 'vruttaant_http_errors_total');
+  const durationMetric = metrics.find((metric) => metric.name === 'vruttaant_http_request_duration_seconds');
+
+  const requestsTotal = (requestsMetric?.values || []).reduce((sum, value) => sum + Number(value.value || 0), 0);
+  const errorsTotal = (errorsMetric?.values || []).reduce((sum, value) => sum + Number(value.value || 0), 0);
+
+  const durationCount = (durationMetric?.values || [])
+    .filter((value) => String(value.metricName || '').endsWith('_count'))
+    .reduce((sum, value) => sum + Number(value.value || 0), 0);
+
+  const durationSum = (durationMetric?.values || [])
+    .filter((value) => String(value.metricName || '').endsWith('_sum'))
+    .reduce((sum, value) => sum + Number(value.value || 0), 0);
+
+  const avgLatencyMs = durationCount > 0 ? (durationSum / durationCount) * 1000 : 0;
+  const errorRatePercent = requestsTotal > 0 ? (errorsTotal / requestsTotal) * 100 : 0;
+
+  return {
+    requestsTotal,
+    errorsTotal,
+    errorRatePercent,
+    avgLatencyMs,
+    requestDurationCount: durationCount
+  };
+}
+
 initializeMetrics();
 
 const metricsMiddleware = createMetricsMiddleware();
@@ -148,6 +179,7 @@ module.exports = {
   createMetricsHandler,
   metricsMiddleware,
   metricsHandler,
+  getMetricsSnapshot,
   normalizePath,
   resolveRequestPath,
   updateDatabaseConnectivity

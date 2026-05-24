@@ -194,6 +194,8 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 ## Track M: Infrastructure Operations
 
 - [x] M1. Add backup automation and restore runbook
+- [x] M2. Add release telemetry dashboard baseline
+- [ ] M3. Add multi-environment load history and trend analysis
 
 ## Session Notes
 
@@ -275,4 +277,9 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 	- Changes: Added `scripts/backup-mongodb.sh`, `scripts/restore-mongodb.sh`, and `scripts/verify-backup-restore.sh` for archive backups, checksum validation, retention pruning, and restore-drill verification. Wired backend npm scripts (`infra:backup`, `infra:restore`, `infra:backup:verify`) and added backup env template `backend/.env.backup.example`.
 	- Validation: Added deterministic restore verification flow over isolated `vruttaant_backup_verify` DB and dry-run restore mode for operator safety.
 	- Risk/Rollback: Backup/restore logic is isolated to scripts and docs; rollback is limited to removing script wiring without runtime API impact.
+	- Commit: pending.
+- _May 24, 2026_: Completed M.2 release telemetry dashboard baseline.
+	- Changes: Added admin endpoint `GET /api/v1/admin/release-telemetry` with compact release-health payload (version/env/uptime, DB/cache connectivity, HTTP traffic/error/latency metrics, and 24h engagement/content aggregates). Added Prometheus registry snapshot helper `getMetricsSnapshot()` in observability metrics module.
+	- Validation: Backend lint and focused Jest suites passed for telemetry/metrics (`__tests__/adminController.test.js`, `__tests__/metrics.test.js`).
+	- Risk/Rollback: Changes are additive to admin-only surfaces; rollback is isolated to route/controller/helper removal without affecting user-facing APIs.
 	- Commit: pending.

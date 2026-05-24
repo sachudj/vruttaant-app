@@ -4,6 +4,8 @@ const NewsCard = require('../models/NewsCard');
 const RefreshToken = require('../models/RefreshToken');
 const NotificationDevice = require('../models/NotificationDevice');
 const pushNotificationService = require('../services/pushNotificationService');
+const { isRedisConnected } = require('../config/redis');
+const { getMetricsSnapshot } = require('../observability/metrics');
 const { AppError } = require('../middleware/errorHandler');
 
 /**
@@ -206,8 +208,74 @@ async function sendAdminNotification(req, res, next) {
   }
 }
 
+/**
+ * Get release telemetry snapshot (admin only)
+ * Provides a compact release health view for rollout monitoring.
+ */
+async function getReleaseTelemetry(req, res, next) {
+  try {
+    const mongooseConnection = require('../config/database').getConnection();
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const [
+      usersTotal,
+      activeUsers24h,
+      bookmarksTotal,
+      bookmarks24h,
+      newsCardsTotal,
+      newsCards24h,
+      enabledDevices
+    ] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ lastLoginAt: { $gte: twentyFourHoursAgo } }),
+      Bookmark.countDocuments(),
+      Bookmark.countDocuments({ createdAt: { $gte: twentyFourHoursAgo } }),
+      NewsCard.countDocuments(),
+      NewsCard.countDocuments({ scrapedAt: { $gte: twentyFourHoursAgo } }),
+      NotificationDevice.countDocuments({ enabled: true })
+    ]);
+
+    const traffic = await getMetricsSnapshot();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        telemetry: {
+          timestamp: now.toISOString(),
+          release: {
+            appVersion: process.env.APP_VERSION || 'dev',
+            nodeEnv: process.env.NODE_ENV || 'development',
+            nodeVersion: process.version,
+            uptimeSeconds: Math.floor(process.uptime())
+          },
+          serviceHealth: {
+            databaseConnected: mongooseConnection.readyState === 1,
+            cacheConnected: isRedisConnected()
+          },
+          traffic,
+          engagement: {
+            usersTotal,
+            activeUsers24h,
+            bookmarksTotal,
+            bookmarks24h,
+            enabledDevices
+          },
+          content: {
+            newsCardsTotal,
+            newsCards24h
+          }
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getDetailedHealth,
   getSystemStats,
-  sendAdminNotification
+  sendAdminNotification,
+  getReleaseTelemetry
 };

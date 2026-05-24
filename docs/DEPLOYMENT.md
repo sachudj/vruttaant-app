@@ -107,7 +107,7 @@ Trigger modes:
 2. Deploy mobile release artifact with production defines
 3. Verify:
    - Error rate alert channels are active
-   - Dashboard shows request and latency metrics
+   - `GET /api/v1/admin/release-telemetry` returns healthy release snapshot for version/env/traffic
    - No spike in `5xx` over first 15 minutes
 
 ## Rollback Playbook

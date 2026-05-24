@@ -4,7 +4,8 @@ const { requireAdmin } = require('../middleware/roleGuard');
 const {
   getDetailedHealth,
   getSystemStats,
-  sendAdminNotification
+  sendAdminNotification,
+  getReleaseTelemetry
 } = require('../controllers/adminController');
 const { getCohortStats, getCohortUsers } = require('../controllers/cohortController');
 
@@ -18,6 +19,9 @@ router.get('/health', getDetailedHealth);
 
 // GET /admin/stats - System statistics
 router.get('/stats', getSystemStats);
+
+// GET /admin/release-telemetry - Release health telemetry snapshot
+router.get('/release-telemetry', getReleaseTelemetry);
 
 // POST /admin/notifications/send - Send manual notification
 router.post('/notifications/send', sendAdminNotification);
