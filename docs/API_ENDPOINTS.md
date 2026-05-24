@@ -16,6 +16,21 @@ Current stable namespace is `v1`.
 
 Legacy non-versioned paths (`/api/news/*`, `/api/auth/*`) still exist for backward compatibility and emit deprecation warnings.
 
+## Swagger / OpenAPI
+
+1. Swagger UI: `/api/docs`
+2. OpenAPI JSON: `/api/docs.json`
+3. These routes are public in local/dev and reflect the documented v1 API surface.
+
+## Postman Collection
+
+`docs/Vruttaant.postman_collection.json` — import into Postman via **File → Import**.
+
+Setup after import:
+1. Set the `baseUrl` collection variable to `http://localhost:5001` (or `5000` if free).
+2. Run **Auth / Login** (or **Signup**). The built-in test script auto-saves `accessToken` and `refreshToken` to the collection variables.
+3. All authenticated requests use `{{accessToken}}` automatically via collection-level Bearer auth.
+
 ## Auth Model
 
 1. Public: no token required

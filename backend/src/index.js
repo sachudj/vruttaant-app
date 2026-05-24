@@ -6,8 +6,10 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
+const swaggerUi = require('swagger-ui-express');
 const { connectDatabase, isDatabaseConnected } = require('./config/database');
 const apiRouter = require('./routes/apiRouter');
+const { openApiSpec } = require('./docs/openapi');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const { requestLogger } = require('./middleware/requestLogger');
 const { createReadyHandler } = require('./health/readiness');
@@ -134,6 +136,19 @@ app.use(inFlightRequests.middleware);
 app.use('/api', apiLimiter);
 app.use('/api', apiRouter);
 
+app.get('/api/docs.json', (req, res) => {
+  res.status(200).json(openApiSpec);
+});
+
+app.use(
+  '/api/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(openApiSpec, {
+    explorer: true,
+    customSiteTitle: 'Vruttaant API Docs'
+  })
+);
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
@@ -153,7 +168,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     health: '/health',
     api: '/api/v1',
-    docs: 'See /api/v1 for available endpoints'
+    docs: '/api/docs'
   });
 });
 

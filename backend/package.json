@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "ci:syntax": "node --check src/index.js && node --check src/config/database.js && node --check src/controllers/adminController.js && node --check src/controllers/authController.js && node --check src/controllers/bookmarkController.js && node --check src/controllers/notificationController.js && node --check src/controllers/newsController.js && node --check src/controllers/loadtestController.js && node --check src/models/Bookmark.js && node --check src/models/NotificationDevice.js && node --check src/models/RefreshToken.js && node --check src/models/NewsCard.js && node --check src/models/User.js && node --check src/models/LoadTestRun.js && node --check src/routes/adminRoutes.js && node --check src/routes/bookmarkRoutes.js && node --check src/routes/newsRoutes.js && node --check src/routes/authRoutes.js && node --check src/services/newsIngestionService.js && node --check src/routes/apiRouter.js && node --check src/middleware/authMiddleware.js && node --check src/middleware/roleGuard.js && node --check src/middleware/errorHandler.js && node --check src/middleware/requestValidation.js && node --check src/validation/authValidators.js && node --check src/validation/bookmarkValidators.js && node --check src/validation/notificationValidators.js",
+    "ci:syntax": "node --check src/index.js && node --check src/docs/openapi.js && node --check src/config/database.js && node --check src/controllers/adminController.js && node --check src/controllers/authController.js && node --check src/controllers/bookmarkController.js && node --check src/controllers/notificationController.js && node --check src/controllers/newsController.js && node --check src/controllers/loadtestController.js && node --check src/models/Bookmark.js && node --check src/models/NotificationDevice.js && node --check src/models/RefreshToken.js && node --check src/models/NewsCard.js && node --check src/models/User.js && node --check src/models/LoadTestRun.js && node --check src/routes/adminRoutes.js && node --check src/routes/bookmarkRoutes.js && node --check src/routes/newsRoutes.js && node --check src/routes/authRoutes.js && node --check src/services/newsIngestionService.js && node --check src/routes/apiRouter.js && node --check src/middleware/authMiddleware.js && node --check src/middleware/roleGuard.js && node --check src/middleware/errorHandler.js && node --check src/middleware/requestValidation.js && node --check src/validation/authValidators.js && node --check src/validation/bookmarkValidators.js && node --check src/validation/notificationValidators.js",
     "ci:health": "bash ../scripts/check-backend-health.sh",
     "lint": "eslint src/",
     "test": "jest",
@@ -47,7 +47,9 @@
     "mongoose": "^8.18.0",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.7",
-    "prom-client": "^15.1.3"
+    "prom-client": "^15.1.3",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1"
   },
   "overrides": {
     "@tootallnate/once": "^3.0.1",

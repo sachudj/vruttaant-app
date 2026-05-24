@@ -1,0 +1,672 @@
+{
+  "info": {
+    "name": "Vruttaant API",
+    "description": "Complete API collection for the Vruttaant multilingual news backend.\n\n**Setup:**\n1. Set the `baseUrl` variable to `http://localhost:5001` (or `5000` if that port is free).\n2. Run **Auth / Signup** or **Auth / Login** first.\n3. Copy `data.tokens.accessToken` from the response into the `accessToken` collection variable.\n4. All authenticated requests will pick it up automatically via the collection-level Auth.\n\n**Variables used:**\n- `baseUrl` — backend origin (default: http://localhost:5001)\n- `accessToken` — JWT access token (set after login/signup)\n- `refreshToken` — JWT refresh token (set after login/signup)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5001",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Platform",
+      "item": [
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/",
+            "description": "Root service metadata — returns version, health link, and docs link."
+          }
+        },
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health",
+            "description": "Service health: databaseConnected, cacheConnected, timestamp."
+          }
+        },
+        {
+          "name": "Readiness",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/ready",
+            "description": "Kubernetes-style readiness probe. Returns 503 if DB is disconnected."
+          }
+        },
+        {
+          "name": "Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/metrics",
+            "description": "Prometheus-compatible metrics export (HTTP counters, latency histograms, process stats)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.tokens) {",
+                  "  pm.collectionVariables.set('accessToken', json.data.tokens.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.data.tokens.refreshToken);",
+                  "  console.log('Tokens saved to collection variables.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/auth/signup",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"reader@example.com\",\n  \"password\": \"StrongPassword123!\"\n}"
+            },
+            "description": "Create a new user account. On success, automatically saves `accessToken` and `refreshToken` to collection variables."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.tokens) {",
+                  "  pm.collectionVariables.set('accessToken', json.data.tokens.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.data.tokens.refreshToken);",
+                  "  console.log('Tokens saved to collection variables.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"reader@example.com\",\n  \"password\": \"StrongPassword123!\"\n}"
+            },
+            "description": "Login and get tokens. On success, automatically saves `accessToken` and `refreshToken` to collection variables."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.tokens) {",
+                  "  pm.collectionVariables.set('accessToken', json.data.tokens.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.data.tokens.refreshToken);",
+                  "  console.log('Tokens rotated and saved.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/auth/refresh",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "description": "Rotate refresh token and issue a new access token. Uses the saved `refreshToken` variable."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/auth/logout",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "description": "Revoke the refresh token."
+          }
+        }
+      ]
+    },
+    {
+      "name": "News",
+      "item": [
+        {
+          "name": "Ingest Health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/news/ingest/health",
+            "description": "Health check for the news ingest route."
+          }
+        },
+        {
+          "name": "Ingest News",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/news/ingest",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/news-article\",\n  \"persist\": true\n}"
+            },
+            "description": "Scrape a news article URL, summarize with LLM, and optionally persist to DB. `persist: false` for dry-run preview."
+          }
+        },
+        {
+          "name": "Get Feed Cards",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/news/cards?language=en&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "news", "cards"],
+              "query": [
+                { "key": "language", "value": "en", "description": "Language code: en, hi, bn, mr, te, ta, gu, ur, kn, or, ml" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20", "description": "1–100" },
+                { "key": "category", "value": "", "description": "Tech | Politics | Sports | Business | World | Health | Entertainment | Science | Education | General", "disabled": true },
+                { "key": "q", "value": "", "description": "Full-text search query", "disabled": true },
+                { "key": "sort", "value": "latest", "description": "latest | relevance | trending" }
+              ]
+            },
+            "description": "Paginated feed cards. Optional auth improves personalization. Supports category filter, full-text search, and sort."
+          }
+        },
+        {
+          "name": "Get Recommended Cards",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/news/recommended?language=en&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "news", "recommended"],
+              "query": [
+                { "key": "language", "value": "en" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "recentlyShown", "value": "", "description": "Format: category:count,category2:count2", "disabled": true }
+              ]
+            },
+            "description": "Personalized recommendation feed. Authenticated requests apply engagement-based scoring."
+          }
+        },
+        {
+          "name": "Translate Story",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/news/translate",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Breaking: Major Policy Announced\",\n  \"summary\": \"The government announced a major new policy today...\",\n  \"targetLanguage\": \"hi\"\n}"
+            },
+            "description": "Translate a story title and summary. Requires at least one of `title` or `summary`, plus `targetLanguage`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Profile",
+          "item": [
+            {
+              "name": "Get Profile",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/user/profile",
+                "description": "Get authenticated user profile and preferences."
+              }
+            },
+            {
+              "name": "Update Profile",
+              "request": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/user/profile",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"language\": \"hi\",\n  \"categories\": [\"Tech\", \"World\", \"Science\"]\n}"
+                },
+                "description": "Update language preference and preferred categories."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Notifications",
+          "item": [
+            {
+              "name": "Get Notification Preferences",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/user/notifications/preferences"
+              }
+            },
+            {
+              "name": "Update Notification Preferences",
+              "request": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/user/notifications/preferences",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"enabled\": true,\n  \"breakingNews\": true,\n  \"bookmarkAlerts\": false,\n  \"dailyDigest\": true,\n  \"quietHours\": {\n    \"enabled\": false,\n    \"start\": \"22:00\",\n    \"end\": \"07:00\",\n    \"timezone\": \"UTC\"\n  }\n}"
+                }
+              }
+            },
+            {
+              "name": "Register Device",
+              "request": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/user/notifications/devices",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"token\": \"fcm-device-token-here\",\n  \"platform\": \"android\",\n  \"deviceName\": \"My Phone\"\n}"
+                },
+                "description": "Register a push notification device token."
+              }
+            },
+            {
+              "name": "List Devices",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/user/notifications/devices"
+              }
+            },
+            {
+              "name": "Delete Device",
+              "request": {
+                "method": "DELETE",
+                "url": "{{baseUrl}}/api/v1/user/notifications/devices/:deviceId",
+                "url.variable": [
+                  { "key": "deviceId", "value": "DEVICE_ID_HERE" }
+                ],
+                "description": "Delete a registered push notification device by ID."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Activity",
+          "item": [
+            {
+              "name": "Activity History",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/user/activity/history?page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "user", "activity", "history"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "eventType", "value": "view", "description": "view | bookmark | translate | share", "disabled": true },
+                    { "key": "language", "value": "en", "disabled": true },
+                    { "key": "category", "value": "Tech", "disabled": true }
+                  ]
+                },
+                "description": "Paginated activity history. Supports filtering by eventType, language, and category."
+              }
+            },
+            {
+              "name": "Reading Feed",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/user/activity/reading-feed?limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "user", "activity", "reading-feed"],
+                  "query": [
+                    { "key": "limit", "value": "20" }
+                  ]
+                },
+                "description": "Recent reading history (view events), sorted by recency."
+              }
+            },
+            {
+              "name": "Activity Stats",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/user/activity/stats",
+                "description": "Engagement stats: total views, bookmarks, translations, shares, top categories, last activity."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Badges",
+          "item": [
+            {
+              "name": "Get Earned Badges",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/user/badges"
+              }
+            },
+            {
+              "name": "Get Badge Progress",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/user/badges/progress",
+                "description": "Progress toward unearned badges with completion percentage."
+              }
+            },
+            {
+              "name": "Evaluate Badges",
+              "request": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/user/badges/evaluate",
+                "description": "Trigger badge evaluation for the authenticated user."
+              }
+            },
+            {
+              "name": "Mark Badge Viewed",
+              "request": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/user/badges/:badgeId/view",
+                "url.variable": [
+                  { "key": "badgeId", "value": "BADGE_ID_HERE" }
+                ]
+              }
+            },
+            {
+              "name": "Badge Engagement Metrics",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/user/badges/metrics"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cohorts",
+          "item": [
+            {
+              "name": "Get User Cohorts",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/user/cohorts"
+              }
+            },
+            {
+              "name": "Refresh Cohorts",
+              "request": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/user/cohorts/refresh",
+                "description": "Recompute cohort memberships for the authenticated user."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Bookmarks",
+      "item": [
+        {
+          "name": "Create Bookmark",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/user/bookmarks",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/article\",\n  \"title\": \"Interesting Article Title\",\n  \"source\": \"Example News\",\n  \"imageUrl\": \"https://example.com/image.jpg\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List Bookmarks",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/user/bookmarks"
+          }
+        },
+        {
+          "name": "Delete Bookmark",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/user/bookmarks/:id",
+            "url.variable": [
+              { "key": "id", "value": "BOOKMARK_ID_HERE" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Capture Event",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/analytics/events",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventType\": \"view\",\n  \"newsCardId\": \"MONGO_OBJECT_ID_HERE\",\n  \"duration\": 30000\n}"
+            },
+            "description": "Capture a user activity event. Optional auth — anonymous events are also accepted.\n\neventType options:\n- `view` — requires `newsCardId`, optional `duration` (ms)\n- `bookmark` — requires `newsCardId`\n- `translate` — requires `newsCardId`, `translation.fromLanguage`, `translation.toLanguage`\n- `share` — requires `newsCardId`"
+          }
+        },
+        {
+          "name": "Trending Analytics (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analytics/trending?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "analytics", "trending"],
+              "query": [
+                { "key": "limit", "value": "10" },
+                { "key": "category", "value": "Tech", "disabled": true }
+              ]
+            },
+            "description": "Trending cards sorted by view count. Requires admin token."
+          }
+        },
+        {
+          "name": "Category Analytics (Admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/analytics/categories",
+            "description": "Category engagement metrics sorted by engagement score. Requires admin token."
+          }
+        },
+        {
+          "name": "Card Metrics (Admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/analytics/card/:cardId/metrics",
+            "url.variable": [
+              { "key": "cardId", "value": "MONGO_OBJECT_ID_HERE" }
+            ],
+            "description": "Engagement metrics for a single card. Requires admin token."
+          }
+        },
+        {
+          "name": "User Engagement Summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/analytics/user/engagement",
+            "description": "Engagement summary for the authenticated user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Detailed Health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/health",
+            "description": "Extended system health including DB, Redis, process stats. Requires admin token."
+          }
+        },
+        {
+          "name": "System Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/stats",
+            "description": "User and content statistics. Requires admin token."
+          }
+        },
+        {
+          "name": "Release Telemetry",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/release-telemetry",
+            "description": "Release health snapshot: DB/cache status, HTTP traffic/error/latency, 24h engagement indicators. Requires admin token."
+          }
+        },
+        {
+          "name": "Load Test — Ingest Run",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/admin/loadtest/runs",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"environment\": \"local\",\n  \"duration\": 30,\n  \"p95Latency\": 120,\n  \"throughput\": 800,\n  \"errorRate\": 0.01,\n  \"scenarios\": [\"cards-read\", \"translate\"]\n}"
+            },
+            "description": "Persist a load-test run report. Requires admin token."
+          }
+        },
+        {
+          "name": "Load Test — History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/loadtest/history?environment=local&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "loadtest", "history"],
+              "query": [
+                { "key": "environment", "value": "local" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Paginated load-test run history. Requires admin token."
+          }
+        },
+        {
+          "name": "Load Test — Trends",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/loadtest/trends",
+            "description": "Aggregated load-test trends across environments. Requires admin token."
+          }
+        },
+        {
+          "name": "Send Push Notification",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/admin/notifications/send",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Breaking News\",\n  \"body\": \"Something important happened!\",\n  \"data\": {}\n}"
+            },
+            "description": "Broadcast a push notification to all registered devices. Requires admin token."
+          }
+        },
+        {
+          "name": "Cohort Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/cohorts/stats",
+            "description": "Aggregate user counts by cohort. Requires admin token."
+          }
+        },
+        {
+          "name": "Cohort Users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/cohorts/:cohortId/users?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "cohorts", ":cohortId", "users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ],
+              "variable": [
+                { "key": "cohortId", "value": "language_en" }
+              ]
+            },
+            "description": "Paginated list of users in a cohort. Cohort IDs follow pattern: language_en, category_tech, device_android, etc. Requires admin token."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Badges",
+      "item": [
+        {
+          "name": "Badge Catalog (Public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/badges/catalog",
+            "description": "Full public catalog of badge definitions: id, name, description, category, tier, criteria. No auth required."
+          }
+        }
+      ]
+    }
+  ]
+}
