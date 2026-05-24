@@ -79,15 +79,71 @@ jobs:
           cat /tmp/backend-load-gate.log || true
           exit 1
 
+      - name: Create admin token for load report ingestion
+        working-directory: backend
+        env:
+          NODE_ENV: staging
+          JWT_ACCESS_SECRET: ci-access-secret
+          JWT_REFRESH_SECRET: ci-refresh-secret
+          MONGODB_URI: mongodb://admin:admin123@127.0.0.1:27017/vruttaant?authSource=admin
+        run: |
+          ADMIN_EMAIL="ci-admin@vruttaant.local"
+          ADMIN_PASSWORD="ci-admin-password"
+
+          curl -sS -X POST http://127.0.0.1:5001/api/v1/auth/signup \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" > /tmp/ci-admin-signup.json
+
+          ADMIN_EMAIL="$ADMIN_EMAIL" node -e "
+            const mongoose = require('mongoose');
+            const User = require('./src/models/User');
+            (async () => {
+              await mongoose.connect(process.env.MONGODB_URI);
+              await User.updateOne({ email: process.env.ADMIN_EMAIL }, { $set: { role: 'admin' } });
+              await mongoose.disconnect();
+            })().catch((error) => {
+              console.error(error);
+              process.exit(1);
+            });
+          "
+
+          LOGIN_RESPONSE="$(curl -sS -X POST http://127.0.0.1:5001/api/v1/auth/login -H 'Content-Type: application/json' -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}")"
+          TOKEN="$(node -e "const payload = JSON.parse(process.argv[1]); process.stdout.write(payload.data.tokens.accessToken);" "$LOGIN_RESPONSE")"
+
+          if [ -z "$TOKEN" ]; then
+            echo "Failed to resolve admin access token"
+            echo "$LOGIN_RESPONSE"
+            exit 1
+          fi
+
+          echo "LOADTEST_REPORT_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+
       - name: Run strict SLO load baseline
         working-directory: backend
         env:
+          NODE_ENV: staging
+          MONGODB_URI: mongodb://admin:admin123@127.0.0.1:27017/vruttaant?authSource=admin
+          JWT_ACCESS_SECRET: ci-access-secret
+          JWT_REFRESH_SECRET: ci-refresh-secret
           LOADTEST_BASE_URL: http://127.0.0.1:5001
           LOADTEST_DURATION_SECONDS: 20
           LOADTEST_CONNECTIONS: 4
           LOADTEST_OVERALL_RATE: 3
           LOADTEST_STRICT_SLO: true
+          LOADTEST_ENVIRONMENT: staging
+          LOADTEST_SOURCE: ci
+          LOADTEST_REPORT_ENDPOINT: http://127.0.0.1:5001/api/v1/admin/loadtest/runs
+          LOADTEST_REPORT_TOKEN: ${{ env.LOADTEST_REPORT_TOKEN }}
+          APP_VERSION: ${{ github.sha }}
         run: npm run loadtest:baseline
+
+      - name: Upload load-test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loadtest-results-staging
+          path: backend/loadtest-results/
+          if-no-files-found: warn
 
       - name: Stop backend
         if: always()

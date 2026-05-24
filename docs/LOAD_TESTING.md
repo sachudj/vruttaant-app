@@ -103,6 +103,45 @@ cd backend
 npm run loadtest:baseline:strict
 ```
 
+## Trend Reporting (Staging vs Production)
+
+Use the admin trend endpoints to compare rollout performance across environments.
+
+### 1) Pull trend snapshots
+
+```bash
+# Staging trend summary (last 30 days)
+curl -sS "http://127.0.0.1:5001/api/v1/admin/loadtest/trends?environment=staging&rangeDays=30" \
+	-H "Authorization: Bearer <admin_jwt>"
+
+# Production trend summary (last 30 days)
+curl -sS "http://127.0.0.1:5001/api/v1/admin/loadtest/trends?environment=production&rangeDays=30" \
+	-H "Authorization: Bearer <admin_jwt>"
+```
+
+### 2) Pull run-level history for drill-down
+
+```bash
+curl -sS "http://127.0.0.1:5001/api/v1/admin/loadtest/history?environment=staging&rangeDays=30&limit=20" \
+	-H "Authorization: Bearer <admin_jwt>"
+```
+
+### 3) Recommended comparison table format
+
+| Environment | Runs (30d) | Pass Rate | Cards p95 Avg | Translate p95 Avg | Cards RPS Avg | Translate RPS Avg | Error Rate Avg |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| staging | 12 | 91.67% | 145 ms | 420 ms | 3.40 | 2.95 | 0.22% |
+| production | 18 | 94.44% | 132 ms | 390 ms | 3.65 | 3.10 | 0.15% |
+
+### 4) Trend chart suggestions
+
+1. Line chart: `cards_read.avgLatencyP95Ms` by `capturedAt` per environment
+2. Line chart: `translate.avgLatencyP95Ms` by `capturedAt` per environment
+3. Bar chart: `passRatePercent` by week and environment
+4. Stacked area: failure count by scenario key over time
+
+Use these views to catch regressions after releases and to tune SLO thresholds with observed trend data.
+
 ## Notes
 
 1. These SLOs are baseline targets, not production contractual SLAs.
