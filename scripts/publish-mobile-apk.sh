@@ -10,9 +10,14 @@ OUTPUT_APK="$OUTPUT_DIR/app-release-latest.apk"
 OUTPUT_META="$OUTPUT_DIR/app-release-latest.json"
 SOURCE_APK="$MOBILE_DIR/build/app/outputs/flutter-apk/app-release.apk"
 DEFINE_FILE="${MOBILE_DEFINE_FILE:-env/production.json}"
+API_BASE_URL_OVERRIDE="${MOBILE_API_BASE_URL:-}"
 
 cd "$MOBILE_DIR"
-flutter build apk --release --dart-define-from-file="$DEFINE_FILE"
+if [[ -n "$API_BASE_URL_OVERRIDE" ]]; then
+  flutter build apk --release --dart-define="API_BASE_URL=$API_BASE_URL_OVERRIDE"
+else
+  flutter build apk --release --dart-define-from-file="$DEFINE_FILE"
+fi
 
 if [[ ! -f "$SOURCE_APK" ]]; then
   echo "APK not found at expected path: $SOURCE_APK" >&2
@@ -41,5 +46,10 @@ echo "Published APK: $OUTPUT_APK"
 echo "Metadata: $OUTPUT_META"
 echo "Size (bytes): $apk_size_bytes"
 echo "SHA256: $sha256"
+if [[ -n "$API_BASE_URL_OVERRIDE" ]]; then
+  echo "API_BASE_URL: $API_BASE_URL_OVERRIDE (from MOBILE_API_BASE_URL override)"
+else
+  echo "API_BASE_URL source file: $DEFINE_FILE"
+fi
 echo ""
 echo "Next: git add artifacts/mobile/android && git commit -m \"chore: update latest mobile APK\""

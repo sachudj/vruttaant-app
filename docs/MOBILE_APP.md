@@ -209,6 +209,14 @@ Use a custom runtime endpoint file when needed (for example, LAN/ngrok backend):
 MOBILE_DEFINE_FILE=env/staging.json npm run mobile:publish-apk
 ```
 
+Use a direct URL override (highest priority) when DNS or env files are not usable:
+
+```bash
+MOBILE_API_BASE_URL=http://192.168.1.20:5001 npm run mobile:publish-apk
+```
+
+This is the quickest fix for `Failed host lookup` errors on phone builds.
+
 This command:
 1. Builds a release APK locally.
 2. Copies it to `artifacts/mobile/android/app-release-latest.apk`.
