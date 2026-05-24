@@ -41,6 +41,163 @@ Backup automation variables (for scripts):
 
 Reference template: `backend/.env.backup.example`
 
+## Free Test Hosting Recommendation
+
+For low-cost or free internet-accessible testing, the recommended stack for this repository is:
+
+1. Backend app host: Render Web Service
+2. Database: MongoDB Atlas free cluster
+3. Cache: Upstash Redis free tier (recommended, but optional for first test deploy)
+
+Why this combination:
+
+1. Render is the simplest path for deploying the existing Node/Express backend from GitHub.
+2. MongoDB Atlas is the most straightforward free hosted Mongo option for Mongoose apps.
+3. The backend already degrades gracefully if `REDIS_URL` is missing, so Redis can be added after first successful internet deployment.
+
+### Quick Decision
+
+Use this setup when:
+
+1. You want a public backend URL quickly for Android/iPhone testing.
+2. You do not want to keep your laptop running behind a tunnel.
+3. You want a deployment path that can later be upgraded to a paid production plan.
+
+### Render Service Setup
+
+Create a new Render Web Service pointing at this repository with:
+
+1. Root directory: `backend`
+2. Build command: `npm install`
+3. Start command: `npm start`
+4. Health check path: `/health`
+5. Auto deploy: enabled for testing, optional later for production discipline
+
+Expected public URL example:
+
+```text
+https://vruttaant-backend-test.onrender.com
+```
+
+### MongoDB Atlas Setup
+
+Create a free shared cluster and obtain a connection string like:
+
+```text
+mongodb+srv://<user>:<password>@<cluster>/<database>?retryWrites=true&w=majority
+```
+
+For quick testing:
+
+1. Create DB user with read/write access to the app database.
+2. Add a network access rule that allows your host platform to connect.
+3. If you want the fastest path and accept temporary looseness, allow `0.0.0.0/0` during testing and tighten later.
+
+### Upstash Redis Setup
+
+Create a free Redis database and copy its `REDIS_URL`.
+
+Notes:
+
+1. Redis is recommended for feed/cache parity.
+2. If you skip `REDIS_URL`, the backend still boots and serves requests; caching is just disabled.
+
+### Minimum Environment Variables For First Public Test
+
+These are the minimum vars to set in Render for a functional backend deployment:
+
+```bash
+NODE_ENV=production
+PORT=5000
+MONGODB_URI=<Atlas connection string>
+JWT_ACCESS_SECRET=<long random secret>
+JWT_REFRESH_SECRET=<long random secret>
+APP_VERSION=render-test
+```
+
+Recommended additions:
+
+```bash
+REDIS_URL=<Upstash redis url>
+SENTRY_DSN=
+SENTRY_ENVIRONMENT=production
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=200
+JSON_PAYLOAD_LIMIT=10kb
+RESPONSE_COMPRESSION_THRESHOLD_BYTES=1536
+CACHE_TTL_NEWS_CARDS=180
+CACHE_TTL_RECOMMENDED=90
+CACHE_TTL_ANALYTICS=300
+```
+
+Optional image optimization/CDN vars:
+
+```bash
+IMAGE_CDN_BASE_URL=
+IMAGE_CDN_URL_TEMPLATE=
+IMAGE_CDN_DEFAULT_WIDTH=1200
+IMAGE_CDN_DEFAULT_QUALITY=80
+```
+
+### CORS Guidance For Mobile Testing
+
+If you are only testing the Android/iOS app, `CORS_ALLOWED_ORIGINS` is not required for the native app path because those requests typically do not send a browser origin.
+
+Set `CORS_ALLOWED_ORIGINS` only if you also need:
+
+1. Browser-based testing
+2. A deployed web client
+3. Swagger/docs or frontends from specific origins
+
+Example:
+
+```bash
+CORS_ALLOWED_ORIGINS=https://your-web-app.example.com,http://localhost:3000
+```
+
+### First Deploy Validation
+
+After Render marks the service healthy, verify these URLs:
+
+```bash
+curl https://your-render-url.onrender.com/health
+curl https://your-render-url.onrender.com/ready
+curl https://your-render-url.onrender.com/api/docs.json
+```
+
+Expected first-pass success criteria:
+
+1. `/health` returns `status: ok`
+2. `/ready` returns HTTP `200`
+3. `/api/docs.json` returns the OpenAPI document
+
+### Build Mobile App Against Hosted Backend
+
+Once the backend URL is live, build the APK against it:
+
+```bash
+cd /path/to/vruttaant-app
+MOBILE_API_BASE_URL=https://your-render-url.onrender.com npm run mobile:publish-apk
+```
+
+Then commit/push the refreshed APK artifact if you want the latest installable APK kept in the repository.
+
+### Lowest-Friction First Deployment Plan
+
+1. Deploy backend on Render
+2. Connect MongoDB Atlas
+3. Omit Redis on first attempt if you want the smallest moving surface
+4. Validate `/health`
+5. Build Android APK using `MOBILE_API_BASE_URL=https://your-render-url.onrender.com`
+6. Install APK on phone and test feed loading
+
+### Known Free-Tier Tradeoffs
+
+1. Cold starts may delay the first request.
+2. Free plans may sleep after inactivity.
+3. Throughput and background-job reliability are not production-grade.
+4. Hostnames and quotas can change over time depending on provider policy.
+
 Image delivery notes:
 
 1. Use `IMAGE_CDN_BASE_URL` when your CDN exposes a fetch endpoint that accepts a source `url` query parameter.
