@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:mobile_app/config/api_config.dart';
 import 'package:mobile_app/models/bookmark_item.dart';
 import 'package:mobile_app/models/news_item.dart';
 import 'package:mobile_app/services/auth_service.dart';
@@ -27,12 +28,7 @@ class NewsApiService {
     String? accessToken,
     AuthService? authService,
     http.Client? client,
-  }) : baseUrl =
-           baseUrl ??
-           const String.fromEnvironment(
-             'API_BASE_URL',
-             defaultValue: 'http://localhost:5000',
-           ),
+  }) : baseUrl = baseUrl ?? ApiConfig.resolveBaseUrl(),
        _staticToken = (() {
          final explicitToken = (accessToken ?? '').trim();
          if (explicitToken.isNotEmpty) return explicitToken;

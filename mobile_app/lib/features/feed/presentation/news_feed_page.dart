@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app/config/api_config.dart';
 import 'package:mobile_app/features/feed/domain/feed_types.dart';
 import 'package:mobile_app/features/feed/presentation/sheets/bookmarks_sheet.dart';
 import 'package:mobile_app/features/feed/presentation/sheets/login_sheet.dart';
@@ -47,10 +48,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
   static const int _maxAdaptiveBufferThreshold = 18;
 
   final AuthService _authService = AuthService(
-    baseUrl: const String.fromEnvironment(
-      'API_BASE_URL',
-      defaultValue: 'http://localhost:5000',
-    ),
+    baseUrl: ApiConfig.resolveBaseUrl(),
   );
   late final NewsApiService _newsApiService;
   late final FeedCacheService _feedCacheService;
