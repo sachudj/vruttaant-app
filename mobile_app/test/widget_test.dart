@@ -11,7 +11,7 @@ import 'package:mobile_app/widgets/news_card.dart';
 
 void main() {
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({'onboarding_completed': true});
   });
 
   testWidgets('renders initial feed story', (WidgetTester tester) async {
@@ -259,6 +259,7 @@ void main() {
     );
 
     SharedPreferences.setMockInitialValues({
+      'onboarding_completed': true,
       cacheService.storageKeyFor(cacheKey): jsonEncode({
         'savedAt': DateTime.now().toUtc().toIso8601String(),
         'items': [cachedStory.toJson()],

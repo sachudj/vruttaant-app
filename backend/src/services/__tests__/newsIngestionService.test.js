@@ -197,11 +197,11 @@ describe('newsIngestionService - Source Quality Rules', () => {
     expect(result.reasons).toContain('invalid_url');
   });
 
-  test('fails card with missing image URL', () => {
+  test('fails card with invalid image URL when image is present', () => {
     const result = validateCardQuality({
       title: 'A sufficiently long title for this quality test case',
       url: 'https://example.com/news/item',
-      imageUrl: ''
+      imageUrl: 'notaurl'
     });
 
     expect(result.pass).toBe(false);

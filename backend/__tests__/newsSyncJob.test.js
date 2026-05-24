@@ -20,6 +20,7 @@ jest.mock('../src/models/NewsCard', () => ({
 
 jest.mock('../src/models/NewsSource', () => ({
   find: jest.fn(),
+  findOne: jest.fn(),
   findOneAndUpdate: jest.fn()
 }));
 
@@ -87,6 +88,9 @@ describe('newsSyncJob', () => {
         ])
       });
       NewsSource.findOneAndUpdate.mockResolvedValue(null);
+      NewsSource.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue(null)
+      });
       fetchNewsCards.mockResolvedValue({
         cards: [
           {
@@ -122,6 +126,9 @@ describe('newsSyncJob', () => {
         ])
       });
       NewsSource.findOneAndUpdate.mockResolvedValue(null);
+      NewsSource.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue(null)
+      });
       fetchNewsCards.mockRejectedValue(new Error('Network error'));
 
       await runSyncCycle();

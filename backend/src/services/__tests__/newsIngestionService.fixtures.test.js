@@ -137,7 +137,7 @@ describe('newsIngestionService fixtures and deterministic llm mocks', () => {
     });
   });
 
-  it('fetchNewsCards filters out cards that fail source quality rules', async () => {
+  it('fetchNewsCards filters out cards that fail title/url quality rules', async () => {
     delete process.env.LLM_API_KEY;
 
     const qualityFixtureHtml = `
@@ -166,11 +166,14 @@ describe('newsIngestionService fixtures and deterministic llm mocks', () => {
 
     const result = await fetchNewsCards('https://example.com/news', 'en', 10);
 
-    expect(result.totalFound).toBe(1);
-    expect(result.cards).toHaveLength(1);
-    expect(result.cards[0].title).toBe('This is a sufficiently long title with valid url and image');
-    expect(result.cards[0].url).toBe('https://example.com/news/valid');
-    expect(result.cards[0].imageUrl).toBe('https://example.com/images/valid.jpg');
+    expect(result.totalFound).toBe(2);
+    expect(result.cards).toHaveLength(2);
+    expect(result.cards[0].title).toBe('This is a sufficiently long title but has no image url');
+    expect(result.cards[0].url).toBe('https://example.com/news/no-image');
+    expect(result.cards[0].imageUrl).toBe('');
+    expect(result.cards[1].title).toBe('This is a sufficiently long title with valid url and image');
+    expect(result.cards[1].url).toBe('https://example.com/news/valid');
+    expect(result.cards[1].imageUrl).toBe('https://example.com/images/valid.jpg');
   });
 
   it('fetchNewsCards logs enrichment failure and falls back when llm call throws', async () => {
