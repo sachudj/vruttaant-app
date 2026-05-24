@@ -218,6 +218,22 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
     );
   }
 
+  Future<List<NewsItem>> _fetchNewsPageForCategory(int page, String? category) {
+    final loader = widget.newsLoader;
+    if (loader != null) {
+      return loader(page - 1);
+    }
+
+    return _newsApiService.fetchCards(
+      language: _language,
+      category: category,
+      q: _searchQuery.isEmpty ? null : _searchQuery,
+      sort: _sort,
+      page: page,
+      limit: 20,
+    );
+  }
+
   Future<StoryTranslationResult> _translateNewsItem(NewsItem news) {
     final translator = widget.storyTranslator;
     if (translator != null) {
@@ -308,6 +324,16 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
 
     try {
       var firstPage = await _fetchNewsPage(1);
+
+      // If a preselected category has no cards, fall back to "all categories"
+      // so first-time users are not blocked by an empty default filter.
+      if (firstPage.isEmpty && _selectedCategory != null) {
+        final fallbackPage = await _fetchNewsPageForCategory(1, null);
+        if (fallbackPage.isNotEmpty) {
+          firstPage = fallbackPage;
+          _selectedCategory = null;
+        }
+      }
 
       if (firstPage.isEmpty) {
         throw Exception(localizations.noStoriesForFilters);
