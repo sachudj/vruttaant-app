@@ -297,11 +297,17 @@ Update baseline when intentionally shipping larger binaries:
 
 Current integration uses `NewsApiService` with:
 
-- Endpoint: `POST /api/news/ingest`
-- Source cycling for pagination batches
-- Pull-to-refresh for reloading first batch
-- Vertical swipe pagination for appending more cards
-- Image prefetching for upcoming cards
+- **Feed (primary)**: `GET /api/v1/news/cards` — paginated cards with language, category, search, and sort
+- **Feed (not yet wired)**: `GET /api/v1/news/recommended` — personalized feed for signed-in users (Track Q1)
+- **Translation**: `POST /api/v1/news/translate`
+- **Auth**: `POST /api/v1/auth/login`, `/signup`, `/social`, `/refresh`, `/logout`
+- **User**: profile, bookmarks, notifications, activity stats, reading feed
+- **Ingest (admin/ops)**: `POST /api/v1/news/ingest` — used by background sync, not the mobile feed loader
+
+Feed behavior:
+- Pull-to-refresh reloads page 1
+- Pull-up pagination appends additional batches
+- Vertical swipe pagination with next-card image prefetching
 
 By default, API service connects to:
 ```
@@ -325,11 +331,29 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
 ```dart
 // services/news_api_service.dart
 class NewsApiService {
-  Future<List<NewsItem>> ingestAndFetchNews({required String sourceUrl}) async {
-    // POST /api/news/ingest and map cardsPreview to NewsItem
+  Future<List<NewsItem>> fetchCards({
+    String language = 'en',
+    String? category,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    // GET /api/v1/news/cards and map cards[] to NewsItem
   }
 }
 ```
+
+## Known Gaps (Track Q — Not Yet in App)
+
+Backend APIs exist for these features; mobile UI wiring is pending:
+
+| Item | Backend | Mobile gap |
+|------|---------|------------|
+| Personalized feed | `GET /api/v1/news/recommended` | App uses generic `/api/v1/news/cards` only |
+| Signup | `POST /api/v1/auth/signup` | Login sheet only — no registration UI |
+| Badges | `/api/v1/user/badges/*` | No badges screen |
+| Activity history | `GET /api/v1/user/activity/history` | Stats + reading feed only |
+
+See [ROADMAP.md](./ROADMAP.md) Track Q for implementation steps.
 
 ## Debugging
 

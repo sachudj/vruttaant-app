@@ -8,7 +8,7 @@
 A multilingual, card-based news app providing a concise "Vruttaant" (chronicle) of local events through a swipable interface.
 
 **Status**: Active Development (v0.7)  
-**Last Updated**: May 24, 2026
+**Last Updated**: June 12, 2026
 
 ## Quick Start (5 minutes)
 
@@ -134,22 +134,30 @@ vruttaant-app/
 
 ## Project Status
 
-Tracks **A through N are complete** (security, auth, reliability, testing, data governance, mobile UX, feed intelligence, recommendations, analytics, engagement, performance, infrastructure operations, and documentation/UX polish).
+Tracks **A through O are complete** (security, auth, reliability, testing, data governance, mobile UX, feed intelligence, recommendations, analytics, engagement, performance, infrastructure operations, documentation polish, and social-auth baseline).
 
-Current focus is **follow-on optimization** using telemetry and load-history data.
+**Immediate focus: Track Q (mobile–backend parity)** — wire existing backend APIs into the Flutter app (recommended feed, signup, badges, activity history).
 
 For the detailed milestone and step log, see:
 - [docs/ROADMAP.md](./docs/ROADMAP.md)
 - [docs/PROJECT_STATUS.md](./docs/PROJECT_STATUS.md)
 
-For detailed roadmap, see [docs/ROADMAP.md](./docs/ROADMAP.md).
-
 ## Next Phase (Roadmap)
 
-Detailed implementation sequencing now lives in [docs/ROADMAP.md](./docs/ROADMAP.md).
+See [docs/ROADMAP.md](./docs/ROADMAP.md) for full sequencing. Active items:
 
+### Track Q — Mobile–Backend Parity (immediate)
+- [ ] Q1. Wire personalized feed (`GET /api/v1/news/recommended`) for signed-in users
+- [ ] Q2. Add mobile signup UI (`POST /api/v1/auth/signup`)
+- [ ] Q3. Add badges and achievements UI
+- [ ] Q4. Add paginated activity history UI
+
+### Track P — Backend Optimization
+- [ ] P3. Source-quality scoring with translation quality signals
+
+### Completed milestones
 - [x] API endpoint to retrieve saved news from database
-- [x] User authentication & profiles
+- [x] User authentication & profiles (email + Google/Apple social)
 - [x] Bookmark/save articles feature
 - [x] Language preference settings
 - [x] Background news sync

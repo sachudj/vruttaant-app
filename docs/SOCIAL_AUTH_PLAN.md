@@ -1,7 +1,7 @@
 # Social Authentication Plan (Google + Apple)
 
 **Date**: May 24, 2026  
-**Status**: Planned  
+**Status**: ✅ Complete (baseline) — code and tests shipped; production OAuth/Apple setup remains  
 **Scope**: Add social sign-in (Google and Apple) while preserving the existing JWT access/refresh backend model.
 
 ## Execution Snapshot
@@ -13,6 +13,16 @@
 - [x] O5. Security hardening (nonce replay defense + explicit email-linking policy completed May 24, 2026)
 - [x] O6. Testing + validation (provider verification tests + auth/social contract parity + mobile service coverage completed May 24, 2026)
 - [x] O7. Documentation parity sweep (API/BACKEND/MOBILE/SECRETS docs + Postman social auth requests completed May 24, 2026)
+
+## Remaining Ops Work (Not Code)
+
+Before social sign-in works in staging/production:
+
+1. Set `GOOGLE_OAUTH_CLIENT_ID` on backend and configure Android/iOS OAuth client IDs.
+2. Enable Sign In with Apple capability on iOS and set `APPLE_SERVICE_ID` on backend.
+3. Run manual smoke: guest browse → Google/Apple sign-in → bookmarks/profile → logout.
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) and [MOBILE_APP.md](./MOBILE_APP.md) for platform setup steps.
 
 ## Objectives
 

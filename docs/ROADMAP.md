@@ -1,24 +1,19 @@
 # Product Roadmap
 
-**Date**: May 24, 2026  
+**Date**: June 12, 2026  
 **Purpose**: Break down pending work into small, trackable implementation steps.
 
 ## Current Status
 
-Tracks A-N completed. Detailed session notes are below. Next phase: Follow-On Optimization.
+Tracks A–O completed. **Immediate focus: Track Q (mobile–backend parity)**, then P3 backend optimization.
 
-### Planned Execution Order
+### Planned Execution Order (Active)
 
-- [x] A1. Add request validation middleware for all API payloads and query params
-- [x] A2. Validate and clamp ingest inputs (`url`, `maxItems`, `language`, `persist`)
-- [x] A3. Validate and clamp cards inputs (`page`, `limit`, `language`, `category`)
-- [x] A4. Add centralized error-handler middleware with consistent JSON error envelope
-- [x] A5. Add `helmet` with secure defaults
-- [x] A6. Restrict CORS to approved origins by environment
-- [x] A7. Add rate limiter for public API routes
-- [x] A8. Add request size limits for JSON payloads
-- [x] A9. Add API versioning prefix (`/api/v1`) and compatibility notes
-- [x] D1. Add backend unit tests for ingestion parsing and category normalization
+- [ ] Q1. Wire personalized recommended feed in mobile app (`GET /api/v1/news/recommended`)
+- [ ] Q2. Add mobile signup/registration UI (`POST /api/v1/auth/signup`)
+- [ ] Q3. Add badges and achievements UI (existing `/api/v1/user/badges/*` APIs)
+- [ ] Q4. Add paginated activity history UI (`GET /api/v1/user/activity/history`)
+- [ ] P3. Extend source-quality scoring with translation quality signals
 
 ### Definition of Done (Sprint)
 
@@ -321,7 +316,7 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 	- Risk/Rollback: If a source has parsing or access issues, disable that source row without code rollback; migration rollback is isolated to deleting inserted source rows.
 	- Commit: pending.
 
-## Track O: Social Authentication (Planned)
+## Track O: Social Authentication (Complete — baseline)
 
 - [x] O1. Extend user identity model for social providers with backward compatibility
 - [x] O2. Add `POST /api/v1/auth/social` (Google/Apple token verification + JWT issuance)
@@ -332,6 +327,8 @@ Use this checklist for every roadmap item (for example: K3, K4, L1).
 - [x] O7. Update docs (`API_ENDPOINTS`, `BACKEND`, `MOBILE_APP`, `SECRETS_POLICY`) + Postman
 
 Reference plan: `docs/SOCIAL_AUTH_PLAN.md`
+
+**Remaining ops work (not code):** configure Google OAuth client IDs and Apple Sign In capability for staging/production.
 
 - _May 24, 2026_: Completed O1 social-auth compatibility baseline.
 	- Changes: Updated `User` schema to support social identity linkage (`authProviders.googleSub`, `authProviders.appleSub`) while preserving existing email/password users, and made `passwordHash` optional for future social-only users. Hardened password login path to reject users without a password hash safely.
@@ -368,6 +365,32 @@ Reference plan: `docs/SOCIAL_AUTH_PLAN.md`
 	- Validation: Manual docs parity review plus `scripts/check-api-docs.sh` gate.
 	- Risk/Rollback: Documentation and API-tooling-only updates; rollback is isolated to docs and Postman collection content.
 	- Commit: pending.
+
+## Track Q: Mobile–Backend Parity (Immediate)
+
+Backend APIs for these features already exist. The mobile app does not surface them yet.
+
+- [ ] Q1. Wire personalized recommended feed
+  - Use `GET /api/v1/news/recommended` when user is signed in
+  - Fall back to `GET /api/v1/news/cards` for guests
+  - Preserve existing search/sort/category filters where applicable
+  - Add `NewsApiService.fetchRecommended()` + feed integration tests
+- [ ] Q2. Add mobile signup/registration UI
+  - Add signup mode to login sheet (email + password + confirm)
+  - Call `POST /api/v1/auth/signup`, then store JWTs like login
+  - Localize new strings (`en`/`hi`)
+- [ ] Q3. Add badges and achievements UI
+  - Surface earned badges, progress, and catalog in Settings/Profile
+  - Wire `/api/v1/user/badges`, `/api/v1/user/badges/progress`, `/api/v1/badges/catalog`
+  - Trigger `/api/v1/user/badges/evaluate` after engagement actions (optional)
+- [ ] Q4. Add paginated activity history UI
+  - Wire `GET /api/v1/user/activity/history` with optional eventType/language/category filters
+  - Complement existing activity stats + reading feed in Settings/Profile
+
+Acceptance criteria (Track Q):
+- Each item has mobile service methods, UI surface, and widget/service tests
+- `flutter analyze` and `flutter test` pass
+- Docs updated in same cycle (`PROJECT_STATUS.md`, `MOBILE_APP.md`, `USER_APP_GUIDE.md` if journeys change)
 
 ## Track P: Follow-On Optimization
 
