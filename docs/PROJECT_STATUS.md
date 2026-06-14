@@ -1,8 +1,8 @@
 # Project Status & Implementation Summary
 
-**Date**: June 12, 2026  
+**Date**: May 24, 2026  
 **Version**: v0.7 (Active Development)  
-**Status**: ✅ Tracks A–O complete (core platform through social-auth baseline). **Track Q (mobile–backend parity) is the immediate focus.**
+**Status**: ✅ Tracks A-N Complete (Core platform, engagement, performance, infra operations, docs/UX polish)
 
 Detailed implementation sequencing and security hardening tasks are tracked in [ROADMAP.md](./ROADMAP.md).
 
@@ -47,24 +47,18 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] User preferences (language, sources)
 
 ### ✅ Web Scraping Service
-- [x] Cheerio-based HTML parsing with source-level quality rules
-- [x] Cross-source duplicate detection via title fingerprinting
-- [x] Database-driven news source registry with enable/disable controls
-- [x] Background news sync job with source reliability scoring and failover
-- [x] Reprocessing job for cards missing summary/category metadata
 
 ### ✅ AI Summarization Service
 - [x] LLM integration for neutral short-form summaries
 - [x] Prompt enforces bounded summary length (`LLM_SUMMARY_MIN_WORDS` to `LLM_SUMMARY_MAX_WORDS`, default 45-75, target ~60)
 - [x] Stored in `aiSummary` field on `NewsCard`
 - [x] Graceful fallback when LLM credentials are not configured
-- [x] Supported content languages: English, Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, Malayalam
+- [x] Supported languages: English, Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, Malayalam
 
-### ✅ Docker & Infrastructure Scripts
-- [x] MongoDB 7 + Redis 7 via Docker Compose
-- [x] Mongo Express 1.0.2 UI service (port 8081)
-- [x] Named volume for data persistence
-- [x] Automatic service dependency management
+  - Mongo Express 1.0.2 UI service (port 8081)
+  - Named volume for data persistence
+  - Automatic service dependency management
+  - aiSummary
 - [x] Backend npm scripts:
   - `npm start` - Production mode
   - `npm run dev` - Development mode (auto-reload)
@@ -82,29 +76,14 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 ### ✅ Mobile Frontend (Implemented)
 - [x] Full-screen NewsCard widget with title/summary overlay
 - [x] Vertical swipe feed using `PageView`
-- [x] API integration via `NewsApiService` (`GET /api/v1/news/cards`)
+- [x] API integration via `NewsApiService`
 - [x] Pull-to-refresh support
 - [x] Pull-up pagination with batch append
 - [x] Next-card image prefetching
 - [x] Dedicated Settings/Profile screen with account, language, categories, and notification preferences
 - [x] Bookmarks management flow (add/list/delete/open)
 - [x] Push notification device registration and preferences management
-- [x] Email login + Google/Apple social sign-in (requires platform OAuth config for production)
-- [x] Translation controls, search/sort, feed cache, onboarding, activity stats + reading feed
 - [x] Widget tests for swipe + pagination
-
-### ⚠️ Mobile–Backend Parity Gaps (Immediate Focus)
-
-Backend APIs exist but are **not yet wired in the mobile app**:
-
-| Priority | Gap | Backend ready | Mobile status |
-|----------|-----|---------------|---------------|
-| **Q1** | Personalized feed | `GET /api/v1/news/recommended` | App uses generic `/api/v1/news/cards` only |
-| **Q2** | User registration | `POST /api/v1/auth/signup` | Login sheet only — no signup UI |
-| **Q3** | Badges & achievements | `/api/v1/user/badges/*`, `/api/v1/badges/catalog` | No badges screen |
-| **Q4** | Full activity history | `GET /api/v1/user/activity/history` | Stats + reading feed only (no paginated history) |
-
-See [ROADMAP.md](./ROADMAP.md) Track Q for step-by-step execution.
 
 ### ✅ Documentation (18 Files)
 - [x] INDEX.md - Navigation hub for all docs
@@ -176,44 +155,12 @@ See [ROADMAP.md](./ROADMAP.md) Track Q for step-by-step execution.
 
 ---
 
-## Immediate Implementation Priorities
-
-Work in this order. Details and acceptance criteria are in [ROADMAP.md](./ROADMAP.md).
-
-### P0 — Mobile–backend parity (Track Q)
-
-1. **Q1. Wire personalized recommended feed** — use `/api/v1/news/recommended` for signed-in users; fall back to `/api/v1/news/cards` for guests.
-2. **Q2. Add mobile signup flow** — expose `POST /api/v1/auth/signup` in the login sheet (email/password registration).
-3. **Q3. Add badges UI** — surface earned badges, progress, and catalog from existing badge APIs in Settings/Profile.
-4. **Q4. Add activity history UI** — paginated history from `/api/v1/user/activity/history` (optional filters).
-
-### P1 — Backend optimization
-
-5. **P3. Source-quality + translation quality signals** — extend scoring beyond current reliability controls (only unchecked backend roadmap item).
-
-### P2 — Production readiness (config / ops, not app code)
-
-6. Configure OAuth client IDs (Google) and Sign In with Apple capability for social auth in staging/production.
-7. Configure CDN, SMTP, FCM, and LLM credentials for staging/production (see [DEPLOYMENT.md](./DEPLOYMENT.md)).
-8. Execute first staging deployment using the existing runbook and deploy-gate workflow.
-
-### Deferred (not immediate)
-
-- Admin/editorial dashboard UI (API-only today)
-- Batch news ingest API (single URL per request is sufficient for now)
-- UI localization beyond `en`/`hi` (content supports 11 languages; UI does not)
-- Web/desktop as supported release targets
-
----
-
 ## Follow-On Optimization (Post Track N)
 
-### Completed
-- ✅ P1 — Cache/compression defaults tuned from telemetry profile
-- ✅ P2 — APK size trend gate from CI artifact history
-
-### Remaining
-- [ ] P3 — Extend source-quality scoring with translation quality signals
+### Current optimization themes
+- Tighten cache/compression thresholds based on release telemetry (P1 complete)
+- Track APK size trend from CI artifacts across releases (P2 complete)
+- Expand source-quality scoring and translation quality signals
 
 ---
 
@@ -277,13 +224,11 @@ Use this checklist for every track item before marking it done.
 
 ## Current Limitations
 
-1. **Mobile–backend parity**: Recommendation engine, signup, badges, and full activity history are backend-complete but not exposed in the Flutter app (see Track Q above).
-2. **Single Source Scraping per Ingest Call**: `/api/news/ingest` accepts one source URL per request (batch ingestion is not yet implemented).
-3. **Localization Scope**: Product-ready UI localization covers primary flows in `en`/`hi` only; content ingestion supports 11 languages.
-4. **Social auth runtime setup**: Google/Apple sign-in code is in place but requires platform OAuth client IDs and Apple capability configuration before production use.
-5. **Redis Coverage**: Write-through cache invalidation is currently limited to ingest-driven content changes.
-6. **CDN / SMTP / FCM / LLM**: Graceful no-op fallbacks when env vars are unset; staging/production need real credentials (see [DEPLOYMENT.md](./DEPLOYMENT.md)).
-7. **Load-Test Reporting Requires Admin Ingestion Token for Central Storage**: Baseline runs always generate local JSON reports; backend persistence needs `LOADTEST_REPORT_ENDPOINT` + `LOADTEST_REPORT_TOKEN`.
+1. **Single Source Scraping per Ingest Call**: `/api/news/ingest` accepts one source URL per request (batch ingestion is not yet implemented).
+2. **Localization Scope**: Product-ready localization is implemented for primary app flows (`en`/`hi`), but broader language coverage and backend message localization can still be expanded.
+3. **Redis Coverage**: Redis now caches `/api/v1/news/cards`, `/api/v1/news/recommended`, `/api/v1/analytics/trending`, and `/api/v1/analytics/categories`, but write-through invalidation is currently limited to ingest-driven content changes.
+4. **CDN Integration Requires Env Setup**: Artwork delivery now supports CDN rewriting through backend env configuration, but staging/production still need real CDN endpoints or templates configured for optimization to take effect.
+5. **Load-Test Reporting Requires Admin Ingestion Token for Central Storage**: Baseline runs always generate local JSON reports, and backend persistence is available when `LOADTEST_REPORT_ENDPOINT` + `LOADTEST_REPORT_TOKEN` are configured.
 
 ---
 
@@ -299,19 +244,11 @@ Use this checklist for every track item before marking it done.
 2. ✅ N2 mobile activity history and reading-feed UI integration — **DONE May 24**
 3. ✅ N3 localization polish for secondary UI surfaces and backend-facing copy — **DONE May 24**
 
-### ✅ Track O: Social Authentication (COMPLETE — baseline)
-O1–O7 completed May 24, 2026. Platform OAuth/Apple capability setup for production is tracked under P2 above. Reference: [SOCIAL_AUTH_PLAN.md](./SOCIAL_AUTH_PLAN.md).
-
-### Track Q: Mobile–Backend Parity (IMMEDIATE)
-1. [ ] Q1 — Wire `/api/v1/news/recommended` for authenticated users
-2. [ ] Q2 — Add mobile signup/registration UI
-3. [ ] Q3 — Add badges and achievements UI
-4. [ ] Q4 — Add paginated activity history UI
-
 ### Follow-On Optimization
 1. ✅ P1 tighten compression/cache defaults using telemetry profile — **DONE May 24**
 2. ✅ P2 tune mobile APK budget trend from CI artifact history over multiple releases — **DONE May 24**
-3. [ ] P3 extend multi-language source quality scoring and translation quality signals
+3. P3 extend multi-language source quality scoring and translation quality signals
+4. Track O progress: O1 (user model compatibility baseline), O2 (backend social auth endpoint baseline), O3 (mobile Google sign-in baseline), O4 (mobile Apple sign-in baseline), O5 (security hardening: nonce replay defense + explicit linking policy), O6 (backend/mobile test + contract parity coverage), and O7 (docs + Postman parity sweep) completed on May 24, 2026
 
 ### ✅ Track M Implementation Details
 1. ✅ M1. Backup automation and restore runbook baseline — **DONE May 24**
@@ -405,4 +342,4 @@ All prerequisites are already installed on your machine.
 
 Refer to the relevant documentation file or check [DEVELOPMENT.md](./DEVELOPMENT.md) troubleshooting section.
 
-**Last validated**: June 12, 2026 — Tracks A–O complete; Track Q (mobile parity) is the active implementation focus ✅
+**Last validated**: May 24, 2026 - Tracks A-N complete and docs/tooling synchronized ✅

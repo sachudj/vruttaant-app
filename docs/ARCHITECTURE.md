@@ -92,13 +92,11 @@ vruttaant-app/
 ## Data Flow
 
 1. **Feed Loading (Mobile)**
-   - Mobile app calls `GET /api/v1/news/cards` through `NewsApiService`
-   - Background sync job ingests news via `POST /api/v1/news/ingest` on a schedule
+   - Mobile app calls `POST /api/news/ingest` through `NewsApiService`
    - Feed is rendered as vertical full-screen cards (`PageView`)
-   - Pull-to-refresh reloads page 1
+   - Pull-to-refresh reloads page 0
    - Pull-up pagination appends additional batches
    - Next images are prefetched for smoother card transitions
-   - Signed-in users will use `GET /api/v1/news/recommended` once Track Q1 is implemented
 
 2. **News Ingestion (Backend)**
    - Mobile/external requests send source URL
