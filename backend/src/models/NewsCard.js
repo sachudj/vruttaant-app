@@ -77,6 +77,9 @@ newsCardSchema.index({ language: 1, category: 1, scrapedAt: -1 });
 newsCardSchema.index({ language: 1, trendScore: -1 });
 newsCardSchema.index({ language: 1, trendScore: -1, scrapedAt: -1 });
 newsCardSchema.index({ titleFingerprint: 1, language: 1 });
-newsCardSchema.index({ title: 'text', summary: 'text', aiSummary: 'text', source: 'text' });
+newsCardSchema.index(
+  { title: 'text', summary: 'text', aiSummary: 'text', source: 'text' },
+  { language_override: 'none' }
+);
 
 module.exports = mongoose.model('NewsCard', newsCardSchema);
