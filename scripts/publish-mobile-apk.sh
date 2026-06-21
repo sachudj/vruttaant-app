@@ -22,6 +22,17 @@ else
   ./gradlew :app:assembleRelease -PenvFile="../$DEFINE_FILE"
 fi
 
+get_file_size_bytes() {
+  local file_path="$1"
+
+  if stat -c%s "$file_path" >/dev/null 2>&1; then
+    stat -c%s "$file_path"
+    return 0
+  fi
+
+  stat -f%z "$file_path"
+}
+
 if [[ ! -f "$SOURCE_APK" ]]; then
   SIGNED_APK="${SOURCE_APK%-unsigned.apk}.apk"
   if [[ -f "$SIGNED_APK" ]]; then
@@ -36,13 +47,13 @@ mkdir -p "$OUTPUT_DIR"
 cp "$SOURCE_APK" "$OUTPUT_APK"
 
 sha256="$(shasum -a 256 "$OUTPUT_APK" | awk '{print $1}')"
-apk_size_bytes="$(stat -f%z "$OUTPUT_APK")"
+apk_size_bytes="$(get_file_size_bytes "$OUTPUT_APK")"
 current_commit="$(git -C "$ROOT_DIR" rev-parse HEAD)"
 
 cat >"$OUTPUT_META" <<EOF
 {
   "generatedAt": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-  "sourceApk": "mobile_app/build/app/outputs/flutter-apk/app-release.apk",
+  "sourceApk": "mobile_app/app/build/outputs/apk/release/app-release-unsigned.apk",
   "publishedApk": "artifacts/mobile/android/app-release-latest.apk",
   "gitCommit": "$current_commit",
   "sizeBytes": $apk_size_bytes,

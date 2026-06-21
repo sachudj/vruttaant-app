@@ -302,7 +302,7 @@ Use system-level Profile GPU Rendering tools in Developer Options on the test de
 ```bash
 # Stop backend (Ctrl+C in terminal running npm start)
 
-# Stop mobile app (Ctrl+C in flutter run terminal)
+# Stop mobile app (Stop button in Android Studio, or Ctrl+C if running gradle run command)
 
 # Stop MongoDB
 cd backend && npm run infra:down

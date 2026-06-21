@@ -23,46 +23,41 @@ echo "└───────────────────────�
 
 # ── 1. Backend syntax parity ────────────────────────────────
 echo ""
-echo "▶ [1/8] Backend syntax checks"
+echo "▶ [1/7] Backend syntax checks"
 (cd "$ROOT/backend" && npm run ci:syntax --silent) || fail "Backend syntax checks"
 
 # ── 2. Backend lint ─────────────────────────────────────────
 echo ""
-echo "▶ [2/8] Backend lint"
+echo "▶ [2/7] Backend lint"
 (cd "$ROOT/backend" && npm run lint --silent) || fail "Backend lint"
 
 # ── 3. Backend tests + coverage gates ───────────────────────
 echo ""
-echo "▶ [3/8] Backend tests (coverage gates)"
+echo "▶ [3/7] Backend tests (coverage gates)"
 (cd "$ROOT/backend" && npm run test:coverage -- --runInBand) || fail "Backend coverage"
 
 # ── 4. Backend security audit ───────────────────────────────
 echo ""
-echo "▶ [4/8] Backend security audit"
+echo "▶ [4/7] Backend security audit"
 (cd "$ROOT/backend" && npm run security:audit) || fail "Backend security audit"
 
 # ── 5. Backend boot health smoke ────────────────────────────
 echo ""
-echo "▶ [5/8] Backend boot health smoke"
+echo "▶ [5/7] Backend boot health smoke"
 (cd "$ROOT/backend" && npm run ci:health --silent) || fail "Backend health smoke"
 
-# ── 6. Mobile analyze ───────────────────────────────────────
+# ── 6. Mobile JVM unit tests ────────────────────────────────
 echo ""
-echo "▶ [6/8] Mobile analyze"
-(cd "$ROOT/mobile_app" && flutter analyze --fatal-infos) || fail "Flutter analyze"
+echo "▶ [6/7] Mobile JVM unit tests"
+(cd "$ROOT/mobile_app" && chmod +x gradlew && ./gradlew testDebugUnitTest) || fail "Mobile unit tests"
 
-# ── 7. Mobile tests ─────────────────────────────────────────
-echo ""
-echo "▶ [7/8] Mobile tests"
-(cd "$ROOT/mobile_app" && flutter test --coverage -r compact) || fail "Flutter tests"
-
-# ── 8. APK sync check (final gate) ─────────────────────────
+# ── 7. APK sync check (final gate) ─────────────────────────
 if [ "${SKIP_APK_SYNC_CHECK:-0}" = "1" ]; then
   echo ""
-  echo "▶ [8/8] Mobile latest APK sync check (skipped by SKIP_APK_SYNC_CHECK=1)"
+  echo "▶ [7/7] Mobile latest APK sync check (skipped by SKIP_APK_SYNC_CHECK=1)"
 else
   echo ""
-  echo "▶ [8/8] Mobile latest APK sync check"
+  echo "▶ [7/7] Mobile latest APK sync check"
   (cd "$ROOT" && npm run mobile:apk-sync-check --silent) || fail "Mobile latest APK sync"
 fi
 

@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-06-21T06:11:23Z",
-  "sourceApk": "mobile_app/build/app/outputs/flutter-apk/app-release.apk",
+  "generatedAt": "2026-06-21T07:02:00Z",
+  "sourceApk": "mobile_app/app/build/outputs/apk/release/app-release-unsigned.apk",
   "publishedApk": "artifacts/mobile/android/app-release-latest.apk",
-  "gitCommit": "15f989f3db3d753349bf71a533e2234963029814",
+  "gitCommit": "c5553a36cc0bb852dbb924755f6b5b73b112da2e",
   "sizeBytes": 14366253,
   "sha256": "2d3522a5c7554d5cd460350f7937024d271489568e5253d642d5e6e13102d1eb"
 }
