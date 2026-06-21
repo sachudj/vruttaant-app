@@ -21,10 +21,9 @@ cp .env.example .env
 npm install
 npm start
 
-# 3. In another terminal, start mobile app
+# 3. In another terminal, compile and install mobile app
 cd mobile_app
-flutter pub get
-flutter run
+./gradlew installDebug
 ```
 
 Backend running on: `http://localhost:5000` (or next free port)
@@ -39,7 +38,7 @@ Interactive API docs:
 ```
 vruttaant-app/
 ├── backend/           # Node.js + Express API server
-├── mobile_app/        # Flutter cross-platform app
+├── mobile_app/        # Native Android app (Jetpack Compose & Kotlin)
 ├── docker-compose.yml # MongoDB + Mongo Express containers
 ├── docs/              # Complete documentation (START HERE)
 └── README.md          # This file
@@ -66,14 +65,14 @@ vruttaant-app/
 
 **Infrastructure:**
 - [Docker/MongoDB](./docs/DOCKER.md) - Container management & troubleshooting
-- [Mobile App](./docs/MOBILE_APP.md) - Flutter setup & building
+- [Mobile App](./docs/MOBILE_APP.md) - Native Android setup & building
 - [Deployment Runbook](./docs/DEPLOYMENT.md) - Environment profiles, rollout/rollback, CI deployment gate
 
 ## Tech Stack
 
 **Backend**: Node.js 25.9 + Express 4.21 + Mongoose 8.18 + Cheerio 1.0  
 **Database**: MongoDB 7 (Docker)  
-**Mobile**: Flutter 3.41 + Dart 3.11  
+**Mobile**: Native Android (Kotlin + Jetpack Compose)  
 **Infrastructure**: Docker + Docker Compose  
 
 ## Key Features Implemented
@@ -105,16 +104,16 @@ vruttaant-app/
 ✅ Editorial dashboard support (trending, categories, engagement)  
 
 **Mobile App**
-✅ Flutter vertical swipe feed with PageView  
+✅ Native Jetpack Compose UI with vertical card swipe and horizontal WebView article reader  
 ✅ Pull-to-refresh and pull-up pagination  
-✅ Next-card image prefetching  
-✅ Settings/Profile screen with preferences  
+✅ Dynamic image loading with Coil  
+✅ Settings/Profile screen with user preference synchronization  
 ✅ Bookmarks management (add/list/delete)  
-✅ Push notifications (FCM + daily digest)  
-✅ Multilingual UI (`en`/`hi`) with locale-aware formatting  
-✅ Feed caching with TTL and offline fallback  
-✅ Translation controls with state badges  
-✅ Event tracking service for analytics  
+✅ Push notifications (Firebase Cloud Messaging integration)  
+✅ Multilingual UI (`en`/`hi`) with dynamic localized string mapping  
+✅ Feed caching with DataStore preferences and offline fallback  
+✅ Real-time Translation controls with state badges  
+✅ Custom event tracking for views, translation, share, and bookmark analytics  
 
 **Data Governance**
 ✅ Strict category taxonomy with fallback mapping  
@@ -193,7 +192,7 @@ This repository now includes CI and release automation:
 
 - `.github/workflows/ci.yml`
   - Runs backend syntax + startup health checks
-  - Runs Flutter analyze + widget tests
+  - Runs Android build and JVM unit tests
 - `.github/workflows/reviewdog.yml`
   - Runs backend ESLint and Flutter analyze on pull requests
   - Publishes inline PR review comments for changed lines
@@ -266,9 +265,9 @@ Run `npm run infra:ps` to verify containers are running.
 **Mobile app won't build?**  
 ```bash
 cd mobile_app
-flutter clean
-flutter pub get
-flutter run
+./gradlew clean
+./gradlew testDebugUnitTest
+./gradlew installDebug
 ```
 
 For more help, see [DEVELOPMENT.md](./docs/DEVELOPMENT.md).
