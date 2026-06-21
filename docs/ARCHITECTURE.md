@@ -5,8 +5,8 @@ Vruttaant is a multilingual, card-based news app with a decoupled backend and mo
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Flutter Mobile App                    │
-│  (mobile_app/)  - Dart/Flutter UI, swipable news cards  │
+│                    Native Android App                   │
+│  (mobile_app/) - Kotlin/Compose, swipable news cards     │
 └──────────────────────┬──────────────────────────────────┘
                        │
                        │ HTTP/REST
@@ -46,18 +46,17 @@ vruttaant-app/
 │   ├── .env                         # Local config (not in git)
 │   └── node_modules/                # Installed packages
 │
-├── mobile_app/                       # Flutter cross-platform app
-│   ├── lib/
-│   │   ├── main.dart                # App shell + vertical PageView feed
-│   │   ├── models/
-│   │   │   └── news_item.dart       # Mobile news data model
-│   │   ├── services/
-│   │   │   └── news_api_service.dart # API client for /api/news/ingest
-│   │   └── widgets/
-│   │       └── news_card.dart       # Full-screen swipe card UI
-│   ├── android/
-│   ├── ios/
-│   ├── pubspec.yaml                 # Flutter dependencies (includes http)
+├── mobile_app/                       # Native Android application
+│   ├── app/
+│   │   ├── src/main/java/com/example/vruttaant/
+│   │   │   ├── MainActivity.kt      # Launch activity entrypoint
+│   │   │   ├── Navigation.kt        # Routing configuration
+│   │   │   ├── data/                # Local cache, DataStore & Retrofit layers
+│   │   │   └── ui/                  # Compose Views & ViewModels
+│   │   └── build.gradle.kts         # App-specific build definitions
+│   ├── gradle/
+│   │   └── libs.versions.toml       # Cataloged libraries configuration
+│   └── settings.gradle.kts          # Multi-project config
 │   └── ...
 │
 ├── docker-compose.yml               # MongoDB + Mongo Express services
@@ -80,10 +79,10 @@ vruttaant-app/
 - **Runtime**: Node.js 25.9.0
 
 ### Mobile
-- **Framework**: Flutter 3.41.9
-- **Language**: Dart 3.11.5
-- **Networking**: http ^1.2.2
-- **Target Platforms**: iOS, Android, Web
+- **Framework**: Jetpack Compose (UI)
+- **Language**: Kotlin 2.1+ / Java 17
+- **Networking**: Retrofit 2.11 / OkHttp 4
+- **Target Platforms**: Android (API 24+)
 
 ### Infrastructure
 - **Container**: Docker
@@ -93,7 +92,7 @@ vruttaant-app/
 
 1. **Feed Loading (Mobile)**
    - Mobile app calls `POST /api/news/ingest` through `NewsApiService`
-   - Feed is rendered as vertical full-screen cards (`PageView`)
+   - Feed is rendered as vertical full-screen cards (`VerticalPager`)
    - Pull-to-refresh reloads page 0
    - Pull-up pagination appends additional batches
    - Next images are prefetched for smoother card transitions

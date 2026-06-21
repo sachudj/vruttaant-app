@@ -14,8 +14,7 @@ npm start
 
 # 3. Setup mobile app (in separate terminal, from project root)
 cd mobile_app
-flutter pub get
-flutter run --dart-define=API_BASE_URL=http://localhost:5000
+./gradlew installDebug
 ```
 
 ## Daily Development Routine
@@ -69,26 +68,18 @@ curl -X POST http://localhost:5001/api/news/ingest \
 ```bash
 cd mobile_app
 
-# Install dependencies
-flutter pub get
+# Build and install on connected device/emulator
+./gradlew installDebug
 
-# Run on device/simulator
-flutter run --dart-define=API_BASE_URL=http://localhost:5000
-
-# Or specify device
-flutter run -d "iPhone 15 Pro"
-
-# Android emulator host mapping
-flutter run -d "emulator-5554" --dart-define=API_BASE_URL=http://10.0.2.2:5000
-
-# Hot reload (during development, press 'r' in terminal)
+# Run unit tests
+./gradlew testDebugUnitTest
 ```
 
 **File Structure**:
-- `lib/main.dart` - Entry point
-- `lib/widgets/news_card.dart` - Full-screen overlay card
-- `lib/services/news_api_service.dart` - Backend API calls
-- `lib/models/news_item.dart` - Feed data model
+- `app/src/main/java/com/example/vruttaant/MainActivity.kt` - Main Activity
+- `app/src/main/java/com/example/vruttaant/ui/feed/FeedScreen.kt` - Feed UI Layout
+- `app/src/main/java/com/example/vruttaant/data/api/NewsApiService.kt` - Retrofit API service
+- `app/src/main/java/com/example/vruttaant/data/model/NewsModels.kt` - News data models
 
 ### Database Operations
 
@@ -164,9 +155,9 @@ npm run format
 npm test
 ```
 
-**Mobile Widget Tests**:
+**Mobile Unit Tests**:
 ```bash
-flutter test
+./gradlew testDebugUnitTest
 ```
 
 ## Debugging Techniques
@@ -195,31 +186,22 @@ db.newscards.findOne()
 
 ### Mobile Debugging
 
-**Dart DevTools**:
+**Logcat logs**:
+Filter for application fatal exception and launch traces:
 ```bash
-flutter pub global activate devtools
-devtools
+adb logcat -d | grep -E "AndroidRuntime|FATAL|com.example.mobile_app"
 ```
 
 **Console logs**:
-```dart
-print('Debug message');
-debugPrint('Another debug message');
+In Kotlin, log via standard `android.util.Log` class:
+```kotlin
+android.util.Log.d("TagName", "Debug message")
 ```
 
 **Device Logs**:
+Stream logs in real-time from device:
 ```bash
-flutter logs
-```
-
-**Hot Reload Issues**:
-```bash
-# If hot reload fails, hot restart
-# (Press Shift+R in terminal while app running)
-# Or manually stop and restart
-flutter clean
-flutter pub get
-flutter run
+adb logcat *:S TagName:V
 ```
 
 ## Common Development Tasks
@@ -279,11 +261,7 @@ npm install --save-dev dev-package@latest
 ```
 
 **Mobile**:
-```bash
-cd mobile_app
-flutter pub add package_name
-flutter pub upgrade
-```
+Add dependencies in `gradle/libs.versions.toml` and implement them under `app/build.gradle.kts`.
 
 ## Performance Monitoring
 
@@ -302,7 +280,7 @@ db.newscards.find().explain("executionStats")
 ```
 
 ### Mobile FPS
-Use Flutter DevTools Performance tab (see above).
+Use system-level Profile GPU Rendering tools in Developer Options on the test device.
 
 ### Feed Behavior Notes
 - Vertical `PageView` for card-by-card swiping
@@ -315,7 +293,7 @@ Use Flutter DevTools Performance tab (see above).
 - [ ] All code changes committed and pushed
 - [ ] Verified backend health: `curl http://localhost:5001/health`
 - [ ] Checked MongoDB has data: `db.newscards.countDocuments()`
-- [ ] Mobile app builds without errors: `flutter test`
+- [ ] Mobile app builds and runs tests: `./gradlew testDebugUnitTest`
 - [ ] `.env` is git-ignored and not committed
 - [ ] No console errors/warnings
 
@@ -334,11 +312,11 @@ cd backend && npm run infra:down
 
 - [Express.js Docs](https://expressjs.com/)
 - [Mongoose Docs](https://mongoosejs.com/)
-- [Flutter Docs](https://flutter.dev/docs)
+- [Android Developer Docs](https://developer.android.com/)
 - [Cheerio Docs](https://cheerio.js.org/)
 
 ## Next Steps
 
 - Read [BACKEND.md](./BACKEND.md) for detailed API info
-- Check [MOBILE_APP.md](./MOBILE_APP.md) for Flutter guide
+- Check [MOBILE_APP.md](./MOBILE_APP.md) for Native Android guide
 - Review [DATABASE.md](./DATABASE.md) for MongoDB schemas

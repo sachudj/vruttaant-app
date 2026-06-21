@@ -22,7 +22,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 ### Development Guides
 - **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Daily workflow, debugging, common tasks
 - **[BACKEND.md](./BACKEND.md)** - Server setup, configuration, modules
-- **[MOBILE_APP.md](./MOBILE_APP.md)** - Flutter setup, running, building
+- **[MOBILE_APP.md](./MOBILE_APP.md)** - Native Android setup, running, building
 - **[USER_APP_GUIDE.md](./USER_APP_GUIDE.md)** - User-facing app journeys, expected pages, and scenarios
 
 ### Reference Documentation
@@ -47,7 +47,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 ### 📱 Mobile Developer
 1. [DEPENDENCIES.md](./DEPENDENCIES.md) - Set up your OS environment
 2. [SETUP.md](./SETUP.md) - Get backend running
-3. [MOBILE_APP.md](./MOBILE_APP.md) - Flutter setup and building
+3. [MOBILE_APP.md](./MOBILE_APP.md) - Native Android setup and building
 4. [API_ENDPOINTS.md](./API_ENDPOINTS.md) - Backend API to consume
 5. [DEVELOPMENT.md](./DEVELOPMENT.md) - Development workflow
 
@@ -73,7 +73,7 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 | **ROADMAP.md** | Step-by-step pending implementation checklist | Everyone |
 | **DEVELOPMENT.md** | Daily workflow & debugging | Developers |
 | **BACKEND.md** | Server configuration & modules | Backend developers |
-| **MOBILE_APP.md** | Flutter setup & building | Mobile developers |
+| **MOBILE_APP.md** | Native Android setup & building | Mobile developers |
 | **USER_APP_GUIDE.md** | User journeys, pages, and scenarios | Product, QA, design |
 | **API_ENDPOINTS.md** | Complete API reference | Developers, testers |
 | **Vruttaant.postman_collection.json** | Postman API test collection | QA, developers |
@@ -129,8 +129,8 @@ Welcome to Vruttaant. This guide will help you navigate all available documentat
 - [Express.js](https://expressjs.com/)
 - [MongoDB](https://docs.mongodb.com/)
 - [Mongoose](https://mongoosejs.com/)
-- [Flutter](https://flutter.dev/docs)
-- [Dart](https://dart.dev/guides)
+- [Android Developer](https://developer.android.com/)
+- [Kotlin](https://kotlinlang.org/docs/home.html)
 - [Docker](https://docs.docker.com/)
 
 ### Tools We Use
@@ -154,7 +154,7 @@ All documentation is tested and verified:
 - ✅ API_ENDPOINTS.md - Endpoints tested with curl
 - ✅ DATABASE.md - MongoDB connected and data persisting
 - ✅ DOCKER.md - Containers running and healthy
-- ✅ MOBILE_APP.md - Flutter installed and verified
+- ✅ MOBILE_APP.md - Native Android environment verified
 - ✅ DEVELOPMENT.md - Workflow tested
 
 ## 💡 Tips

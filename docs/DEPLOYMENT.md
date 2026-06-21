@@ -220,17 +220,16 @@ Template files:
 1. `mobile_app/env/staging.json`
 2. `mobile_app/env/production.json`
 
-Build using environment-specific defines:
+Build using environment-specific configurations:
 
 ```bash
 cd mobile_app
 
-# Staging
-flutter run --dart-define-from-file=env/staging.json
+# Install/run staging debug build on connected device
+./gradlew installDebug -PenvFile="../env/staging.json"
 
-# Production build
-flutter build apk --release --dart-define-from-file=env/production.json
-flutter build ios --release --dart-define-from-file=env/production.json
+# Production release build
+./gradlew assembleRelease -PenvFile="../env/production.json"
 ```
 
 ## CI Deployment Gate

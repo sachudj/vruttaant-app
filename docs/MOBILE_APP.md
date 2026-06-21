@@ -1,443 +1,137 @@
-# Flutter Mobile App Setup
+# Native Android Mobile App Setup
 
 ## Overview
-Flutter mobile app for browsing news in an InShorts-style vertical swipe interface. Supports iOS, Android, and Web with backend-powered feed loading.
+Native Android mobile application built using **Kotlin** and **Jetpack Compose** for browsing news in an InShorts-style vertical card-based swipe interface. The app connects to the Node.js backend to fetch, translate, bookmark, and cache news cards.
+
+---
 
 ## Prerequisites
-- Flutter 3.41.9+ (installed via Homebrew)
-- Dart 3.11.5+ (included with Flutter)
-- iOS: Xcode 26.4.1+, CocoaPods 1.16.2+
-- Android: Android Studio 2025.3+, Android SDK 36+, Java 26+
+- **Android Studio**: Android Studio Ladybug (2024.2.1+) or newer.
+- **Java Development Kit (JDK)**: JDK 17+ (JDK 21 recommended).
+- **Android SDK**: Compile SDK 36, Target SDK 36, Minimum SDK 24 (Android 7.0+).
+- **Google Services File**: An active `google-services.json` inside the `app/` folder to authorize Firebase Cloud Messaging (FCM).
 
-## Supported Platforms
+---
 
-- Android: API 24+ (Android 7.0+)
-- iOS: 15.0+
+## Project Structure
 
-Notes:
-- Android minimum is inherited from `flutter.minSdkVersion` in `android/app/build.gradle.kts` (Flutter currently resolves this project to API 24).
-- iOS minimum is pinned in both `ios/Podfile` and `ios/Runner.xcodeproj/project.pbxproj`.
-
-## Verify Installation
-
-```bash
-flutter doctor
-```
-
-All checks should show `✓`:
-```
-[✓] Flutter (Channel stable, 3.41.9)
-[✓] Android toolchain
-[✓] Xcode
-[✓] Chrome
-[✓] Connected device
-```
-
-If not, run:
-```bash
-flutter pub get
-flutter clean
-flutter pub get
-```
-
-## Project Setup
-
-```bash
-cd mobile_app
-```
-
-### Get Dependencies
-```bash
-flutter pub get
-```
-
-### Build Configuration
-
-Check `pubspec.yaml` for dependencies. Key packages:
-
-- `http: ^1.2.2` for backend API calls
-- `cupertino_icons` for iOS icon set
-- `google_sign_in` for Google auth
-- `sign_in_with_apple` for Apple auth
-
-### iOS Setup (macOS only)
-
-```bash
-cd ios
-pod install
-cd ..
-```
-
-This installs CocoaPods dependencies for iOS.
-
-For Apple sign-in support, also enable the **Sign In with Apple** capability in the iOS target.
-
-### Social Sign-In Setup
-
-Google and Apple sign-in call backend `POST /api/v1/auth/social` and exchange provider identity tokens for app JWTs.
-
-Required backend env vars for verification:
-
-- `GOOGLE_OAUTH_CLIENT_ID`
-- `APPLE_SERVICE_ID`
-
-Platform prerequisites:
-
-- Google: configure OAuth client IDs for Android/iOS and ensure the app receives an ID token.
-- Apple: configure Sign In with Apple capability and matching service identifiers.
-
-Runtime behavior in app:
-- Login sheet shows Email/Password plus `Sign in with Google` and `Sign in with Apple` actions.
-- Provider tokens are exchanged only with backend `/api/v1/auth/social`; the app does not call protected APIs using provider tokens directly.
-- On successful social login, mobile stores backend JWT access/refresh tokens exactly like password login.
-- If backend rejects linking due to O5 policy checks (for example `409` conflict or `401` unverified email), the backend error message is surfaced in the login sheet.
-
-## Running the App
-
-### On Simulator/Emulator
-
-**iOS Simulator** (macOS):
-```bash
-flutter run -d "iPhone 15 Pro"
-```
-
-**Android Emulator**:
-```bash
-flutter run -d "emulator-5554"
-```
-
-**Chrome (Web)**:
-```bash
-flutter run -d "chrome"
-```
-
-### On Physical Device
-
-**iPhone**:
-1. Connect iPhone via USB
-2. Trust the computer (on device)
-3. Run: `flutter devices` (verify device listed)
-4. Run: `flutter run`
-
-**Android**:
-1. Enable USB debugging on device
-2. Connect via USB
-3. Run: `flutter devices` (verify device listed)
-4. Run: `flutter run`
-5. If you need backend access from device to local server, run: `adb reverse tcp:5000 tcp:5000` and then launch with `flutter run --dart-define=API_BASE_URL=http://127.0.0.1:5000`
-
-No SIM card is required for local testing. You only need:
-1. Device power and USB cable
-2. Developer options + USB debugging enabled
-3. Internet via Wi-Fi if your flow needs external APIs (Google/Apple auth or remote backend)
-
-## Development Workflow
-
-### Hot Reload (Fast Refresh)
-While app is running, press `r` in terminal:
-```
-r         reload
-R         restart
-```
-
-### Debug Mode
-```bash
-flutter run --debug
-```
-
-### Release Mode
-```bash
-flutter run --release
-```
-
-### Profile Mode (Performance Testing)
-```bash
-flutter run --profile
-```
-
-## Code Structure
+The codebase is located in the `mobile_app/` folder, structured under the namespace `com.example.vruttaant`:
 
 ```
 mobile_app/
-├── lib/
-│   ├── main.dart               # App shell, feed state, refresh, pagination
-│   ├── widgets/
-│   │   └── news_card.dart      # Full-screen image + gradient text overlay
-│   ├── models/
-│   │   └── news_item.dart      # Mobile data model
-│   ├── services/
-│   │   └── news_api_service.dart  # POST /api/news/ingest client
-├── test/                      # Unit & widget tests
-├── pubspec.yaml              # Dependencies
-└── README.md                 # App-specific docs
+├── app/
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── AndroidManifest.xml     # Application manifest & entrypoints
+│   │   │   ├── java/com/example/vruttaant/
+│   │   │   │   ├── MainActivity.kt     # App entry point
+│   │   │   │   ├── Navigation.kt       # NavHost definitions & routes
+│   │   │   │   ├── data/               # Data layer repositories & cache
+│   │   │   │   │   ├── api/            # Retrofit Service & interceptors
+│   │   │   │   │   ├── model/          # Serializable news/user schemas
+│   │   │   │   │   ├── AuthRepository.kt
+│   │   │   │   │   ├── FeedCacheRepository.kt
+│   │   │   │   │   └── PreferencesRepository.kt
+│   │   │   │   ├── ui/                 # Jetpack Compose MVVM View layer
+│   │   │   │   │   ├── feed/           # FeedScreen + FeedViewModel
+│   │   │   │   │   ├── bookmarks/      # BookmarksSheet + BookmarksViewModel
+│   │   │   │   │   ├── auth/           # LoginSheet + AuthViewModel
+│   │   │   │   │   ├── onboarding/     # OnboardingScreen + OnboardingViewModel
+│   │   │   │   │   ├── settings/       # SettingsScreen + SettingsViewModel
+│   │   │   │   │   └── theme/          # HSL themes & Localizations
+│   │   │   │   └── service/            # MyFirebaseMessagingService (FCM)
+│   │   │   └── res/                    # Drawables, layouts, launcher icons
+│   │   └── test/                       # Local JVM unit tests (JUnit, Coroutine tests)
+│   └── build.gradle.kts                # App build configuration
+├── gradle/
+│   └── libs.versions.toml              # Version catalog dependencies
+├── settings.gradle.kts                 # Multi-project gradle configuration
+└── gradlew                             # Gradle wrapper executable
 ```
 
-## Building for Release
+---
 
-### iOS Release Build
+## Dependencies & Version Catalog
+
+The app uses standard version-cataloged libraries defined in [libs.versions.toml](file:///Users/sachinjoshi/Documents/Personal/vruttaant-app/mobile_app/gradle/libs.versions.toml):
+- **Compose**: Jetpack Compose BOM (Material3, Icons, Tooling, Pager).
+- **Navigation**: androidx.navigation3 (runtime, ui, viewmodel integration).
+- **Networking**: Retrofit 2 + OkHttp 4 client with kotlinx.serialization converter.
+- **Image Loading**: Coil 3 (Compose-compatible).
+- **Data Caching & Persistence**: androidx.datastore (preferences).
+- **Firebase**: Firebase BOM, Firebase Cloud Messaging (FCM).
+
+---
+
+## Developing & Running the App
+
+### 1. Development Mode (Emulator/Device)
+Open the `mobile_app` folder in Android Studio and run the app. Alternatively, compile and install from the terminal:
+
 ```bash
-flutter build ios --release
+cd mobile_app
+# Compile and install on a connected emulator/device
+./gradlew installDebug
 ```
 
-Output: `build/ios/iphoneos/Runner.app`
+### 2. Run Local Unit Tests
+Run the JUnit and Coroutines tests:
 
-To create IPA:
 ```bash
-flutter build ipa --release
+cd mobile_app
+./gradlew testDebugUnitTest
 ```
 
-Output: `build/ios/ipa/`
+---
 
-### Android Release Build
+## Release Building & Packaging
+
+### 1. Build a Release APK
+Compile a release APK signed with the debug key:
+
 ```bash
-flutter build apk --release
+cd mobile_app
+./gradlew :app:assembleRelease
 ```
+Output location: `app/build/outputs/apk/release/app-release.apk`
 
-Output: `build/app/outputs/flutter-apk/app-release.apk`
+### 2. Local Size & Trend Checks
 
-### Keep Latest APK In Repo (No CI Artifacts)
+The repository defines helper scripts (managed in `package.json`) to gate APK size additions:
 
-If you cannot use CI artifacts, you can publish a latest APK into a tracked repo path:
+```bash
+# Verify absolute package size is under 20MB
+npm run mobile:size-check
+
+# Verify size trend has not grown more than 4% compared to baseline
+npm run mobile:size-trend-check
+```
+*Gating baselines are read from `mobile_app/env/apk-size-baseline.json`.*
+
+### 3. Publish APK
+To publish a signed release APK and write metadata to `artifacts/mobile/android/`:
 
 ```bash
 npm run mobile:publish-apk
 ```
+This updates [app-release-latest.apk](file:///Users/sachinjoshi/Documents/Personal/vruttaant-app/artifacts/mobile/android/app-release-latest.apk) and [app-release-latest.json](file:///Users/sachinjoshi/Documents/Personal/vruttaant-app/artifacts/mobile/android/app-release-latest.json).
 
-Use a custom runtime endpoint file when needed (for example, LAN/ngrok backend):
-
-```bash
-MOBILE_DEFINE_FILE=env/staging.json npm run mobile:publish-apk
-```
-
-Use a direct URL override (highest priority) when DNS or env files are not usable:
-
-```bash
-MOBILE_API_BASE_URL=http://192.168.1.20:5001 npm run mobile:publish-apk
-```
-
-For current hosted test backend on Render:
-
-```bash
-MOBILE_API_BASE_URL=https://vruttaant-app.onrender.com npm run mobile:publish-apk
-```
-
-This is the quickest fix for `Failed host lookup` errors on phone builds.
-
-This command:
-1. Builds a release APK locally.
-2. Copies it to `artifacts/mobile/android/app-release-latest.apk`.
-3. Writes metadata to `artifacts/mobile/android/app-release-latest.json` with commit SHA, file size, and SHA256.
-
-Then include it in your commit:
-
+Commit the updated APK and metadata:
 ```bash
 git add artifacts/mobile/android
 git commit -m "chore: update latest mobile APK"
-git push origin main
+git push
 ```
 
-Recommendation: if repo size becomes a concern, move this APK path to Git LFS while keeping the same workflow.
+---
 
-If your local git pre-push hook is enabled, push now also validates APK freshness using `npm run mobile:apk-sync-check` and blocks if `mobile_app` code is newer than the committed `artifacts/mobile/android/app-release-latest.apk`.
+## Key Core Integrations
 
-Emergency bypass for a one-off push:
+### Localization (Dynamic Language Swapper)
+Unlike standard Android resource-bound localization, the app uses a custom translation mapping ([Localizations.kt](file:///Users/sachinjoshi/Documents/Personal/vruttaant-app/mobile_app/app/src/main/java/com/example/vruttaant/ui/theme/Localizations.kt)) supporting:
+- Dynamic, in-app language swapper settings.
+- Real-time updates without restarting the application context.
 
-```bash
-SKIP_APK_SYNC_CHECK=1 git push origin main
-```
-
-For Google Play (AAB format):
-```bash
-flutter build appbundle --release
-```
-
-Output: `build/app/outputs/bundle/release/app-release.aab`
-
-### Android Size Analysis
-Flutter code size analysis requires a single target ABI. The repository includes a repeatable helper script:
-
-```bash
-npm run mobile:size-check
-```
-
-By default this runs:
-
-```bash
-cd mobile_app
-flutter build apk --release --analyze-size --target-platform android-arm64
-```
-
-Override the ABI when needed:
-
-```bash
-TARGET_PLATFORM=android-x64 npm run mobile:size-check
-```
-
-Use the generated size analysis output to confirm tree shaking stays effective after adding dependencies or new feature modules. CI now runs the same arm64 size-analysis build, enforces an initial 20 MB APK budget, and uploads the resulting JSON report plus APK as a workflow artifact.
-
-The helper also copies the latest Flutter-generated `*-code-size-analysis_*.json` report into `mobile_app/build/size-analysis/` so the file is preserved in a stable repo-local path for CI artifact collection and local inspection.
-
-CI now enforces both:
-1. Absolute APK cap (`MAX_APK_SIZE_MB`, default 20 MB)
-2. Relative growth trend gate (`MAX_APK_GROWTH_PERCENT`, default 4%) versus baseline in `mobile_app/env/apk-size-baseline.json`
-
-Run the trend gate locally (after a size build):
-
-```bash
-npm run mobile:size-trend-check
-```
-
-Update baseline when intentionally shipping larger binaries:
-1. Validate release intent and dependency/module justification.
-2. Measure new arm64 APK size using `npm run mobile:size-check`.
-3. Update `mobile_app/env/apk-size-baseline.json` with the approved `baselineBytes` and `capturedAt`.
-4. Include rationale in PR notes so future trend deltas remain explainable.
-
-## Backend Integration
-
-Current integration uses `NewsApiService` with:
-
-- Endpoint: `POST /api/news/ingest`
-- Source cycling for pagination batches
-- Pull-to-refresh for reloading first batch
-- Vertical swipe pagination for appending more cards
-- Image prefetching for upcoming cards
-
-By default, API service connects to:
-```
-http://localhost:5000  (development)
-https://api.vruttaant.app  (production)
-```
-
-Override API base URL at run time:
-
-```bash
-flutter run --dart-define=API_BASE_URL=http://localhost:5000
-```
-
-Android emulator uses host loopback mapping:
-
-```bash
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
-```
-
-### Example API Call Pattern
-```dart
-// services/news_api_service.dart
-class NewsApiService {
-  Future<List<NewsItem>> ingestAndFetchNews({required String sourceUrl}) async {
-    // POST /api/news/ingest and map cardsPreview to NewsItem
-  }
-}
-```
-
-## Debugging
-
-### Enable Verbose Logging
-```bash
-flutter run -v
-```
-
-### Dart DevTools (Inspector)
-```bash
-flutter pub global activate devtools
-devtools
-```
-
-Then open in browser (URL printed), or use in VS Code:
-```bash
-flutter pub global run devtools
-```
-
-### Check Device Logs
-```bash
-flutter logs
-```
-
-## Common Issues
-
-### Build Fails on iOS
-```bash
-cd ios
-rm -rf Pods
-pod install
-cd ..
-flutter clean
-flutter pub get
-flutter run
-```
-
-### Build Fails on Android
-```bash
-flutter clean
-flutter pub get
-flutter run
-```
-
-### CocoaPods Issues
-```bash
-# Update CocoaPods
-sudo gem install cocoapods
-
-# Clean pods
-cd ios
-rm -rf Pods
-rm Podfile.lock
-pod install
-cd ..
-```
-
-## Testing
-
-### Run All Tests
-```bash
-flutter test
-```
-
-### Run Specific Test File
-```bash
-flutter test test/widget_test.dart
-```
-
-### Coverage Report
-```bash
-flutter test --coverage
-```
-
-Coverage in `coverage/lcov.info`
-
-## Localization (Multi-language)
-
-Flutter localization strategy:
-- Create `lib/l10n/app_en.arb` for English
-- Create `lib/l10n/app_es.arb` for Spanish
-- Create `lib/l10n/app_hi.arb` for Hindi
-- etc.
-
-Then generate with:
-```bash
-flutter gen-l10n
-```
-
-## Performance
-
-### Profile App
-```bash
-flutter run --profile
-```
-
-Use DevTools Performance tab to track:
-- Frame rate (target: 60 FPS on iOS, 120 FPS on iPad)
-- Memory usage
-- GPU/CPU metrics
-
-### Optimize Images
-- Use `flutter pub add cached_network_image`
-- Implement lazy loading for news cards
-- Cache images locally
-
-## Next Steps
-- Follow [SETUP.md](./SETUP.md) to start backend
-- Extend mobile feed with bookmarking + local persistence
-- Add a dedicated backend retrieval endpoint (`GET /api/news/cards`)
-- Add language/source filters in feed
+### Network Authentication & Auto-refresh Interceptor
+- `AuthInterceptor` automatically appends JWT tokens to request headers.
+- Automatically handles expired JWTs. If a request returns `401 Unauthorized`, it calls `POST /api/v1/auth/token/refresh` using a stored refresh token and retries the failed request thread-safely.

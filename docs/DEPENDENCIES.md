@@ -13,8 +13,8 @@ Complete guide to setting up Vruttaant on macOS, Linux, or Windows.
 - VS Code or preferred IDE
 
 **For Mobile Development:**
-- Flutter 3.40+ with Dart
-- Android Studio / Xcode (for emulators)
+- Android Studio & Android SDK 36
+- Java Development Kit (JDK) 17+
 
 ---
 
@@ -40,15 +40,15 @@ Complete guide to setting up Vruttaant on macOS, Linux, or Windows.
 | **Docker** | 20.10 | Container runtime (optional but recommended) |
 | **Docker Compose** | 2.0 | Multi-container orchestration (optional) |
 
-### Mobile Dependencies (Flutter)
+### Mobile Dependencies (Native Android)
 
 | Component | Version | Purpose |
 |-----------|---------|---------|
-| **Flutter** | 3.40+ | Mobile framework |
-| **Dart** | 3.10+ | Programming language |
-| **http (pub package)** | ^1.2.2 | Backend API client in mobile app |
-| **Android SDK** | API 24+ | Android development |
-| **Xcode** | 14+ | iOS development (macOS only) |
+| **Android Studio** | Ladybug+ | IDE & Emulator runner |
+| **Kotlin** | 2.1+ | Programming language |
+| **Retrofit / OkHttp** | 2.11 / 4.x | Backend API client in mobile app |
+| **Android SDK** | API 24+ | Android development runtime |
+| **JDK** | 17+ | Java Development Kit compile environment |
 
 ### Database
 
@@ -140,20 +140,18 @@ docker --version
 docker compose version
 ```
 
-### Step 4: Install Flutter (For Mobile Development)
+### Step 4: Install Android Studio & JDK 17 (For Mobile Development)
 
 ```bash
-# Install Flutter using Homebrew
-brew install flutter
+# Install JDK 17 using Homebrew
+brew install openjdk@17
 
-# Or download manually from https://flutter.dev/docs/get-started/install/macos
+# Install Android Studio via Homebrew cask
+brew install --cask android-studio
 
-# Verify installation
-flutter --version
-dart --version
-
-# Check Flutter setup
-flutter doctor         # Shows missing components
+# Or download manual installers from:
+# JDK: https://adoptium.net/
+# Android Studio: https://developer.android.com/studio
 ```
 
 ### Step 5: Verify Everything
@@ -175,8 +173,8 @@ echo "✓ Docker:"
 docker --version
 echo "✓ Docker Compose:"
 docker compose version
-echo "✓ Flutter:"
-flutter --version
+echo "✓ Java:"
+java -version
 echo ""
 echo "✅ All required tools are installed!"
 EOF
@@ -189,8 +187,8 @@ chmod +x /tmp/verify_setup.sh
 
 - Node.js via Homebrew: ~5 minutes
 - Docker Desktop: ~10 minutes (first run)
-- Flutter: ~15 minutes
-- Total: ~30 minutes
+- Android Studio & JDK: ~20 minutes
+- Total: ~35 minutes
 
 ---
 
@@ -278,23 +276,16 @@ docker --version
 docker compose version
 ```
 
-### Step 4: Install Flutter (For Mobile Development)
+### Step 4: Install Android Studio & JDK 17 (For Mobile Development)
 
 ```bash
-# Install dependencies
-sudo apt install -y git curl clang cmake ninja-build pkg-config libgtk-3-dev
+# Install JDK 17
+sudo apt install -y openjdk-17-jdk
 
-# Download Flutter
-cd ~
-git clone https://github.com/flutter/flutter.git -b stable
+# Download and install Android Studio (via Snap)
+sudo snap install android-studio --classic
 
-# Add Flutter to PATH
-echo 'export PATH="$PATH:$HOME/flutter/bin"' >> ~/.bashrc
-source ~/.bashrc
-
-# Verify
-flutter --version
-flutter doctor         # Shows missing components
+# Or manual download from https://developer.android.com/studio
 ```
 
 ### Step 5: Verify Everything
@@ -316,8 +307,8 @@ echo "✓ Docker:"
 docker --version
 echo "✓ Docker Compose:"
 docker compose version
-echo "✓ Flutter:"
-flutter --version
+echo "✓ Java:"
+java -version
 echo ""
 echo "✅ All required tools are installed!"
 EOF
@@ -330,8 +321,8 @@ chmod +x ~/verify_setup.sh
 
 - Node.js: ~10 minutes
 - Docker: ~15 minutes
-- Flutter: ~20 minutes
-- Total: ~45 minutes
+- Android Studio & JDK: ~25 minutes
+- Total: ~50 minutes
 
 ---
 
@@ -437,40 +428,15 @@ docker compose version
 - Hyper-V enabled (usually pre-installed)
 - At least 4GB RAM allocated to Docker
 
-### Step 4: Install Flutter (For Mobile Development)
+### Step 4: Install Android Studio & JDK 17 (For Mobile Development)
 
-```powershell
-# Download Flutter
-git clone https://github.com/flutter/flutter.git -b stable
+1. **Install JDK 17**:
+   - Download the Windows installer from [Adoptium Temurin 17](https://adoptium.net/).
+   - Run the installer and ensure "Add to PATH" is checked.
+2. **Install Android Studio**:
+   - Download the installer from [developer.android.com/studio](https://developer.android.com/studio).
+   - Run the installer, configure the Android SDK and Emulator setup wizard options.
 
-# Add Flutter to PATH:
-# 1. Right-click "This PC" → Properties
-# 2. Click "Advanced system settings"
-# 3. Click "Environment Variables"
-# 4. Under "User variables", click "New"
-# 5. Variable name: Path
-#    Variable value: C:\path\to\flutter\bin
-# 6. Click OK and restart PowerShell
-
-# Verify
-flutter --version
-flutter doctor         # Shows missing components
-```
-
-### Step 5: Install Android Studio (For Mobile Emulator)
-
-```powershell
-# Download from https://developer.android.com/studio
-
-# Run installer and follow prompts
-# During setup, ensure:
-# - Android SDK is installed
-# - Android Emulator is installed
-# - Add to PATH
-
-# Verify
-flutter doctor
-```
 
 ### Step 6: Verify Everything
 
@@ -490,8 +456,8 @@ Write-Host "✓ Docker:" -ForegroundColor Green
 docker --version
 Write-Host "✓ Docker Compose:" -ForegroundColor Green
 docker compose version
-Write-Host "✓ Flutter:" -ForegroundColor Green
-flutter --version
+Write-Host "✓ Java:" -ForegroundColor Green
+java -version
 Write-Host ""
 Write-Host "✅ All required tools are installed!" -ForegroundColor Green
 "@
@@ -505,9 +471,8 @@ $script | Out-File -FilePath "$env:USERPROFILE\verify_setup.ps1"
 - Node.js: ~5 minutes
 - Git: ~5 minutes
 - Docker Desktop: ~15 minutes (first run)
-- Flutter: ~20 minutes
-- Android Studio: ~30 minutes (optional)
-- Total: ~45-75 minutes
+- Android Studio & JDK: ~30 minutes
+- Total: ~50-60 minutes
 
 ---
 
@@ -542,17 +507,8 @@ curl http://localhost:5000/health
 # From project root
 cd mobile_app
 
-# Check Flutter setup
-flutter doctor
-
-# Install dependencies
-flutter pub get
-
-# Run on iOS simulator/device
-flutter run --dart-define=API_BASE_URL=http://localhost:5000
-
-# Run on Android emulator (host loopback mapping)
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
+# Install and run on connected device/emulator
+./gradlew installDebug
 ```
 
 ---
@@ -574,12 +530,9 @@ Use this checklist to verify your setup:
 
 ### Mobile
 
-- [ ] Flutter installed: `flutter --version`
-- [ ] Dart installed: `dart --version`
-- [ ] Flutter setup complete: `flutter doctor` → No errors
-- [ ] Android SDK installed (for Android): `flutter doctor`
-- [ ] Xcode installed (for iOS on macOS): `xcode-select --version`
-- [ ] Emulator/device detected: `flutter devices`
+- [ ] JDK 17+ installed: `java -version`
+- [ ] Android SDK 36 configured in build tools
+- [ ] Emulator or device detected: `adb devices`
 
 ---
 
@@ -645,12 +598,11 @@ netstat -ano | findstr :5000
 taskkill /PID <PID> /F
 ```
 
-### Flutter doctor shows errors
+### Android SDK license issues
 
-**Solution:** Run doctor and follow suggestions
+**Solution:** Accept Android SDK licenses via sdkmanager:
 ```bash
-flutter doctor -v   # Verbose output with fixes
-flutter doctor --android-licenses  # Accept Android licenses
+yes | sdkmanager --licenses
 ```
 
 ---
@@ -661,9 +613,9 @@ flutter doctor --android-licenses  # Accept Android licenses
 
 | OS | Time | Notes |
 |---|------|-------|
-| **macOS** | 30 min | Homebrew makes it fastest |
-| **Linux** | 45 min | Add repository keys, slightly longer |
-| **Windows** | 45-75 min | Android Studio optional adds 30 min |
+| **macOS** | 35 min | Homebrew makes it fastest |
+| **Linux** | 50 min | Add repository keys, slightly longer |
+| **Windows** | 50-60 min | Android Studio + SDK installation |
 
 ### System Requirements by OS
 
@@ -684,9 +636,9 @@ flutter doctor --android-licenses  # Accept Android licenses
 **Recommended Setup (Full dev):**
 - Node.js 20
 - Docker & Compose
-- Flutter
-- Android Studio / Xcode
-- Total disk: ~30-50 GB
+- Android Studio & Android SDK
+- JDK 17
+- Total disk: ~30 GB
 - Total RAM: 8-16 GB
 
 ---
@@ -745,10 +697,7 @@ After installation, proceed with:
 
 ## 📞 Support Resources
 
-- **Node.js Issues:** https://nodejs.org/en/docs/
-- **npm Docs:** https://docs.npmjs.com/
-- **Docker Issues:** https://docs.docker.com/
-- **Flutter Issues:** https://flutter.dev/docs
+- **Android Developer Help:** https://developer.android.com/
 - **Git Help:** https://git-scm.com/doc
 
 ---

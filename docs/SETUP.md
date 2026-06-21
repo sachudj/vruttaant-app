@@ -3,7 +3,8 @@
 ## Prerequisites
 - Node.js 25.9.0+
 - npm 11.12.1+
-- Flutter 3.41.9+
+- Android Studio & Android SDK 36+
+- JDK 17+
 - Docker 20.10+ (for MongoDB)
 - macOS 26.4.1+ (ARM64 Apple Silicon)
 
@@ -30,8 +31,7 @@ Backend will run on `http://localhost:5000` (or next free port if 5000 is occupi
 ### 4. Mobile App Setup (Optional)
 ```bash
 cd mobile_app
-flutter pub get
-flutter run
+./gradlew installDebug   # Compiles and installs the debug app on connected device/emulator
 ```
 
 ## Verification

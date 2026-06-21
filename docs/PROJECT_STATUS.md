@@ -74,16 +74,16 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] Main README with navigation
 
 ### ✅ Mobile Frontend (Implemented)
-- [x] Full-screen NewsCard widget with title/summary overlay
-- [x] Vertical swipe feed using `PageView`
-- [x] API integration via `NewsApiService`
-- [x] Pull-to-refresh support
-- [x] Pull-up pagination with batch append
-- [x] Next-card image prefetching
+- [x] Full-screen NewsCard UI with title/summary overlay constraints
+- [x] Vertical swipe feed using Jetpack Compose `VerticalPager` and horizontal `HorizontalPager` swipe to WebView
+- [x] API integration via Retrofit `NewsApiService` and `AuthInterceptor` token auto-refresh
+- [x] Pull-to-refresh reload feed behavior
+- [x] Pull-up vertical pager pagination with batch append
+- [x] Next-card image loading using Coil
 - [x] Dedicated Settings/Profile screen with account, language, categories, and notification preferences
 - [x] Bookmarks management flow (add/list/delete/open)
 - [x] Push notification device registration and preferences management
-- [x] Widget tests for swipe + pagination
+- [x] Local JVM unit tests for repository caching & models
 
 ### ✅ Documentation (18 Files)
 - [x] INDEX.md - Navigation hub for all docs
@@ -94,7 +94,7 @@ Detailed implementation sequencing and security hardening tasks are tracked in [
 - [x] API_ENDPOINTS.md - Complete API reference
 - [x] DOCKER.md - MongoDB container management
 - [x] DATABASE.md - MongoDB schema & queries
-- [x] MOBILE_APP.md - Flutter setup & building
+- [x] MOBILE_APP.md - Native Android setup & building
 - [x] DEVELOPMENT.md - Daily workflow & debugging
 - [x] PROJECT_STATUS.md - Implementation checklist (this file)
 - [x] ROADMAP.md - Small-step implementation plan
@@ -289,15 +289,12 @@ Foundation and latest mobile feed updates:
 - `backend/.env.example` - MongoDB credentials added
 - `backend/src/index.js` - dotenv loading, DB bootstrap, graceful shutdown
 - `docker-compose.yml` - Full MongoDB + Mongo Express stack
-- `mobile_app/lib/main.dart` - App bootstrap/shell wiring; feed moved to feature module
-- `mobile_app/test/widget_test.dart` - Swipe + pagination test
-- `mobile_app/pubspec.yaml` - Added `http` dependency
-- `docs/MOBILE_APP.md` - Updated to implemented state
-- `docs/DEVELOPMENT.md` - Updated mobile commands and file structure
-- `docs/DEPENDENCIES.md` - Added mobile runtime dependency + emulator URL guidance
-- `docs/ARCHITECTURE.md` - Added mobile modules and runtime flow
-- `mobile_app/lib/features/feed/domain/feed_types.dart` - Shared feed typedefs
-- `mobile_app/lib/features/feed/presentation/news_feed_page.dart` - Extracted feed orchestration/page UI
+- `mobile_app/app/` - Completely replaced Flutter with Native Compose Android application structure
+- `mobile_app/app/src/test/` - JUnit unit testing suite
+- `mobile_app/gradle/libs.versions.toml` - Configured Compose, Retrofit, DataStore, and Firebase catalog dependencies
+- `docs/MOBILE_APP.md` - Rewritten to document Native Android architecture
+- `docs/DEVELOPMENT.md` - Updated to native build, test, and debug workflows
+- `docs/ARCHITECTURE.md` - Replaced system diagrams and tech stack details
 
 **Added**:
 - `backend/src/config/database.js`
@@ -315,12 +312,10 @@ To continue development, you need:
 
 - ✅ Node.js 25.9+ (installed)
 - ✅ npm 11.12+ (installed)
-- ✅ Flutter 3.41+ (installed)
+- ✅ Android Studio (installed)
+- ✅ Android SDK 36 (installed)
+- ✅ Java 17+ (installed)
 - ✅ Docker 20.10+ (installed)
-- ✅ Xcode 26.4+ (installed)
-- ✅ Android Studio 2025.3+ (installed)
-- ✅ Java 26+ (installed)
-- ✅ CocoaPods 1.16+ (installed)
 
 All prerequisites are already installed on your machine.
 
