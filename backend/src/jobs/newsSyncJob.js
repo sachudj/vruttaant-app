@@ -195,6 +195,12 @@ function startNewsSyncJob() {
   cronJob = cron.schedule(schedule, () => {
     void runSyncCycle();
   });
+
+  // Run immediately at boot in development environment so developer doesn't have to wait
+  if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+    console.log('[newsSyncJob] Triggering initial sync run at boot in development environment...');
+    void runSyncCycle();
+  }
 }
 
 function stopNewsSyncJob() {
