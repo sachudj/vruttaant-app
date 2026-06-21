@@ -108,25 +108,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Analyze
-        run: flutter analyze
+      - name: Make gradlew executable
+        run: chmod +x gradlew
 
-      - name: Widget tests with coverage
-        run: flutter test --coverage -r compact
+      - name: Run JVM Unit Tests
+        run: ./gradlew testDebugUnitTest
 
       - name: Mobile size analysis build
         env:
@@ -143,8 +138,8 @@ jobs:
       - name: Collect mobile size artifacts
         run: |
           mkdir -p ../artifacts/mobile-size
-          cp -R build/size-analysis/. ../artifacts/mobile-size/
-          cp build/app/outputs/flutter-apk/*.apk ../artifacts/mobile-size/
+          cp -R app/build/size-analysis/. ../artifacts/mobile-size/
+          cp app/build/outputs/apk/release/*.apk ../artifacts/mobile-size/
 
       - name: Upload mobile size artifacts
         uses: actions/upload-artifact@v4
@@ -152,13 +147,3 @@ jobs:
           name: mobile-size-analysis-android-arm64
           path: artifacts/mobile-size/
           if-no-files-found: error
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: mobile_app/coverage/lcov.info
-          flags: mobile
-          name: vruttaant-mobile
-          fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

@@ -46,27 +46,12 @@ vruttaant-app/
 
 ## 📚 Documentation
 
-**Start here:** [📖 Documentation Index](./docs/INDEX.md) - Complete navigation guide
+Detailed guides are located in the `docs/` directory:
 
-**First-time Setup:**
-→ [🔧 Environment & Dependencies](./docs/DEPENDENCIES.md) - OS-specific setup (macOS/Linux/Windows)
-
-**Quick Links:**
-1. [Setup Guide](./docs/SETUP.md) - Installation & 5-min quick start ⚡
-2. [Architecture](./docs/ARCHITECTURE.md) - System design & structure 
-3. [Development Guide](./docs/DEVELOPMENT.md) - Daily workflow & common tasks
-4. [Project Status](./docs/PROJECT_STATUS.md) - What's done, roadmap, next steps
-5. [Roadmap](./docs/ROADMAP.md) - Small-step implementation checklist
-
-**API & Backend:**
-- [API Endpoints](./docs/API_ENDPOINTS.md) - Complete reference with examples
-- [Backend Guide](./docs/BACKEND.md) - Server setup & configuration
-- [Database Schema](./docs/DATABASE.md) - MongoDB models & queries
-
-**Infrastructure:**
-- [Docker/MongoDB](./docs/DOCKER.md) - Container management & troubleshooting
-- [Mobile App](./docs/MOBILE_APP.md) - Native Android setup & building
-- [Deployment Runbook](./docs/DEPLOYMENT.md) - Environment profiles, rollout/rollback, CI deployment gate
+1. **[Architecture Guide](./docs/ARCHITECTURE.md)**: High-level system design, architecture diagrams, and data flows.
+2. **[Development Guide](./docs/DEVELOPMENT.md)**: Workspace configuration, quicksetup steps, database commands, and native Android / backend testing workflows.
+3. **[API Endpoints Reference](./docs/API_ENDPOINTS.md)**: Complete REST endpoints and request/response specifications.
+4. **[Deployment Runbook](./docs/DEPLOYMENT.md)**: Multi-environment setups, rollback procedures, alerting rule checklists, and database backups.
 
 ## Tech Stack
 
@@ -133,48 +118,7 @@ vruttaant-app/
 
 ## Project Status
 
-Tracks **A through N are complete** (security, auth, reliability, testing, data governance, mobile UX, feed intelligence, recommendations, analytics, engagement, performance, infrastructure operations, and documentation/UX polish).
-
-Current focus is **follow-on optimization** using telemetry and load-history data.
-
-For the detailed milestone and step log, see:
-- [docs/ROADMAP.md](./docs/ROADMAP.md)
-- [docs/PROJECT_STATUS.md](./docs/PROJECT_STATUS.md)
-
-For detailed roadmap, see [docs/ROADMAP.md](./docs/ROADMAP.md).
-
-## Next Phase (Roadmap)
-
-Detailed implementation sequencing now lives in [docs/ROADMAP.md](./docs/ROADMAP.md).
-
-- [x] API endpoint to retrieve saved news from database
-- [x] User authentication & profiles
-- [x] Bookmark/save articles feature
-- [x] Language preference settings
-- [x] Background news sync
-- [x] Push notifications
-- [x] Advanced search & filtering
-
-### Industry-Standard Secure App Checklist
-
-- [x] Add centralized request validation (query/body/schema) for all API endpoints
-- [x] Add security middleware: Helmet, strict CORS policy, and rate limiting
-- [x] Add API auth hardening: JWT rotation, refresh token revocation, and protected routes
-- [x] Add backend unit + integration tests for critical APIs (`/api/news/ingest`, `/api/news/cards`)
-- [x] Add structured logging with request IDs and centralized error handling
-- [x] Add observability: metrics, error tracking, and alerting for backend failures
-- [x] Add API versioning strategy (`/api/v1`) with backward-compatibility policy
-- [x] Add production readiness probes (`/health`, `/ready`) and graceful shutdown handling
-- [x] Add dependency and container security scans in CI (SAST + npm audit gating)
-- [x] Add secrets management policy (no plaintext secrets, rotation, environment separation)
-- [x] Add role-based access controls for admin/internal operations
-- [x] Add data governance for LLM output (category taxonomy validation + fallback rules)
-
-### API Tooling Snapshot
-
-- [x] Swagger/OpenAPI runtime docs at `/api/docs` and `/api/docs.json`
-- [x] Postman import collection at `docs/Vruttaant.postman_collection.json`
-- [x] Docs parity CI guard via `scripts/check-api-docs.sh`
+All development milestones and operational checklists have been fully implemented and verified. The platform is complete and ready for staging/production deployments.
 
 ## Infrastructure Scripts
 
@@ -194,14 +138,9 @@ This repository now includes CI and release automation:
   - Runs backend syntax + startup health checks
   - Runs Android build and JVM unit tests
 - `.github/workflows/reviewdog.yml`
-  - Runs backend ESLint and Flutter analyze on pull requests
-  - Publishes inline PR review comments for changed lines
+  - Runs backend ESLint on pull requests and publishes inline comments
 - `.github/workflows/security.yml`
-  - Runs CodeQL SAST scans for JavaScript code
-  - Runs Trivy filesystem scan for vulnerabilities, secrets, and misconfigurations
-- `.github/workflows/progress-report.yml`
-  - Reads `docs/PROJECT_STATUS.md` checklists
-  - Publishes completion percentage to workflow summary
+  - Runs CodeQL SAST and Trivy filesystem vulnerability scans
 - `.github/workflows/release-drafter.yml`
   - Maintains a draft release note from merged changes
 - `.github/workflows/release.yml`
