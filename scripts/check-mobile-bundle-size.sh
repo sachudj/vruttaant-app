@@ -6,8 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 TARGET_PLATFORM="${TARGET_PLATFORM:-android-arm64}"
 MAX_APK_SIZE_MB="${MAX_APK_SIZE_MB:-20}"
-APK_PATH="$ROOT_DIR/mobile_app/build/app/outputs/flutter-apk/app-release.apk"
-SIZE_ANALYSIS_DIR="$ROOT_DIR/mobile_app/build/size-analysis"
+APK_PATH="$ROOT_DIR/mobile_app/app/build/outputs/apk/release/app-release-unsigned.apk"
+SIZE_ANALYSIS_DIR="$ROOT_DIR/mobile_app/app/build/size-analysis"
 METADATA_PATH="$SIZE_ANALYSIS_DIR/apk-size-metadata.json"
 
 get_file_size_bytes() {
@@ -22,18 +22,20 @@ get_file_size_bytes() {
 }
 
 cd "$ROOT_DIR/mobile_app"
-flutter build apk --release --analyze-size --target-platform "$TARGET_PLATFORM"
+chmod +x gradlew
+./gradlew :app:assembleRelease
 
 mkdir -p "$SIZE_ANALYSIS_DIR"
 
-latest_analysis_file="$(ls -t "$HOME"/.flutter-devtools/*-code-size-analysis_*.json 2>/dev/null | head -n 1 || true)"
-if [[ -n "$latest_analysis_file" ]]; then
-	cp "$latest_analysis_file" "$SIZE_ANALYSIS_DIR/"
-fi
-
 if [[ ! -f "$APK_PATH" ]]; then
-	echo "Expected APK not found at $APK_PATH" >&2
-	exit 1
+	# Check if signed version exists
+	SIGNED_APK_PATH="${APK_PATH%-unsigned.apk}.apk"
+	if [[ -f "$SIGNED_APK_PATH" ]]; then
+		APK_PATH="$SIGNED_APK_PATH"
+	else
+		echo "Expected APK not found at $APK_PATH" >&2
+		exit 1
+	fi
 fi
 
 apk_size_bytes="$(get_file_size_bytes "$APK_PATH")"

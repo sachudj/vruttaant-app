@@ -8,20 +8,28 @@ MOBILE_DIR="$ROOT_DIR/mobile_app"
 OUTPUT_DIR="${APK_PUBLISH_DIR:-$ROOT_DIR/artifacts/mobile/android}"
 OUTPUT_APK="$OUTPUT_DIR/app-release-latest.apk"
 OUTPUT_META="$OUTPUT_DIR/app-release-latest.json"
-SOURCE_APK="$MOBILE_DIR/build/app/outputs/flutter-apk/app-release.apk"
+SOURCE_APK="$MOBILE_DIR/app/build/outputs/apk/release/app-release-unsigned.apk"
 DEFINE_FILE="${MOBILE_DEFINE_FILE:-env/production.json}"
 API_BASE_URL_OVERRIDE="${MOBILE_API_BASE_URL:-}"
 
 cd "$MOBILE_DIR"
+chmod +x gradlew
+
 if [[ -n "$API_BASE_URL_OVERRIDE" ]]; then
-  flutter build apk --release --dart-define="API_BASE_URL=$API_BASE_URL_OVERRIDE"
+  echo "{\"API_BASE_URL\": \"$API_BASE_URL_OVERRIDE\", \"FLAVOR\": \"production\"}" > env/override.json
+  ./gradlew :app:assembleRelease -PenvFile="../env/override.json"
 else
-  flutter build apk --release --dart-define-from-file="$DEFINE_FILE"
+  ./gradlew :app:assembleRelease -PenvFile="../$DEFINE_FILE"
 fi
 
 if [[ ! -f "$SOURCE_APK" ]]; then
-  echo "APK not found at expected path: $SOURCE_APK" >&2
-  exit 1
+  SIGNED_APK="${SOURCE_APK%-unsigned.apk}.apk"
+  if [[ -f "$SIGNED_APK" ]]; then
+    SOURCE_APK="$SIGNED_APK"
+  else
+    echo "APK not found at expected path: $SOURCE_APK" >&2
+    exit 1
+  fi
 fi
 
 mkdir -p "$OUTPUT_DIR"

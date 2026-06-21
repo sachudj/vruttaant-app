@@ -10,7 +10,7 @@ MAX_APK_GROWTH_PERCENT="${MAX_APK_GROWTH_PERCENT:-4}"
 BASELINE_FILE="${APK_SIZE_BASELINE_FILE:-$ROOT_DIR/mobile_app/env/apk-size-baseline.json}"
 METADATA_FILE="${APK_SIZE_METADATA_FILE:-$ROOT_DIR/mobile_app/build/size-analysis/apk-size-metadata.json}"
 SUMMARY_FILE="${APK_SIZE_TREND_SUMMARY_FILE:-$ROOT_DIR/mobile_app/build/size-analysis/apk-size-trend-summary.md}"
-APK_PATH="$ROOT_DIR/mobile_app/build/app/outputs/flutter-apk/app-release.apk"
+APK_PATH="$ROOT_DIR/mobile_app/app/build/outputs/apk/release/app-release-unsigned.apk"
 
 get_file_size_bytes() {
   local file_path="$1"
@@ -36,8 +36,13 @@ fi
 
 if [[ -z "$current_apk_size" ]]; then
   if [[ ! -f "$APK_PATH" ]]; then
-    echo "Unable to resolve current APK size from metadata or APK path." >&2
-    exit 1
+    SIGNED_APK="${APK_PATH%-unsigned.apk}.apk"
+    if [[ -f "$SIGNED_APK" ]]; then
+      APK_PATH="$SIGNED_APK"
+    else
+      echo "Unable to resolve current APK size from metadata or APK path." >&2
+      exit 1
+    fi
   fi
   current_apk_size="$(get_file_size_bytes "$APK_PATH")"
 fi
@@ -54,7 +59,7 @@ max_allowed_bytes="$(( baseline_apk_size + allowed_growth_bytes ))"
 size_delta_bytes="$(( current_apk_size - baseline_apk_size ))"
 
 if (( baseline_apk_size > 0 )); then
-  growth_percent="$(node -e "const delta=Number(process.argv[1]); const baseline=Number(process.argv[2]); process.stdout.write(((delta*100)/baseline).toFixed(2));" "$size_delta_bytes" "$baseline_apk_size")"
+  growth_percent="$(node -e "const delta=Number(process.argv[1]); const baseline=Number(process.argv[2]); process.stdout.write(((delta*100)/baseline).toFixed(2));" -- "$size_delta_bytes" "$baseline_apk_size")"
 else
   growth_percent="0.00"
 fi
