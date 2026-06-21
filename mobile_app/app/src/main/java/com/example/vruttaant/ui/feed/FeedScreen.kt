@@ -384,127 +384,8 @@ fun NewsCardScreen(
                 .fillMaxSize()
                 .safeDrawingPadding()
                 .padding(horizontal = 20.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.Bottom
         ) {
-            // Upper Section Actions & Source Tag
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Source label
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(Color.Black.copy(alpha = 0.45f))
-                        .border(
-                            width = 1.dp,
-                            color = Color.White.copy(alpha = 0.24f),
-                            shape = RoundedCornerShape(999.dp)
-                        )
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = item.source,
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Actions row
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Translate Toggle
-                    IconButton(
-                        onClick = {
-                            if (translationState == "translated") {
-                                displayTitle = item.title
-                                displaySummary = item.summary
-                                translationState = "original"
-                                translationError = null
-                            } else if (translationState == "original") {
-                                translationState = "translating"
-                                translationError = null
-                                onTranslateRequested { t, s, isSuccess ->
-                                    if (isSuccess) {
-                                        displayTitle = t
-                                        displaySummary = s
-                                        translationState = "translated"
-                                    } else {
-                                        displayTitle = item.title
-                                        displaySummary = item.summary
-                                        translationState = "original"
-                                        translationError = Localizations.getString("translation_failed", language)
-                                    }
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color.White.copy(alpha = 0.2f), CircleShape)
-                    ) {
-                        if (translationState == "translating") {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = Color.White
-                            )
-                        } else {
-                            Icon(
-                                imageVector = if (translationState == "translated") Icons.Default.Translate else Icons.Outlined.Translate,
-                                contentDescription = "Translate",
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-
-                    // Share button
-                    IconButton(
-                        onClick = {
-                            onShare()
-                            val text = if (item.originalUrl.isNotEmpty()) {
-                                "${item.title}\n\n${item.originalUrl}"
-                            } else {
-                                "${item.title}\n\n${item.summary}"
-                            }
-                            val shareIntent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, text)
-                            }
-                            context.startActivity(Intent.createChooser(shareIntent, "Share story"))
-                        },
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color.White.copy(alpha = 0.2f), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "Share",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    // Bookmark toggle button
-                    IconButton(
-                        onClick = onBookmarkToggle,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color.White.copy(alpha = 0.2f), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                            contentDescription = "Bookmark",
-                            tint = if (isBookmarked) Color.Yellow else Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-            }
-
             // Lower Section Text overlays
             Column(modifier = Modifier.fillMaxWidth()) {
                 // Translation state row & reading time
@@ -597,6 +478,127 @@ fun NewsCardScreen(
                     overflow = TextOverflow.Ellipsis,
                     lineHeight = 22.sp
                 )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Action Bar (Source + Actions)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Source label
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(Color.White.copy(alpha = 0.16f))
+                            .border(
+                                width = 1.dp,
+                                color = Color.White.copy(alpha = 0.24f),
+                                shape = RoundedCornerShape(999.dp)
+                            )
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = item.source.ifEmpty { "News" },
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    // Actions row
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Translate Toggle
+                        IconButton(
+                            onClick = {
+                                if (translationState == "translated") {
+                                    displayTitle = item.title
+                                    displaySummary = item.summary
+                                    translationState = "original"
+                                    translationError = null
+                                } else if (translationState == "original") {
+                                    translationState = "translating"
+                                    translationError = null
+                                    onTranslateRequested { t, s, isSuccess ->
+                                        if (isSuccess) {
+                                            displayTitle = t
+                                            displaySummary = s
+                                            translationState = "translated"
+                                        } else {
+                                            displayTitle = item.title
+                                            displaySummary = item.summary
+                                            translationState = "original"
+                                            translationError = Localizations.getString("translation_failed", language)
+                                        }
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(Color.White.copy(alpha = 0.16f), CircleShape)
+                        ) {
+                            if (translationState == "translating") {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = Color.White
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = if (translationState == "translated") Icons.Default.Translate else Icons.Outlined.Translate,
+                                    contentDescription = "Translate",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+
+                        // Share button
+                        IconButton(
+                            onClick = {
+                                onShare()
+                                val text = if (item.originalUrl.isNotEmpty()) {
+                                    "${item.title}\n\n${item.originalUrl}"
+                                } else {
+                                    "${item.title}\n\n${item.summary}"
+                                }
+                                val shareIntent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, text)
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, "Share story"))
+                            },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(Color.White.copy(alpha = 0.16f), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        // Bookmark toggle button
+                        IconButton(
+                            onClick = onBookmarkToggle,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(Color.White.copy(alpha = 0.16f), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                                contentDescription = "Bookmark",
+                                tint = if (isBookmarked) Color.Yellow else Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
