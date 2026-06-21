@@ -10,7 +10,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:windowSoftInputMode="adjustResize"
-        android:theme="@style/Theme.Vruttaant">
+        android:theme="@style/Theme.Vruttaant"
+        android:usesCleartextTraffic="true">
         <activity
             android:name="com.example.vruttaant.MainActivity"
             android:exported="true">
