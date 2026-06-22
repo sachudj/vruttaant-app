@@ -147,7 +147,10 @@ function extractImageUrl(node, $, baseUrl) {
   ]);
 
   if (fromImageNode) {
-    return resolveUrl(baseUrl, fromImageNode);
+    const resolved = resolveUrl(baseUrl, fromImageNode);
+    if (!isGenericOrLogoImage(resolved)) {
+      return resolved;
+    }
   }
 
   const fromMeta = getFirstNonEmpty([
@@ -155,7 +158,11 @@ function extractImageUrl(node, $, baseUrl) {
     $('meta[name="twitter:image"]').first().attr('content')
   ]);
 
-  return resolveUrl(baseUrl, fromMeta);
+  const resolvedMeta = resolveUrl(baseUrl, fromMeta);
+  if (!isGenericOrLogoImage(resolvedMeta)) {
+    return resolvedMeta;
+  }
+  return '';
 }
 
 function extractPrimaryTitle(node) {
@@ -177,12 +184,46 @@ function extractPrimarySummary(node) {
   ]);
 }
 
-function extractPrimaryLink(node, baseUrl) {
-  const link = getFirstNonEmpty([
-    node.find('a[href]').first().attr('href'),
-    node.attr('href')
-  ]);
-  return resolveUrl(baseUrl, link);
+function extractPrimaryLink(node, baseUrl, $) {
+  // 1. Try finding links inside heading elements (h1-h6) first
+  const headingLink = node.find('h1 a, h2 a, h3 a, h4 a, h5 a, h6 a').first().attr('href');
+  if (headingLink) {
+    return resolveUrl(baseUrl, headingLink);
+  }
+
+  // 2. Iterate through all links inside the node
+  const allLinks = [];
+  node.find('a[href]').each((_, el) => {
+    const href = $ ? $(el).attr('href') : (el.attribs ? el.attribs.href : null);
+    if (href) {
+      allLinks.push(resolveUrl(baseUrl, href));
+    }
+  });
+
+  const nonArticlePatterns = [
+    /\/category\//i,
+    /\/section\//i,
+    /\/tag\//i,
+    /\/author\//i,
+    /\/topic\//i,
+    /\/about\//i,
+    /\/contact\//i,
+    /\/terms\//i,
+    /\/privacy\//i
+  ];
+
+  for (const link of allLinks) {
+    const matchesPattern = nonArticlePatterns.some((pattern) => pattern.test(link));
+    if (!matchesPattern) {
+      return link;
+    }
+  }
+
+  if (allLinks.length > 0) {
+    return allLinks[0];
+  }
+
+  return resolveUrl(baseUrl, node.attr('href'));
 }
 
 function normalizeLanguage(language) {
@@ -205,6 +246,135 @@ function hasValidHttpUrl(value) {
   } catch {
     return false;
   }
+}
+
+function isGenericOrLogoImage(url) {
+  if (!url) {
+    return true;
+  }
+  const lower = url.toLowerCase();
+  const genericKeywords = [
+    'logo',
+    'placeholder',
+    'default-ie',
+    'default_ie',
+    'fallback',
+    'banner-default',
+    'brand-image',
+    'social-share-default',
+    'og-default',
+    'common-share',
+    'ie-logo',
+    'indianexpress-logo',
+    'indian-express-logo',
+    'reuters-logo',
+    'bbc-logo',
+    'aljazeera-logo',
+    'default-meta',
+    'sharing-default',
+    'ie-ogimage',
+    'ogimage',
+    'og-image'
+  ];
+  return genericKeywords.some((keyword) => lower.includes(keyword));
+}
+
+function getSourceNameFromUrl(sourceUrl, parsedName = '') {
+  if (parsedName && parsedName.trim()) {
+    return parsedName.trim();
+  }
+  try {
+    const hostname = new URL(sourceUrl).hostname.toLowerCase();
+    const domain = hostname.replace('www.', '');
+    
+    if (domain.includes('indianexpress.com')) return 'The Indian Express';
+    if (domain.includes('bbc.com') || domain.includes('bbc.co.uk')) return 'BBC News';
+    if (domain.includes('reuters.com')) return 'Reuters';
+    if (domain.includes('aljazeera.com')) return 'Al Jazeera';
+    if (domain.includes('thehindu.com')) return 'The Hindu';
+    if (domain.includes('hindustantimes.com')) return 'Hindustan Times';
+    if (domain.includes('ndtv.com')) return 'NDTV';
+    if (domain.includes('aajtak.in')) return 'Aaj Tak';
+    if (domain.includes('amarujala.com')) return 'Amar Ujala';
+    if (domain.includes('anandabazar.com')) return 'Anandabazar Patrika';
+    if (domain.includes('eisamay.com')) return 'Ei Samay';
+    if (domain.includes('tv9bangla.com')) return 'TV9 Bangla';
+    if (domain.includes('loksatta.com')) return 'Loksatta';
+    if (domain.includes('maharashtratimes.com')) return 'Maharashtra Times';
+    if (domain.includes('eenadu.net')) return 'Eenadu';
+    if (domain.includes('sakshi.com')) return 'Sakshi';
+    if (domain.includes('andhrajyothy.com')) return 'Andhra Jyothy';
+    if (domain.includes('dailythanthi.com')) return 'Daily Thanthi';
+    if (domain.includes('dinamalar.com')) return 'Dinamalar';
+    if (domain.includes('gujaratsamachar.com')) return 'Gujarat Samachar';
+    if (domain.includes('sandesh.com')) return 'Sandesh';
+    if (domain.includes('siasat.com')) return 'Siasat';
+    if (domain.includes('inquilab.com')) return 'Inquilab';
+    if (domain.includes('urdupoint.com')) return 'UrduPoint';
+    if (domain.includes('prajavani.net')) return 'Prajavani';
+    if (domain.includes('vijaykarnataka.com')) return 'Vijaya Karnataka';
+    if (domain.includes('kannadaprabha.com')) return 'Kannada Prabha';
+    if (domain.includes('sambad.in')) return 'Sambad';
+    if (domain.includes('dharitri.com')) return 'Dharitri';
+    if (domain.includes('prameya.com')) return 'Prameya';
+    if (domain.includes('manoramaonline.com')) return 'Malayala Manorama';
+    if (domain.includes('mathrubhumi.com')) return 'Mathrubhumi';
+    if (domain.includes('deshabhimani.com')) return 'Deshabhimani';
+
+    const parts = domain.split('.');
+    const name = parts[0] || 'News';
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  } catch {
+    return 'News';
+  }
+}
+
+async function translateWithGoogleFree(text, sourceLang = 'en', targetLang = 'en') {
+  if (!text || sourceLang === targetLang) {
+    return text;
+  }
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Google Translate returned status: ${res.status}`);
+    }
+    const data = await res.json();
+    if (data && data[0]) {
+      const translatedSentences = data[0]
+        .map((sentence) => sentence[0])
+        .filter(Boolean);
+      return translatedSentences.join('');
+    }
+    return text;
+  } catch (err) {
+    return text;
+  }
+}
+
+function truncateToSentences(text, maxWords = 75) {
+  if (!text) {
+    return '';
+  }
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) {
+    return text;
+  }
+
+  const truncatedWords = words.slice(0, maxWords);
+  const truncatedText = truncatedWords.join(' ');
+
+  const lastSentenceEnd = Math.max(
+    truncatedText.lastIndexOf('.'),
+    truncatedText.lastIndexOf('?'),
+    truncatedText.lastIndexOf('!')
+  );
+
+  if (lastSentenceEnd > 0) {
+    return truncatedText.slice(0, lastSentenceEnd + 1).trim();
+  }
+
+  return truncatedText + '...';
 }
 
 function validateCardQuality(card) {
@@ -343,15 +513,32 @@ async function translateStoryContent(card, sourceLanguage = 'en', targetLanguage
 
   const apiKey = process.env.LLM_API_KEY;
   if (!apiKey) {
-    return {
-      translated: false,
-      title,
-      summary,
-      language: normalizedSourceLanguage,
-      sourceLanguage: normalizedSourceLanguage,
-      targetLanguage: normalizedTargetLanguage,
-      fallbackReason: 'translation_unavailable'
-    };
+    try {
+      const translatedTitle = await translateWithGoogleFree(title, normalizedSourceLanguage, normalizedTargetLanguage);
+      const translatedSummary = await translateWithGoogleFree(summary, normalizedSourceLanguage, normalizedTargetLanguage);
+
+      const isSuccess = translatedTitle !== title || translatedSummary !== summary;
+
+      return {
+        translated: isSuccess,
+        title: translatedTitle,
+        summary: translatedSummary,
+        language: normalizedTargetLanguage,
+        sourceLanguage: normalizedSourceLanguage,
+        targetLanguage: normalizedTargetLanguage,
+        fallbackReason: isSuccess ? null : 'translation_noop'
+      };
+    } catch (err) {
+      return {
+        translated: false,
+        title,
+        summary,
+        language: normalizedSourceLanguage,
+        sourceLanguage: normalizedSourceLanguage,
+        targetLanguage: normalizedTargetLanguage,
+        fallbackReason: 'translation_failed'
+      };
+    }
   }
 
   const apiUrl = process.env.LLM_API_URL || DEFAULT_LLM_API_URL;
@@ -533,7 +720,9 @@ function hasKeywordOverlap(title, summary, minOverlapCount = 1) {
     .toLowerCase()
     .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'–—]/g, ' ')
     .split(/\s+/)
-    .filter((word) => word.length > 2 && !stopwords.has(word));
+    .filter((word) => word.length > 2 && !stopwords.has(word))
+    .map((word) => word.replace(/(s|es|ing|ed)$/, ''))
+    .filter((word) => word.length > 2);
 
   if (titleWords.length === 0) {
     return true; // If title is empty or has only stopwords/short words, skip overlap validation
@@ -545,7 +734,7 @@ function hasKeywordOverlap(title, summary, minOverlapCount = 1) {
   return matches.length >= minOverlapCount;
 }
 
-async function fetchArticleSummary(url, title = '') {
+async function fetchArticleDetails(url, title = '') {
   try {
     const normalizedUrl = validateUrlForIngestion(url);
     const response = await fetch(normalizedUrl, {
@@ -561,11 +750,47 @@ async function fetchArticleSummary(url, title = '') {
       signal: AbortSignal.timeout(3000)
     });
     if (!response.ok) {
-      return '';
+      return { title: '', summary: '', imageUrl: '' };
     }
     const html = await response.text();
     const $ = cheerio.load(html);
 
+    // Extract title
+    let cleanTitle = '';
+    const ogTitle = $('meta[property="og:title"]').attr('content') ||
+                    $('meta[name="twitter:title"]').attr('content');
+    if (ogTitle) {
+      cleanTitle = cleanText(ogTitle);
+    } else {
+      const h1Text = $('h1').first().text();
+      if (h1Text) {
+        cleanTitle = cleanText(h1Text);
+      }
+    }
+
+    // Extract image
+    let imageUrl = '';
+    const ogImage = $('meta[property="og:image"]').attr('content') ||
+                    $('meta[name="twitter:image"]').attr('content') ||
+                    $('meta[property="og:image:secure_url"]').attr('content');
+
+    if (ogImage && hasValidHttpUrl(ogImage) && !isGenericOrLogoImage(ogImage)) {
+      imageUrl = resolveUrl(normalizedUrl, ogImage);
+    } else {
+      $('article img, .article-body img, .story-body img, .entry-content img, img').each((_, el) => {
+        const src = $(el).attr('src') || $(el).attr('data-src');
+        if (src) {
+          const resolved = resolveUrl(normalizedUrl, src);
+          if (hasValidHttpUrl(resolved) && !isGenericOrLogoImage(resolved)) {
+            imageUrl = resolved;
+            return false; // break
+          }
+        }
+      });
+    }
+
+    // Extract summary
+    let summary = '';
     // 1. Try og:description, description, or twitter:description meta tags
     let desc = $('meta[property="og:description"]').attr('content') ||
                $('meta[name="description"]').attr('content') ||
@@ -575,27 +800,33 @@ async function fetchArticleSummary(url, title = '') {
       desc = cleanText(desc);
       if (desc && desc.length > 25 && !isBoilerplateText(desc)) {
         if (!title || hasKeywordOverlap(title, desc)) {
-          return desc;
+          summary = truncateToSentences(desc, 75);
         }
       }
     }
 
-    // 2. Fallback to first paragraph of article body (which is not boilerplate and is relevant)
-    let firstP = '';
-    $('article p, .article-body p, .story-body p, .entry-content p, p').each((_, el) => {
-      const text = cleanText($(el).text());
-      if (text.length > 80 && text.length < 400 && !isBoilerplateText(text)) {
-        if (!title || hasKeywordOverlap(title, text)) {
-          firstP = text;
-          return false; // Break loop
+    if (!summary) {
+      // 2. Fallback to first paragraph of article body (which is not boilerplate and is relevant)
+      $('article p, .article-body p, .story-body p, .entry-content p, p').each((_, el) => {
+        const text = cleanText($(el).text());
+        if (text.length > 80 && text.length < 400 && !isBoilerplateText(text)) {
+          if (!title || hasKeywordOverlap(title, text)) {
+            summary = truncateToSentences(text, 75);
+            return false; // Break loop
+          }
         }
-      }
-    });
+      });
+    }
 
-    return firstP;
+    return { title: cleanTitle, summary, imageUrl };
   } catch {
-    return '';
+    return { title: '', summary: '', imageUrl: '' };
   }
+}
+
+async function fetchArticleSummary(url, title = '') {
+  const details = await fetchArticleDetails(url, title);
+  return details.summary;
 }
 
 async function enrichCardsWithDetailedSummaries(cards, maxConcurrency = 5) {
@@ -604,11 +835,18 @@ async function enrichCardsWithDetailedSummaries(cards, maxConcurrency = 5) {
     const chunk = enriched.slice(i, i + maxConcurrency);
     await Promise.all(
       chunk.map(async (card, chunkIndex) => {
-        if (!card.summary) {
+        const needsSummary = !card.summary || card.summary.split(/\s+/).filter(Boolean).length < 20;
+        const needsImage = !card.imageUrl || isGenericOrLogoImage(card.imageUrl);
+
+        if (needsSummary || needsImage) {
           const index = i + chunkIndex;
-          const detailed = await fetchArticleSummary(card.url, card.title);
-          if (detailed) {
-            enriched[index].summary = detailed;
+          const details = await fetchArticleDetails(card.url, card.title);
+          
+          if (needsSummary && details.summary) {
+            enriched[index].summary = details.summary;
+          }
+          if (needsImage && details.imageUrl) {
+            enriched[index].imageUrl = details.imageUrl;
           }
         }
       })
@@ -660,9 +898,10 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
     const node = $(element);
     const title = extractPrimaryTitle(node);
     const summary = extractPrimarySummary(node);
-    const link = extractPrimaryLink(node, normalizedUrl);
+    const link = extractPrimaryLink(node, normalizedUrl, $);
     const imageUrl = extractImageUrl(node, $, normalizedUrl);
     const source = cleanText(node.find('.source, .publisher, [data-source]').first().text());
+    const resolvedSource = getSourceNameFromUrl(sourceUrl, source);
     const publishedAt = parseDate(
       node.find('time').first().attr('datetime') || node.find('time').first().text()
     );
@@ -687,7 +926,7 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
       summary,
       url: link,
       imageUrl,
-      source,
+      source: resolvedSource,
       language: normalizedLanguage,
       publishedAt,
       titleFingerprint: computeTitleFingerprint(title),
@@ -705,11 +944,55 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
       }
 
       const node = $(element);
-      const title = cleanText(node.text());
       const link = resolveUrl(normalizedUrl, node.attr('href'));
-
-      if (!title || !link) {
+      if (!link) {
         return;
+      }
+
+      // Try to find a heading inside this anchor
+      let title = '';
+      const heading = node.find('h1, h2, h3, h4, h5, h6').first();
+      if (heading.length) {
+        title = cleanText(heading.text());
+      } else {
+        const titleEl = node.find('[class*="title" i], [class*="headline" i], [class*="heading" i]').first();
+        if (titleEl.length) {
+          title = cleanText(titleEl.text());
+        }
+      }
+
+      const fullText = cleanText(node.text());
+      if (!title) {
+        if (fullText.length < 120) {
+          title = fullText;
+        } else {
+          const parts = fullText.split(/[.\n]/);
+          title = cleanText(parts[0]);
+        }
+      }
+
+      if (!title) {
+        return;
+      }
+
+      // Try to find a summary inside this anchor (e.g. p tag or summary class)
+      let summary = '';
+      const pTag = node.find('p').first();
+      if (pTag.length) {
+        summary = cleanText(pTag.text());
+      } else {
+        const descEl = node.find('[class*="summary" i], [class*="description" i], [class*="excerpt" i], [class*="promo" i]').first();
+        if (descEl.length) {
+          summary = cleanText(descEl.text());
+        }
+      }
+
+      if (!summary && fullText.length > title.length) {
+        let rest = fullText.substring(fullText.indexOf(title) + title.length).trim();
+        // Remove trailing date-like metadata e.g. "12 hrs ago", "UK"
+        rest = rest.replace(/\d+\s*(hrs?|hours?|mins?|minutes?|days?)\s*ago.*/i, '');
+        rest = rest.replace(/UK$/i, '');
+        summary = cleanText(rest);
       }
 
       const quality = validateCardQuality({ title, url: link, imageUrl: '' });
@@ -725,10 +1008,10 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
       seenKeys.add(key);
       cards.push({
         title,
-        summary: '',
+        summary,
         url: link,
         imageUrl: '',
-        source: '',
+        source: getSourceNameFromUrl(sourceUrl, ''),
         language: normalizedLanguage,
         publishedAt: null,
         titleFingerprint: computeTitleFingerprint(title),
@@ -790,7 +1073,12 @@ module.exports = {
   translateStoryContent,
   validateUrlForIngestion,
   fetchArticleSummary,
+  fetchArticleDetails,
   enrichCardsWithDetailedSummaries,
   isBoilerplateText,
-  hasKeywordOverlap
+  hasKeywordOverlap,
+  isGenericOrLogoImage,
+  truncateToSentences,
+  getSourceNameFromUrl,
+  translateWithGoogleFree
 };

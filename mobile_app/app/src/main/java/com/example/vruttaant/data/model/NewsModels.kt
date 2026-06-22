@@ -41,8 +41,7 @@ data class NewsCardNetwork(
         val finalSummary = aiSummary?.trim()?.takeIf { it.isNotEmpty() } 
             ?: summary?.trim()?.takeIf { it.isNotEmpty() } 
             ?: "No summary available."
-        val finalImageUrl = imageUrl?.trim()?.takeIf { it.isNotEmpty() } 
-            ?: "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1600&q=80"
+        val finalImageUrl = imageUrl?.trim()?.takeIf { it.isNotEmpty() } ?: ""
         val finalSource = source?.trim()?.takeIf { it.isNotEmpty() } ?: "Unknown Source"
         val finalCategory = category?.trim()?.takeIf { it.isNotEmpty() } ?: "General"
         

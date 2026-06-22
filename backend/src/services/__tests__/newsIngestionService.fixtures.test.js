@@ -159,9 +159,17 @@ describe('newsIngestionService fixtures and deterministic llm mocks', () => {
       </body></html>
     `;
 
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      text: async () => qualityFixtureHtml
+    global.fetch = jest.fn().mockImplementation((url) => {
+      if (url.includes('/news/no-image')) {
+        return Promise.resolve({
+          ok: true,
+          text: async () => '<html><body><div class="story-body"><p>This is a valid long description without any image tags.</p></div></body></html>'
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        text: async () => qualityFixtureHtml
+      });
     });
 
     const result = await fetchNewsCards('https://example.com/news', 'en', 10);

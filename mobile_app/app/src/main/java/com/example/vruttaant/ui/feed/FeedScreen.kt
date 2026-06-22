@@ -1,10 +1,16 @@
 package com.example.vruttaant.ui.feed
 
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.ui.platform.LocalView
+import androidx.core.content.FileProvider
+import java.io.File
+import java.io.FileOutputStream
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,7 +40,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import coil3.compose.AsyncImage
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.AsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.allowHardware
 import com.example.vruttaant.data.model.NewsItem
 import com.example.vruttaant.ui.theme.LocalAppLanguage
 import com.example.vruttaant.ui.theme.Localizations
@@ -50,6 +59,7 @@ fun FeedScreen(
     modifier: Modifier = Modifier
 ) {
     val language = LocalAppLanguage.current
+    val context = LocalContext.current
     val feed by viewModel.feed.collectAsState()
     val isInitialLoading by viewModel.isInitialLoading.collectAsState()
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
@@ -169,7 +179,17 @@ fun FeedScreen(
                                     isBookmarked = isBookmarked,
                                     onBookmarkToggle = { viewModel.toggleBookmark(item, onLoginRequired = { showLoginSheet = true }) },
                                     onTranslateRequested = { onResult -> viewModel.translateStory(item, onResult) },
-                                    onShare = { viewModel.trackShare(item) }
+                                    onShare = { viewModel.trackShare(item) },
+                                    onSourceClick = {
+                                        if (item.originalUrl.isNotEmpty()) {
+                                            try {
+                                                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(item.originalUrl))
+                                                context.startActivity(intent)
+                                            } catch (e: Exception) {
+                                                // ignore
+                                            }
+                                        }
+                                    }
                                 )
                             } else {
                                 WebViewReaderScreen(
@@ -342,261 +362,276 @@ fun NewsCardScreen(
     isBookmarked: Boolean,
     onBookmarkToggle: () -> Unit,
     onTranslateRequested: ((title: String, summary: String, isSuccess: Boolean) -> Unit) -> Unit,
-    onShare: () -> Unit
+    onShare: () -> Unit,
+    onSourceClick: () -> Unit
 ) {
     val language = LocalAppLanguage.current
     val context = LocalContext.current
+    val view = LocalView.current
 
     var displayTitle by remember(item) { mutableStateOf(item.title) }
     var displaySummary by remember(item) { mutableStateOf(item.summary) }
     var translationState by remember(item) { mutableStateOf("original") } // original, translating, translated
     var translationError by remember(item) { mutableStateOf<String?>(null) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // News Card Background Cover Image
-        AsyncImage(
-            model = item.imageUrl,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-
-        // Dark Gradient Overlay for Readability
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Top 50% - Image or placeholder with a top scrim
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Black.copy(alpha = 0.08f),
-                            Color.Black.copy(alpha = 0.28f),
-                            Color.Black.copy(alpha = 0.86f)
-                        ),
-                        startY = 0f,
-                        endY = Float.POSITIVE_INFINITY
-                    )
-                )
-        )
-
-        // Card Content
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(horizontal = 20.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.Bottom
+                .fillMaxWidth()
+                .weight(1f)
         ) {
-            // Lower Section Text overlays
-            Column(modifier = Modifier.fillMaxWidth()) {
-                // Translation state row & reading time
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                ) {
-                    val statusText = when (translationState) {
-                        "translating" -> Localizations.getString("translating", language)
-                        "translated" -> Localizations.getString("translated", language)
-                        else -> Localizations.getString("original", language)
-                    }
-                    val statusBg = if (translationState == "translated") Color(0xFF00796B) else Color.White.copy(alpha = 0.16f)
+            SubcomposeAsyncImage(
+                model = coil3.request.ImageRequest.Builder(LocalContext.current)
+                    .data(item.imageUrl)
+                    .allowHardware(false)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                val state = painter.state.collectAsState().value
+                android.util.Log.d("FeedScreen", "Coil image state: $state for url: ${item.imageUrl}")
+                if (state is AsyncImagePainter.State.Error) {
+                    android.util.Log.e("FeedScreen", "Coil load error for ${item.imageUrl}: ${state.result.throwable.message}", state.result.throwable)
+                }
 
+                if (state is AsyncImagePainter.State.Success) {
+                    androidx.compose.foundation.Image(
+                        painter = painter,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(statusBg)
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFF2C3E50),
+                                        Color(0xFF0F2027)
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = statusText,
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
+                        Icon(
+                            imageVector = Icons.Outlined.Article,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.6f),
+                            modifier = Modifier.size(64.dp)
                         )
                     }
+                }
+            }
+            // Top scrim gradient for status bar / category bar overlay readability
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.65f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+        }
 
-                    // Reading time minutes chip
-                    val readingMins = item.readingTime ?: 0
-                    if (readingMins > 0) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(Color.White.copy(alpha = 0.16f))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+        // Bottom 50% - News details with a clean dark background
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .background(Color(0xFF161719))
+                .navigationBarsPadding()
+                .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Upper part: Status row + Title + Summary
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Translation state row
+                if (translationState != "original" || translationError != null) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    ) {
+                        if (translationState != "original") {
+                            val statusText = when (translationState) {
+                                "translating" -> Localizations.getString("translating", language)
+                                "translated" -> Localizations.getString("translated", language)
+                                else -> ""
+                            }
+                            val statusBg = if (translationState == "translated") Color(0xFF00796B) else Color.White.copy(alpha = 0.16f)
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(statusBg)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Schedule,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(12.dp)
-                                )
                                 Text(
-                                    text = Localizations.getString("read_time_minutes", language).replace("{minutes}", readingMins.toString()),
+                                    text = statusText,
                                     color = Color.White,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
                         }
-                    }
 
-                    // Error text overlay
-                    translationError?.let {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(Color.Red.copy(alpha = 0.24f))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(text = it, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        // Error text overlay
+                        translationError?.let {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Color.Red.copy(alpha = 0.24f))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(text = it, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
 
-                // Title (max 3 lines)
+                // Title (max 4 lines)
                 Text(
                     text = displayTitle,
-                    fontSize = 28.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.White,
-                    maxLines = 3,
+                    maxLines = 4,
                     overflow = TextOverflow.Ellipsis,
-                    lineHeight = 34.sp
+                    lineHeight = 26.sp
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Summary (max 12 lines)
+                // Summary (max 6 lines)
                 Text(
                     text = displaySummary,
                     fontSize = 15.sp,
                     color = Color(0xFFE8E8E8),
-                    maxLines = 12,
+                    maxLines = 6,
                     overflow = TextOverflow.Ellipsis,
                     lineHeight = 22.sp
                 )
+            }
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Action Bar (Source + Actions)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Source label
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(Color.White.copy(alpha = 0.16f))
-                            .border(
-                                width = 1.dp,
-                                color = Color.White.copy(alpha = 0.24f),
-                                shape = RoundedCornerShape(999.dp)
-                            )
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = item.source.ifEmpty { "News" },
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
+            // Bottom part: Action Bar (Source + Actions)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Source label
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(Color.White.copy(alpha = 0.16f))
+                        .border(
+                            width = 1.dp,
+                            color = Color.White.copy(alpha = 0.24f),
+                            shape = RoundedCornerShape(999.dp)
                         )
-                    }
+                        .clickable(enabled = item.originalUrl.isNotEmpty()) { onSourceClick() }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = item.source.ifEmpty { "News" },
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
-                    Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
 
-                    // Actions row
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // Translate Toggle
-                        IconButton(
-                            onClick = {
-                                if (translationState == "translated") {
-                                    displayTitle = item.title
-                                    displaySummary = item.summary
-                                    translationState = "original"
-                                    translationError = null
-                                } else if (translationState == "original") {
-                                    translationState = "translating"
-                                    translationError = null
-                                    onTranslateRequested { t, s, isSuccess ->
-                                        if (isSuccess) {
-                                            displayTitle = t
-                                            displaySummary = s
-                                            translationState = "translated"
-                                        } else {
-                                            displayTitle = item.title
-                                            displaySummary = item.summary
-                                            translationState = "original"
-                                            translationError = Localizations.getString("translation_failed", language)
-                                        }
+                // Actions row
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Translate Toggle
+                    IconButton(
+                        onClick = {
+                            if (translationState == "translated") {
+                                displayTitle = item.title
+                                displaySummary = item.summary
+                                translationState = "original"
+                                translationError = null
+                            } else if (translationState == "original") {
+                                translationState = "translating"
+                                translationError = null
+                                onTranslateRequested { t, s, isSuccess ->
+                                    if (isSuccess) {
+                                        displayTitle = t
+                                        displaySummary = s
+                                        translationState = "translated"
+                                    } else {
+                                        displayTitle = item.title
+                                        displaySummary = item.summary
+                                        translationState = "original"
+                                        translationError = Localizations.getString("translation_failed", language)
                                     }
                                 }
-                            },
-                            modifier = Modifier
-                                .size(36.dp)
-                                .background(Color.White.copy(alpha = 0.16f), CircleShape)
-                        ) {
-                            if (translationState == "translating") {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = Color.White
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = if (translationState == "translated") Icons.Default.Translate else Icons.Outlined.Translate,
-                                    contentDescription = "Translate",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
-                                )
                             }
-                        }
-
-                        // Share button
-                        IconButton(
-                            onClick = {
-                                onShare()
-                                val text = if (item.originalUrl.isNotEmpty()) {
-                                    "${item.title}\n\n${item.originalUrl}"
-                                } else {
-                                    "${item.title}\n\n${item.summary}"
-                                }
-                                val shareIntent = Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, text)
-                                }
-                                context.startActivity(Intent.createChooser(shareIntent, "Share story"))
-                            },
-                            modifier = Modifier
-                                .size(36.dp)
-                                .background(Color.White.copy(alpha = 0.16f), CircleShape)
-                        ) {
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color.White.copy(alpha = 0.16f), CircleShape)
+                    ) {
+                        if (translationState == "translating") {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                        } else {
                             Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = "Share",
+                                imageVector = if (translationState == "translated") Icons.Default.Translate else Icons.Outlined.Translate,
+                                contentDescription = "Translate",
                                 tint = Color.White,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
+                    }
 
-                        // Bookmark toggle button
-                        IconButton(
-                            onClick = onBookmarkToggle,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .background(Color.White.copy(alpha = 0.16f), CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                                contentDescription = "Bookmark",
-                                tint = if (isBookmarked) Color.Yellow else Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                    // Share button
+                    IconButton(
+                        onClick = {
+                            onShare()
+                            val text = if (item.originalUrl.isNotEmpty()) {
+                                "${displayTitle}\n\n${item.originalUrl}"
+                            } else {
+                                "${displayTitle}\n\n${displaySummary}"
+                            }
+                            shareScreenshot(view, context, displayTitle, text)
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color.White.copy(alpha = 0.16f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Share",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    // Bookmark toggle button
+                    IconButton(
+                        onClick = onBookmarkToggle,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color.White.copy(alpha = 0.16f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                            contentDescription = "Bookmark",
+                            tint = if (isBookmarked) Color.Yellow else Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             }
@@ -772,3 +807,43 @@ fun WebViewReaderScreen(
         }
     }
 }
+
+private fun shareScreenshot(view: android.view.View, context: android.content.Context, title: String, text: String) {
+    try {
+        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        view.draw(canvas)
+
+        val cachePath = File(context.cacheDir, "shared_images")
+        cachePath.mkdirs()
+        val file = File(cachePath, "screenshot.png")
+        val fileOutputStream = FileOutputStream(file)
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+        fileOutputStream.flush()
+        fileOutputStream.close()
+
+        val contentUri = FileProvider.getUriForFile(
+            context,
+            "com.example.vruttaant.fileprovider",
+            file
+        )
+
+        if (contentUri != null) {
+            val shareIntent = Intent().apply {
+                action = Intent.ACTION_SEND
+                clipData = android.content.ClipData.newRawUri("", contentUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                setDataAndType(contentUri, context.contentResolver.getType(contentUri))
+                putExtra(Intent.EXTRA_STREAM, contentUri)
+                putExtra(Intent.EXTRA_TEXT, text)
+                type = "image/png"
+            }
+            val chooserIntent = Intent.createChooser(shareIntent, "Share News via Vruttaant")
+            chooserIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.startActivity(chooserIntent)
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+

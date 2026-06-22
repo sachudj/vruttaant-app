@@ -1,7 +1,14 @@
 const mongoose = require('mongoose');
+const cheerio = require('cheerio');
 const { connectDatabase, isDatabaseConnected } = require('../config/database');
 const NewsCard = require('../models/NewsCard');
-const { summarizeWithLlm, fetchArticleSummary, isBoilerplateText } = require('../services/newsIngestionService');
+const {
+  summarizeWithLlm,
+  fetchArticleDetails,
+  isBoilerplateText,
+  isGenericOrLogoImage,
+  getSourceNameFromUrl
+} = require('../services/newsIngestionService');
 const { logAuditEvent } = require('../observability/auditLogger');
 
 function parseLimit(raw) {
@@ -12,18 +19,77 @@ function parseLimit(raw) {
   return Math.min(Math.max(Math.floor(parsed), 1), 200);
 }
 
+async function findCorrectArticleUrl(indexUrl, title) {
+  try {
+    const response = await fetch(indexUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-IN,en;q=0.9,hi-IN;q=0.8',
+      },
+      signal: AbortSignal.timeout(3000)
+    });
+    if (!response.ok) return null;
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    
+    const normalizedTitle = title.trim().toLowerCase();
+    let foundUrl = null;
+    
+    $('a').each((_, el) => {
+      const href = $(el).attr('href');
+      const text = $(el).text().trim().toLowerCase();
+      if (href && text && text.length > 15) {
+        if (normalizedTitle.includes(text) || text.includes(normalizedTitle)) {
+          try {
+            const resolved = new URL(href, indexUrl).toString();
+            const nonArticlePatterns = [
+              /\/category\//i,
+              /\/section\//i,
+              /\/tag\//i,
+              /\/author\//i,
+              /\/topic\//i
+            ];
+            const isArticle = !nonArticlePatterns.some((pattern) => pattern.test(resolved));
+            if (isArticle) {
+              foundUrl = resolved;
+              return false; // break loop
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+    });
+    return foundUrl;
+  } catch (err) {
+    return null;
+  }
+}
+
 function buildMissingMetadataQuery() {
   const hasLlm = Boolean(process.env.LLM_API_KEY);
+  const baseMissing = {
+    $or: [
+      { title: { $regex: /^.{80,}$/ } },
+      { summary: { $in: [null, ''] } },
+      { summary: { $regex: /^.{0,100}$/ } },
+      { imageUrl: { $in: [null, ''] } },
+      { imageUrl: /logo|placeholder|default-ie/i },
+      { source: { $in: [null, '', 'Unknown Source'] } },
+      { url: /\/(section|category|author)\//i }
+    ]
+  };
+
   if (!hasLlm) {
-    return {
-      summary: { $in: [null, ''] }
-    };
+    return baseMissing;
   }
   return {
     $or: [
+      ...baseMissing.$or,
       { aiSummary: { $in: [null, ''] } },
-      { category: { $in: [null, ''] } },
-      { summary: { $in: [null, ''] } }
+      { category: { $in: [null, ''] } }
     ]
   };
 }
@@ -36,7 +102,7 @@ async function reprocessMissingMetadata(options = {}) {
     throw new Error('Database is not connected. Cannot run reprocessing job.');
   }
 
-  const missingQuery = buildMissingMetadataQuery();
+  const missingQuery = options.query || buildMissingMetadataQuery();
   const cards = await NewsCard.find(missingQuery).sort({ createdAt: -1 }).limit(batchLimit).lean();
 
   const summary = {
@@ -48,14 +114,50 @@ async function reprocessMissingMetadata(options = {}) {
 
   for (const card of cards) {
     try {
+      let currentUrl = card.url || '';
       let currentSummary = card.summary || '';
+      let currentImageUrl = card.imageUrl || '';
+      let currentSource = card.source || '';
       const updatedFields = {};
 
-      if (!currentSummary || isBoilerplateText(currentSummary)) {
-        const detailed = await fetchArticleSummary(card.url);
-        if (detailed) {
-          currentSummary = detailed;
-          updatedFields.summary = detailed;
+      const nonArticlePatterns = [
+        /\/category\//i,
+        /\/section\//i,
+        /\/author\//i,
+        /\/topic\//i
+      ];
+      const isIndexUrl = nonArticlePatterns.some((pattern) => pattern.test(currentUrl));
+      if (isIndexUrl) {
+        const correctUrl = await findCorrectArticleUrl(currentUrl, card.title);
+        if (correctUrl && correctUrl !== currentUrl) {
+          currentUrl = correctUrl;
+          updatedFields.url = correctUrl;
+        }
+      }
+
+      const cleanSource = getSourceNameFromUrl(currentUrl, currentSource === 'Unknown Source' ? '' : currentSource);
+      if (cleanSource && cleanSource !== currentSource) {
+        currentSource = cleanSource;
+        updatedFields.source = cleanSource;
+      }
+
+      const needsTitle = !card.title || card.title.length > 80;
+      const needsSummary = !currentSummary || currentSummary.split(/\s+/).filter(Boolean).length < 20 || isBoilerplateText(currentSummary);
+      const needsImage = !currentImageUrl || isGenericOrLogoImage(currentImageUrl);
+
+      if (needsSummary || needsImage || needsTitle || updatedFields.url) {
+        const details = await fetchArticleDetails(currentUrl, card.title);
+        
+        if (needsTitle && details.title && details.title.length < card.title.length) {
+          updatedFields.title = details.title;
+        }
+        if ((needsSummary || updatedFields.url) && details.summary) {
+          currentSummary = details.summary;
+          updatedFields.summary = details.summary;
+        }
+        if ((needsImage || updatedFields.url) && details.imageUrl) {
+          currentImageUrl = details.imageUrl;
+          updatedFields.imageUrl = details.imageUrl;
         }
       }
 
@@ -63,8 +165,8 @@ async function reprocessMissingMetadata(options = {}) {
         {
           title: card.title,
           summary: currentSummary,
-          source: card.source,
-          url: card.url
+          source: currentSource,
+          url: currentUrl
         },
         card.language || 'en'
       );

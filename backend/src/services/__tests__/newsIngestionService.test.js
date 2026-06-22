@@ -9,7 +9,9 @@ const {
   validateUrlForIngestion,
   fetchArticleSummary,
   isBoilerplateText,
-  hasKeywordOverlap
+  hasKeywordOverlap,
+  isGenericOrLogoImage,
+  truncateToSentences
 } = require('../newsIngestionService');
 
 describe('newsIngestionService - Language Normalization', () => {
@@ -379,5 +381,44 @@ describe('newsIngestionService - hasKeywordOverlap', () => {
         'This is a completely unrelated summary discussing technology updates for the iPhone 17 lineup.'
       )
     ).toBe(false);
+  });
+});
+
+describe('newsIngestionService - isGenericOrLogoImage', () => {
+  test('returns true for null/empty and generic image URLs', () => {
+    expect(isGenericOrLogoImage(null)).toBe(true);
+    expect(isGenericOrLogoImage('')).toBe(true);
+    expect(isGenericOrLogoImage('https://indianexpress.com/wp-content/plugins/ie-newsblock-builder/assets/images/default-ie.jpg')).toBe(true);
+    expect(isGenericOrLogoImage('https://site.com/assets/logo.png')).toBe(true);
+    expect(isGenericOrLogoImage('https://site.com/placeholders/brand-image.jpg')).toBe(true);
+  });
+
+  test('returns false for actual story image URLs', () => {
+    expect(isGenericOrLogoImage('https://images.indianexpress.com/2026/05/LEGO-P1-ILLUUSTRATION.jpg')).toBe(false);
+    expect(isGenericOrLogoImage('https://images.unsplash.com/photo-1495020689067-958852a7765e')).toBe(false);
+  });
+});
+
+describe('newsIngestionService - truncateToSentences', () => {
+  test('returns empty string for empty input', () => {
+    expect(truncateToSentences('')).toBe('');
+    expect(truncateToSentences(null)).toBe('');
+  });
+
+  test('returns original string if under word limit', () => {
+    const text = 'This is a short sentence. It is well under the limit.';
+    expect(truncateToSentences(text, 20)).toBe(text);
+  });
+
+  test('truncates to sentence boundary if over limit', () => {
+    const text = 'This is the first sentence. This is the second sentence that contains many words to exceed the limit. This is the third sentence.';
+    const result = truncateToSentences(text, 12);
+    expect(result).toBe('This is the first sentence.');
+  });
+  
+  test('truncates with ellipsis if no sentence boundary is found near the end of truncated chunk', () => {
+    const text = 'Word '.repeat(30).trim();
+    const result = truncateToSentences(text, 10);
+    expect(result).toBe('Word Word Word Word Word Word Word Word Word Word...');
   });
 });

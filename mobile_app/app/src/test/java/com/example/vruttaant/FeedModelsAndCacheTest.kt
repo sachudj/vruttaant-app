@@ -32,7 +32,7 @@ class FeedModelsAndCacheTest {
         assertEquals("Test Title", newsItem.title)
         assertEquals("AI Summary text...", newsItem.summary)
         // Fallback for empty image URL
-        assertEquals("https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1600&q=80", newsItem.imageUrl)
+        assertEquals("", newsItem.imageUrl)
         assertEquals("Source", newsItem.source)
         assertEquals("Business", newsItem.category)
         assertEquals("http://example.com/news", newsItem.url)

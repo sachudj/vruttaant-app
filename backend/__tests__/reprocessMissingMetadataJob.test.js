@@ -11,7 +11,10 @@ jest.mock('../src/models/NewsCard', () => ({
 jest.mock('../src/services/newsIngestionService', () => ({
   summarizeWithLlm: jest.fn(),
   fetchArticleSummary: jest.fn(),
-  isBoilerplateText: jest.fn().mockReturnValue(false)
+  fetchArticleDetails: jest.fn().mockResolvedValue({ summary: '', imageUrl: '' }),
+  isBoilerplateText: jest.fn().mockReturnValue(false),
+  isGenericOrLogoImage: jest.fn().mockReturnValue(false),
+  getSourceNameFromUrl: jest.fn((url, parsed) => parsed || 'Resolved Source')
 }));
 
 jest.mock('../src/observability/auditLogger', () => ({
@@ -66,9 +69,15 @@ describe('reprocessMissingMetadata job', () => {
   test('buildMissingMetadataQuery matches empty summary/category records', () => {
     expect(buildMissingMetadataQuery()).toEqual({
       $or: [
+        { title: { $regex: /^.{80,}$/ } },
+        { summary: { $in: [null, ''] } },
+        { summary: { $regex: /^.{0,100}$/ } },
+        { imageUrl: { $in: [null, ''] } },
+        { imageUrl: /logo|placeholder|default-ie/i },
+        { source: { $in: [null, '', 'Unknown Source'] } },
+        { url: /\/(section|category|author)\//i },
         { aiSummary: { $in: [null, ''] } },
-        { category: { $in: [null, ''] } },
-        { summary: { $in: [null, ''] } }
+        { category: { $in: [null, ''] } }
       ]
     });
   });
