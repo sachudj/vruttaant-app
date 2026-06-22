@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-06-21T07:36:40Z",
+  "generatedAt": "2026-06-22T16:25:32Z",
   "sourceApk": "mobile_app/app/build/outputs/apk/release/app-release-unsigned.apk",
   "publishedApk": "artifacts/mobile/android/app-release-latest.apk",
-  "gitCommit": "c762228f3f54ae81a42afef4b5fd126bf49dc90c",
-  "sizeBytes": 14366277,
-  "sha256": "0be07a6def8e82c3386b2c4d84c472d446eda608def195c5e99a48ae106f51df"
+  "gitCommit": "4626dbaeb6db5e57d29bc60ed5c56f829e862350",
+  "sizeBytes": 14366777,
+  "sha256": "94551a2a0b06b3ed25cb9a68b039dd11765192c8e89fc72f13338943df74c302"
 }
