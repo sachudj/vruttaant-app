@@ -5,7 +5,11 @@ const {
   resolveUrl,
   cleanText,
   validateCardQuality,
-  toLanguageLabel
+  toLanguageLabel,
+  validateUrlForIngestion,
+  fetchArticleSummary,
+  isBoilerplateText,
+  hasKeywordOverlap
 } = require('../newsIngestionService');
 
 describe('newsIngestionService - Language Normalization', () => {
@@ -206,5 +210,174 @@ describe('newsIngestionService - Source Quality Rules', () => {
 
     expect(result.pass).toBe(false);
     expect(result.reasons).toContain('missing_image');
+  });
+});
+
+describe('newsIngestionService - validateUrlForIngestion', () => {
+  test('allows valid HTTP/HTTPS URLs', () => {
+    expect(validateUrlForIngestion('https://example.com/news')).toBe('https://example.com/news');
+    expect(validateUrlForIngestion('http://example.com/news')).toBe('http://example.com/news');
+  });
+
+  test('throws for invalid protocol', () => {
+    expect(() => validateUrlForIngestion('ftp://example.com')).toThrow('Invalid URL protocol');
+  });
+
+  test('throws for malformed URL', () => {
+    expect(() => validateUrlForIngestion('not-a-url')).toThrow('Invalid source URL');
+  });
+
+  test('throws for SSRF hostnames', () => {
+    expect(() => validateUrlForIngestion('https://localhost/api')).toThrow('Requests to internal or private networks are not allowed.');
+    expect(() => validateUrlForIngestion('https://127.0.0.1/api')).toThrow('Requests to internal or private networks are not allowed.');
+    expect(() => validateUrlForIngestion('https://192.168.1.1/api')).toThrow('Requests to internal or private networks are not allowed.');
+  });
+});
+
+describe('newsIngestionService - fetchArticleSummary', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  test('extracts summary from og:description', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => '<html><head><meta property="og:description" content="This is an awesome og:description metadata tag for the story." /></head><body></body></html>'
+    });
+
+    const summary = await fetchArticleSummary('https://example.com/story');
+    expect(summary).toBe('This is an awesome og:description metadata tag for the story.');
+  });
+
+  test('extracts summary from name=description tag when og:description is missing', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => '<html><head><meta name="description" content="This is a simple name description meta tag summary." /></head><body></body></html>'
+    });
+
+    const summary = await fetchArticleSummary('https://example.com/story');
+    expect(summary).toBe('This is a simple name description meta tag summary.');
+  });
+
+  test('falls back to the first body paragraph matching length criteria', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => `
+        <html>
+          <body>
+            <article>
+              <p>Short</p>
+              <p>This is a sufficiently long first paragraph body text that we expect to be returned as a summary because it falls in the valid length bounds.</p>
+            </article>
+          </body>
+        </html>
+      `
+    });
+
+    const summary = await fetchArticleSummary('https://example.com/story');
+    expect(summary).toBe('This is a sufficiently long first paragraph body text that we expect to be returned as a summary because it falls in the valid length bounds.');
+  });
+
+  test('returns empty string if fetch fails', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false
+    });
+
+    const summary = await fetchArticleSummary('https://example.com/story');
+    expect(summary).toBe('');
+  });
+
+  test('ignores boilerplate meta description and falls back to body paragraph', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => `
+        <html>
+          <head>
+            <meta property="og:description" content="Pune News Updates: Read Latest Pune News Headlines about Pune Education, Weather, Politics." />
+          </head>
+          <body>
+            <p>To mitigate the potential impact of expected El Niño conditions, the Maharashtra government has intensified soil and water conservation projects across the state.</p>
+          </body>
+        </html>
+      `
+    });
+
+    const summary = await fetchArticleSummary('https://example.com/story');
+    expect(summary).toBe('To mitigate the potential impact of expected El Niño conditions, the Maharashtra government has intensified soil and water conservation projects across the state.');
+  });
+
+  test('ignores meta description that fails keyword overlap check and falls back', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => `
+        <html>
+          <head>
+            <meta property="og:description" content="This is a summary about standard football soccer leagues and cricket scores." />
+          </head>
+          <body>
+            <p>To mitigate the potential impact of expected El Niño conditions, the Maharashtra government has intensified soil and water conservation projects across the state.</p>
+          </body>
+        </html>
+      `
+    });
+
+    const summary = await fetchArticleSummary(
+      'https://example.com/story',
+      'El Niño: Maharashtra farmers urged to finish water conservation'
+    );
+    expect(summary).toBe('To mitigate the potential impact of expected El Niño conditions, the Maharashtra government has intensified soil and water conservation projects across the state.');
+  });
+});
+
+describe('newsIngestionService - isBoilerplateText', () => {
+  test('identifies empty or null text as boilerplate', () => {
+    expect(isBoilerplateText('')).toBe(true);
+    expect(isBoilerplateText(null)).toBe(true);
+  });
+
+  test('flags promotional or generic updates keywords', () => {
+    expect(isBoilerplateText('Read latest news on our website.')).toBe(true);
+    expect(isBoilerplateText('follow us on whatsapp for updates')).toBe(true);
+    expect(isBoilerplateText('Catch all Live news updates on our page')).toBe(true);
+  });
+
+  test('flags multiple category names listing (keyword stuffing)', () => {
+    expect(isBoilerplateText('Latest updates about Education, Weather, Politics, Crime')).toBe(true);
+  });
+
+  test('allows clean article descriptions', () => {
+    expect(isBoilerplateText('To mitigate the potential impact of expected El Niño conditions, the Maharashtra government has intensified soil and water conservation projects.')).toBe(false);
+  });
+});
+
+describe('newsIngestionService - hasKeywordOverlap', () => {
+  test('returns false for empty title or summary', () => {
+    expect(hasKeywordOverlap('', 'Summary')).toBe(false);
+    expect(hasKeywordOverlap('Title', '')).toBe(false);
+    expect(hasKeywordOverlap(null, null)).toBe(false);
+  });
+
+  test('returns true for title with only stopwords/short words (defaults pass)', () => {
+    expect(hasKeywordOverlap('the in on', 'To mitigate the impact...')).toBe(true);
+  });
+
+  test('detects actual matching keywords case-insensitively', () => {
+    expect(
+      hasKeywordOverlap(
+        'El Niño: Maharashtra farmers urged to finish water conservation',
+        'Maharashtra government urges conservation efforts.'
+      )
+    ).toBe(true);
+  });
+
+  test('rejects totally unrelated texts (zero overlap)', () => {
+    expect(
+      hasKeywordOverlap(
+        'El Niño: Maharashtra farmers urged to finish water conservation',
+        'This is a completely unrelated summary discussing technology updates for the iPhone 17 lineup.'
+      )
+    ).toBe(false);
   });
 });

@@ -436,12 +436,10 @@ async function translateStoryContent(card, sourceLanguage = 'en', targetLanguage
   }
 }
 
-async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
-  const normalizedLanguage = normalizeLanguage(language);
-
+function validateUrlForIngestion(targetUrl) {
   let parsedUrl;
   try {
-    parsedUrl = new URL(sourceUrl);
+    parsedUrl = new URL(targetUrl);
   } catch {
     throw new Error('Invalid source URL');
   }
@@ -463,7 +461,166 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
     throw new Error('Requests to internal or private networks are not allowed.');
   }
 
-  const normalizedUrl = parsedUrl.toString();
+  return parsedUrl.toString();
+}
+
+function isBoilerplateText(text) {
+  if (!text) {
+    return true;
+  }
+  const normalized = text.toLowerCase();
+
+  const keywords = [
+    'read latest',
+    'news headlines',
+    'live news updates',
+    'stay updated',
+    'follow us on',
+    'subscribe to',
+    'get latest news',
+    'latest updates on',
+    'click here to read',
+    'catch all live',
+    'breaking news updates'
+  ];
+
+  const matchCount = keywords.filter((kw) => normalized.includes(kw)).length;
+  if (matchCount > 0) {
+    return true;
+  }
+
+  const categoryKeywords = [
+    'politics',
+    'weather',
+    'crime',
+    'education',
+    'business',
+    'sports',
+    'entertainment',
+    'science',
+    'health'
+  ];
+  const categoryMatches = categoryKeywords.filter((kw) => normalized.includes(kw)).length;
+  if (categoryMatches >= 3) {
+    return true;
+  }
+
+  return false;
+}
+
+function hasKeywordOverlap(title, summary, minOverlapCount = 1) {
+  if (!title || !summary) {
+    return false;
+  }
+
+  const stopwords = new Set([
+    'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', 'arent', 'as', 'at',
+    'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', 'cant', 'cannot', 'could',
+    'couldnt', 'did', 'didnt', 'do', 'does', 'doesnt', 'doing', 'dont', 'down', 'during', 'each', 'few', 'for', 'from',
+    'further', 'had', 'hadnt', 'has', 'hasnt', 'have', 'havent', 'having', 'he', 'hed', 'hell', 'hes', 'her', 'here',
+    'heres', 'hers', 'herself', 'him', 'himself', 'his', 'how', 'hows', 'i', 'id', 'ill', 'im', 'ive', 'if', 'in',
+    'into', 'is', 'isnt', 'it', 'its', 'itself', 'lets', 'me', 'more', 'most', 'mustnt', 'my', 'myself', 'no', 'nor',
+    'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours', 'ourselves', 'out', 'over', 'own',
+    'same', 'shant', 'she', 'shed', 'shell', 'shes', 'should', 'shouldnt', 'so', 'some', 'such', 'than', 'that',
+    'thats', 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', 'theres', 'these', 'they', 'theyd',
+    'theyll', 'theyre', 'theyve', 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was',
+    'wasnt', 'we', 'wed', 'well', 'were', 'weve', 'werent', 'what', 'whats', 'when', 'whens', 'where', 'wheres',
+    'which', 'while', 'who', 'whos', 'whom', 'why', 'whys', 'with', 'wont', 'would', 'wouldnt', 'you', 'youd',
+    'youll', 'youre', 'youve', 'your', 'yours', 'yourself', 'yourselves'
+  ]);
+
+  const titleWords = title
+    .toLowerCase()
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'–—]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length > 2 && !stopwords.has(word));
+
+  if (titleWords.length === 0) {
+    return true; // If title is empty or has only stopwords/short words, skip overlap validation
+  }
+
+  const summaryLower = summary.toLowerCase();
+  const matches = titleWords.filter((word) => summaryLower.includes(word));
+
+  return matches.length >= minOverlapCount;
+}
+
+async function fetchArticleSummary(url, title = '') {
+  try {
+    const normalizedUrl = validateUrlForIngestion(url);
+    const response = await fetch(normalizedUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+        Accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-IN,en;q=0.9,hi-IN;q=0.8',
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache'
+      },
+      signal: AbortSignal.timeout(3000)
+    });
+    if (!response.ok) {
+      return '';
+    }
+    const html = await response.text();
+    const $ = cheerio.load(html);
+
+    // 1. Try og:description, description, or twitter:description meta tags
+    let desc = $('meta[property="og:description"]').attr('content') ||
+               $('meta[name="description"]').attr('content') ||
+               $('meta[property="twitter:description"]').attr('content');
+
+    if (desc) {
+      desc = cleanText(desc);
+      if (desc && desc.length > 25 && !isBoilerplateText(desc)) {
+        if (!title || hasKeywordOverlap(title, desc)) {
+          return desc;
+        }
+      }
+    }
+
+    // 2. Fallback to first paragraph of article body (which is not boilerplate and is relevant)
+    let firstP = '';
+    $('article p, .article-body p, .story-body p, .entry-content p, p').each((_, el) => {
+      const text = cleanText($(el).text());
+      if (text.length > 80 && text.length < 400 && !isBoilerplateText(text)) {
+        if (!title || hasKeywordOverlap(title, text)) {
+          firstP = text;
+          return false; // Break loop
+        }
+      }
+    });
+
+    return firstP;
+  } catch {
+    return '';
+  }
+}
+
+async function enrichCardsWithDetailedSummaries(cards, maxConcurrency = 5) {
+  const enriched = [...cards];
+  for (let i = 0; i < enriched.length; i += maxConcurrency) {
+    const chunk = enriched.slice(i, i + maxConcurrency);
+    await Promise.all(
+      chunk.map(async (card, chunkIndex) => {
+        if (!card.summary) {
+          const index = i + chunkIndex;
+          const detailed = await fetchArticleSummary(card.url, card.title);
+          if (detailed) {
+            enriched[index].summary = detailed;
+          }
+        }
+      })
+    );
+  }
+  return enriched;
+}
+
+async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
+  const normalizedLanguage = normalizeLanguage(language);
+
+  const normalizedUrl = validateUrlForIngestion(sourceUrl);
 
   const response = await fetch(normalizedUrl, {
     headers: {
@@ -583,8 +740,10 @@ async function fetchNewsCards(sourceUrl, language = 'en', maxItems = 20) {
     });
   }
 
+  const enrichedCards = await enrichCardsWithDetailedSummaries(cards);
+
   const cardsWithAiSummary = await Promise.all(
-    cards.map(async (card) => {
+    enrichedCards.map(async (card) => {
       try {
         const llmOutput = await summarizeWithLlm(card, normalizedLanguage);
         return {
@@ -628,5 +787,10 @@ module.exports = {
   toLanguageLabel,
   summarizeWithLlm,
   enforceSummaryWordRange,
-  translateStoryContent
+  translateStoryContent,
+  validateUrlForIngestion,
+  fetchArticleSummary,
+  enrichCardsWithDetailedSummaries,
+  isBoilerplateText,
+  hasKeywordOverlap
 };

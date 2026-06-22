@@ -1,6 +1,7 @@
+const mongoose = require('mongoose');
 const { connectDatabase, isDatabaseConnected } = require('../config/database');
 const NewsCard = require('../models/NewsCard');
-const { summarizeWithLlm } = require('../services/newsIngestionService');
+const { summarizeWithLlm, fetchArticleSummary, isBoilerplateText } = require('../services/newsIngestionService');
 const { logAuditEvent } = require('../observability/auditLogger');
 
 function parseLimit(raw) {
@@ -12,10 +13,17 @@ function parseLimit(raw) {
 }
 
 function buildMissingMetadataQuery() {
+  const hasLlm = Boolean(process.env.LLM_API_KEY);
+  if (!hasLlm) {
+    return {
+      summary: { $in: [null, ''] }
+    };
+  }
   return {
     $or: [
       { aiSummary: { $in: [null, ''] } },
-      { category: { $in: [null, ''] } }
+      { category: { $in: [null, ''] } },
+      { summary: { $in: [null, ''] } }
     ]
   };
 }
@@ -29,7 +37,7 @@ async function reprocessMissingMetadata(options = {}) {
   }
 
   const missingQuery = buildMissingMetadataQuery();
-  const cards = await NewsCard.find(missingQuery).sort({ createdAt: 1 }).limit(batchLimit).lean();
+  const cards = await NewsCard.find(missingQuery).sort({ createdAt: -1 }).limit(batchLimit).lean();
 
   const summary = {
     scanned: cards.length,
@@ -40,10 +48,21 @@ async function reprocessMissingMetadata(options = {}) {
 
   for (const card of cards) {
     try {
+      let currentSummary = card.summary || '';
+      const updatedFields = {};
+
+      if (!currentSummary || isBoilerplateText(currentSummary)) {
+        const detailed = await fetchArticleSummary(card.url);
+        if (detailed) {
+          currentSummary = detailed;
+          updatedFields.summary = detailed;
+        }
+      }
+
       const llm = await summarizeWithLlm(
         {
           title: card.title,
-          summary: card.summary,
+          summary: currentSummary,
           source: card.source,
           url: card.url
         },
@@ -53,19 +72,21 @@ async function reprocessMissingMetadata(options = {}) {
       const nextSummary = llm.aiSummary || card.aiSummary || '';
       const nextCategory = llm.category || card.category || 'General';
 
-      if (!nextSummary && !nextCategory) {
+      if (nextSummary !== card.aiSummary) {
+        updatedFields.aiSummary = nextSummary;
+      }
+      if (nextCategory !== card.category) {
+        updatedFields.category = nextCategory;
+      }
+
+      if (Object.keys(updatedFields).length === 0) {
         summary.skipped += 1;
         continue;
       }
 
       await NewsCard.updateOne(
         { _id: card._id },
-        {
-          $set: {
-            aiSummary: nextSummary,
-            category: nextCategory
-          }
-        }
+        { $set: updatedFields }
       );
 
       summary.updated += 1;
@@ -90,6 +111,12 @@ async function run() {
   } catch (error) {
     console.error(error.message || error);
     process.exitCode = 1;
+  } finally {
+    try {
+      await mongoose.disconnect();
+    } catch {
+      // Ignore disconnect errors
+    }
   }
 }
 

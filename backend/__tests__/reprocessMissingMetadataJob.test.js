@@ -9,7 +9,9 @@ jest.mock('../src/models/NewsCard', () => ({
 }));
 
 jest.mock('../src/services/newsIngestionService', () => ({
-  summarizeWithLlm: jest.fn()
+  summarizeWithLlm: jest.fn(),
+  fetchArticleSummary: jest.fn(),
+  isBoilerplateText: jest.fn().mockReturnValue(false)
 }));
 
 jest.mock('../src/observability/auditLogger', () => ({
@@ -33,8 +35,11 @@ describe('reprocessMissingMetadata job', () => {
     lean: jest.fn()
   };
 
+  const originalLlmApiKey = process.env.LLM_API_KEY;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.LLM_API_KEY = 'test-key';
 
     connectDatabase.mockResolvedValue(true);
     isDatabaseConnected.mockReturnValue(true);
@@ -45,6 +50,10 @@ describe('reprocessMissingMetadata job', () => {
 
     NewsCard.find.mockReturnValue(mockChain);
     NewsCard.updateOne.mockResolvedValue({ acknowledged: true, modifiedCount: 1 });
+  });
+
+  afterEach(() => {
+    process.env.LLM_API_KEY = originalLlmApiKey;
   });
 
   test('parseLimit clamps values to supported range', () => {
@@ -58,7 +67,8 @@ describe('reprocessMissingMetadata job', () => {
     expect(buildMissingMetadataQuery()).toEqual({
       $or: [
         { aiSummary: { $in: [null, ''] } },
-        { category: { $in: [null, ''] } }
+        { category: { $in: [null, ''] } },
+        { summary: { $in: [null, ''] } }
       ]
     });
   });
